@@ -6,7 +6,7 @@ export default function RootLayout() {
   return (
     <InstagramProvider>
       <Stack>
-        <Stack.Screen name="index" options={{ title: 'Home' }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
     </InstagramProvider>
   );
