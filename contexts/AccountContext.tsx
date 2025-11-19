@@ -1,13 +1,15 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { useAccount, useCreateAccount } from '~/lib/useAccount';
+import { useTracks } from '~/lib/useTracks';
 import { useSecureStorage } from '~/lib/useSecureStorage';
-import { Account } from '~/lib/types';
+import { Account, Instagram } from '~/lib/types';
 
 const ACCOUNT_ID_KEY = 'account_id';
 
 interface AccountContextType {
   account: Account | null;
+  trackedAccounts: Instagram[];
   isLoading: boolean;
 }
 
@@ -43,6 +45,12 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     error: fetchError,
   } = useAccount(storedAccountId);
 
+  // Fetch tracked accounts for this account
+  const {
+    data: trackedAccounts = [],
+    isLoading: isFetchingTracks,
+  } = useTracks(storedAccountId);
+
   // Create new account mutation
   const createAccount = useCreateAccount();
 
@@ -77,7 +85,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Determine account and loading state
   const account = existingAccount || createAccount.data || null;
   const isLoading =
-    isCheckingStorage || isFetchingAccount || createAccount.isPending;
+    isCheckingStorage || isFetchingAccount || isFetchingTracks || createAccount.isPending;
 
   // Show loading screen while initializing
   if (isLoading) {
@@ -90,6 +98,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const value: AccountContextType = {
     account,
+    trackedAccounts,
     isLoading,
   };
 

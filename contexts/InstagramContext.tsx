@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { View, Modal, Text, Pressable } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { useSQLiteContext } from 'expo-sqlite';
 import { useStorage } from '~/lib/useStorage';
 import { useConnectInstagram, useDisconnectInstagram } from '~/lib/useAccount';
 import { useAccountContext } from './AccountContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { syncFollowingList } from '~/lib/syncing';
 
 // Constants
 const INSTAGRAM_APP_ID = '936619743392459';
@@ -51,8 +52,11 @@ export const useInstagram = () => {
 
 // Provider
 export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Database
+  const db = useSQLiteContext();
+
   // Account context
-  const { account } = useAccountContext();
+  const { account, trackedAccounts } = useAccountContext();
   const connectInstagram = useConnectInstagram();
   const disconnectInstagram = useDisconnectInstagram();
 
@@ -89,6 +93,16 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, [isLoadingUserId, userId, webViewReady]);
 
+  // Sync tracked accounts when logged in and tracked accounts change
+  useEffect(() => {
+    if (!isLoggedIn || !webViewReady || trackedAccounts.length === 0) return;
+
+    // Sync each tracked account
+    trackedAccounts.forEach((trackedAccount) => {
+      fetchFollowing(trackedAccount.user_id, false);
+    });
+  }, [isLoggedIn, webViewReady, trackedAccounts]);
+
   // Inject JavaScript helper
   const injectJS = (code: string) => {
     webViewRef.current?.injectJavaScript(`(function(){${code}})(); true;`);
@@ -123,10 +137,11 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (!webViewRef.current) return;
 
     if (fetchingUsersRef.current.has(userIdToFetch)) {
-      console.log(`⏭️ Skipping ${userIdToFetch} - already fetching`);
+      console.log(`Skipping ${userIdToFetch} - already fetching`);
       return;
     }
 
+    console.log(`Starting fetch for ${userIdToFetch}`);
     fetchingUsersRef.current.add(userIdToFetch);
     setIsSyncing(true);
 
@@ -166,44 +181,18 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     });
   };
 
-  // Handle following list completion and comparison
+  // Handle following list completion
   const handleFollowingComplete = async (userId: string, users: User[]) => {
-    const storageKey = `${userId}_followings`;
-
     // Deduplicate users
     const deduplicatedUsers = Array.from(
       new Map(users.map((user) => [user.id, user])).values()
     );
 
     try {
-      const storedData = await AsyncStorage.getItem(storageKey);
-
-      if (storedData) {
-        const storedUsers: User[] = JSON.parse(storedData);
-        const storedIds = new Set(storedUsers.map((u) => u.id));
-        const currentIds = new Set(deduplicatedUsers.map((u) => u.id));
-
-        const newFollowings = deduplicatedUsers.filter((u) => !storedIds.has(u.id));
-        const lostFollowings = storedUsers.filter((u) => !currentIds.has(u.id));
-
-        if (newFollowings.length > 0 || lostFollowings.length > 0) {
-          console.log(`📊 Changes for user ${userId}:`);
-
-          if (newFollowings.length > 0) {
-            console.log(`  ✅ Started following: ${newFollowings.length}`);
-            newFollowings.forEach((user) => console.log(`    + ${user.username}`));
-          }
-
-          if (lostFollowings.length > 0) {
-            console.log(`  ❌ Stopped following: ${lostFollowings.length}`);
-            lostFollowings.forEach((user) => console.log(`    - ${user.username}`));
-          }
-        }
-      }
-
-      await AsyncStorage.setItem(storageKey, JSON.stringify(deduplicatedUsers));
+      // Sync to SQLite
+      await syncFollowingList(db, userId, deduplicatedUsers);
     } catch (error) {
-      console.error(`Error handling following storage for ${userId}:`, error);
+      console.error(`Error syncing following list for ${userId}:`, error);
     }
   };
 
@@ -229,7 +218,6 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           justLoggedInRef.current = true;
           setUserId(data.userId!);
           setIsLoggedIn(true);
-          pendingFetchUserIdRef.current = data.userId!;
 
           // Connect Instagram account
           if (account?.uuid && data.userId && data.username) {
@@ -260,7 +248,8 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         case 'LOGIN_STATUS_CHECK':
           if (data.success) {
             setIsLoggedIn(true);
-            fetchFollowing(data.userId!, true);
+            // Sync connected account's following list
+            fetchFollowing(data.userId!, false);
           } else {
             setIsLoggedIn(false);
             setUserId(null);
@@ -270,13 +259,6 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         case 'FOLLOWING_COMPLETE':
           fetchingUsersRef.current.delete(data.userId!);
           handleFollowingComplete(data.userId!, data.users!);
-
-          // Fetch following for first 3 accounts if this is the main user
-          if (data.isMainUser && data.users!.length > 0) {
-            data.users!.slice(0, 3).forEach((user) => {
-              fetchFollowing(user.id);
-            });
-          }
 
           // Check if all fetches are complete
           if (fetchingUsersRef.current.size === 0) {
