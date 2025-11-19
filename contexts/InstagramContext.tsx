@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useRef, useEffect } from 'r
 import { View, Modal, Text, Pressable } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useStorage } from '~/lib/useStorage';
+import { useUpdateAccount } from '~/lib/useAccount';
+import { useAccountContext } from './AccountContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Constants
@@ -48,6 +50,10 @@ export const useInstagram = () => {
 
 // Provider
 export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Account context
+  const { account } = useAccountContext();
+  const updateAccount = useUpdateAccount();
+
   // State
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [[isLoadingUserId, userId], setUserId] = useStorage('instagram_user_id');
@@ -197,21 +203,43 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       switch (data.type) {
         case 'LOGIN_SUCCESS':
-          console.log('✅ Login successful');
+          console.log('Login successful');
           closeLoginModal();
           justLoggedInRef.current = true;
           setUserId(data.userId!);
           setIsLoggedIn(true);
           pendingFetchUserIdRef.current = data.userId!;
+
+          // Update account with Instagram credentials
+          if (account?.uuid) {
+            updateAccount.mutate({
+              uuid: account.uuid,
+              updates: {
+                instagram_user_id: data.userId!,
+                instagram_username: data.username || null,
+              },
+            });
+          }
           break;
 
         case 'LOGOUT_SUCCESS':
-          console.log('✅ Logged out successfully');
+          console.log('Logged out successfully');
           setUserId(null);
           setIsLoggedIn(false);
           setIsSyncing(false);
           fetchingUsersRef.current.clear();
           webViewRef.current?.clearCache?.(true);
+
+          // Clear Instagram credentials from account
+          if (account?.uuid) {
+            updateAccount.mutate({
+              uuid: account.uuid,
+              updates: {
+                instagram_user_id: null,
+                instagram_username: null,
+              },
+            });
+          }
           break;
 
         case 'LOGIN_STATUS_CHECK':
