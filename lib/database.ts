@@ -76,12 +76,9 @@ export const initializeDatabase = async (db: SQLite.SQLiteDatabase): Promise<voi
   const result = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   const currentVersion = result?.user_version || 0;
 
-  console.log(`Database version: ${currentVersion}, Target version: ${CURRENT_DB_VERSION}`);
-
   // Run migrations
   if (currentVersion < CURRENT_DB_VERSION) {
     for (let version = currentVersion + 1; version <= CURRENT_DB_VERSION; version++) {
-      console.log(`Running migration ${version}...`);
       const migration = migrations[version];
       if (migration) {
         await migration(db);
@@ -90,11 +87,19 @@ export const initializeDatabase = async (db: SQLite.SQLiteDatabase): Promise<voi
 
     // Update version
     await db.execAsync(`PRAGMA user_version = ${CURRENT_DB_VERSION}`);
-    console.log(`Database migrated to version ${CURRENT_DB_VERSION}`);
   }
 };
 
 // Get current UTC timestamp in ISO 8601 format
 export const getCurrentUTCTimestamp = (): string => {
   return new Date().toISOString();
+};
+
+// Clear all data from the database (for account mismatch scenarios)
+export const clearAllData = async (db: SQLite.SQLiteDatabase): Promise<void> => {
+  await db.execAsync(`
+    DELETE FROM followings;
+    DELETE FROM followers;
+    DELETE FROM sync_state;
+  `);
 };

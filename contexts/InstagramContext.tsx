@@ -6,6 +6,7 @@ import { useStorage } from '~/lib/useStorage';
 import { useConnectInstagram, useDisconnectInstagram } from '~/lib/useAccount';
 import { useAccountContext } from './AccountContext';
 import { syncFollowingList } from '~/lib/syncing';
+import { clearAllData } from '~/lib/database';
 
 // Constants
 const INSTAGRAM_APP_ID = '936619743392459';
@@ -22,6 +23,7 @@ interface InstagramContextType {
   showLogin: () => void;
   disconnect: () => void;
   fetchUserId: (username: string) => Promise<string>;
+  syncFollowing: (instagramUserId: string) => void;
 }
 
 interface WebViewMessage {
@@ -75,6 +77,24 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const pendingLoginCheckRef = useRef<string | null>(null);
   const userIdFetchPromisesRef = useRef<Map<string, { resolve: (userId: string) => void; reject: (error: Error) => void }>>(new Map());
 
+  // Fetch following list for a user (internal helper)
+  const fetchFollowing = (userIdToFetch: string, isMainUser: boolean = false) => {
+    if (!webViewRef.current) return;
+
+    if (fetchingUsersRef.current.has(userIdToFetch)) {
+      return;
+    }
+
+    fetchingUsersRef.current.add(userIdToFetch);
+    setIsSyncing(true);
+
+    injectJS(`
+      if (window.instagramAPI?.fetchFollowing) {
+        window.instagramAPI.fetchFollowing('${userIdToFetch}', ${isMainUser});
+      }
+    `);
+  };
+
   // Check login status when userId and WebView are ready
   useEffect(() => {
     if (isLoadingUserId) return;
@@ -93,11 +113,30 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, [isLoadingUserId, userId, webViewReady]);
 
+  // Sync connected account when logged in and verify account matches
+  useEffect(() => {
+    if (!isLoggedIn || !webViewReady || !userId || !account) return;
+
+    // Check if logged-in Instagram account matches the backend account
+    if (account.instagram_user_id && account.instagram_user_id !== userId) {
+      console.error('Account mismatch: clearing data and logging out');
+
+      // Clear database and logout
+      const handleMismatch = async () => {
+        await clearAllData(db);
+        handleDisconnect();
+      };
+      handleMismatch();
+      return;
+    }
+
+    fetchFollowing(userId, false);
+  }, [isLoggedIn, webViewReady, userId, account]);
+
   // Sync tracked accounts when logged in and tracked accounts change
   useEffect(() => {
     if (!isLoggedIn || !webViewReady || trackedAccounts.length === 0) return;
 
-    // Sync each tracked account
     trackedAccounts.forEach((trackedAccount) => {
       fetchFollowing(trackedAccount.user_id, false);
     });
@@ -132,24 +171,13 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     `);
   };
 
-  // Fetch following list for a user
-  const fetchFollowing = (userIdToFetch: string, isMainUser: boolean = false) => {
-    if (!webViewRef.current) return;
-
-    if (fetchingUsersRef.current.has(userIdToFetch)) {
-      console.log(`Skipping ${userIdToFetch} - already fetching`);
+  // Public API to sync an Instagram account's following list
+  const syncFollowing = (instagramUserId: string) => {
+    if (!isLoggedIn) {
+      console.warn('Cannot sync: not logged in');
       return;
     }
-
-    console.log(`Starting fetch for ${userIdToFetch}`);
-    fetchingUsersRef.current.add(userIdToFetch);
-    setIsSyncing(true);
-
-    injectJS(`
-      if (window.instagramAPI?.fetchFollowing) {
-        window.instagramAPI.fetchFollowing('${userIdToFetch}', ${isMainUser});
-      }
-    `);
+    fetchFollowing(instagramUserId, false);
   };
 
   // Disconnect (logout)
@@ -213,7 +241,6 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       switch (data.type) {
         case 'LOGIN_SUCCESS':
-          console.log('Login successful');
           closeLoginModal();
           justLoggedInRef.current = true;
           setUserId(data.userId!);
@@ -230,7 +257,6 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           break;
 
         case 'LOGOUT_SUCCESS':
-          console.log('Logged out successfully');
           setUserId(null);
           setIsLoggedIn(false);
           setIsSyncing(false);
@@ -248,8 +274,6 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         case 'LOGIN_STATUS_CHECK':
           if (data.success) {
             setIsLoggedIn(true);
-            // Sync connected account's following list
-            fetchFollowing(data.userId!, false);
           } else {
             setIsLoggedIn(false);
             setUserId(null);
@@ -345,6 +369,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     showLogin,
     disconnect: handleDisconnect,
     fetchUserId,
+    syncFollowing,
   };
 
   return (
