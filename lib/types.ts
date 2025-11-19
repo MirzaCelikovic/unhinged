@@ -9,3 +9,8 @@ export interface Account {
   date_created: string; // ISO 8601 datetime string
   date_updated: string; // ISO 8601 datetime string
 }
+
+export interface Instagram {
+  user_id: string;
+  username: string;
+}

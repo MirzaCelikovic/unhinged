@@ -20,10 +20,11 @@ interface InstagramContextType {
   isSyncing: boolean;
   showLogin: () => void;
   disconnect: () => void;
+  fetchUserId: (username: string) => Promise<string>;
 }
 
 interface WebViewMessage {
-  type: 'LOGIN_SUCCESS' | 'LOGOUT_SUCCESS' | 'LOGIN_STATUS_CHECK' | 'FOLLOWING_COMPLETE' | 'FETCH_ERROR' | 'LOGOUT_ERROR';
+  type: 'LOGIN_SUCCESS' | 'LOGOUT_SUCCESS' | 'LOGIN_STATUS_CHECK' | 'FOLLOWING_COMPLETE' | 'FETCH_ERROR' | 'LOGOUT_ERROR' | 'USER_ID_FETCHED';
   userId?: string;
   username?: string;
   success?: boolean;
@@ -68,6 +69,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const justLoggedInRef = useRef(false);
   const pendingFetchUserIdRef = useRef<string | null>(null);
   const pendingLoginCheckRef = useRef<string | null>(null);
+  const userIdFetchPromisesRef = useRef<Map<string, { resolve: (userId: string) => void; reject: (error: Error) => void }>>(new Map());
 
   // Check login status when userId and WebView are ready
   useEffect(() => {
@@ -144,6 +146,24 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         window.instagramAPI.logout('${userId}');
       }
     `);
+  };
+
+  // Fetch user ID by username
+  const fetchUserId = (username: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      if (!webViewRef.current) {
+        reject(new Error('WebView not ready'));
+        return;
+      }
+
+      userIdFetchPromisesRef.current.set(username, { resolve, reject });
+
+      injectJS(`
+        if (window.instagramAPI?.fetchUserId) {
+          window.instagramAPI.fetchUserId('${username}');
+        }
+      `);
+    });
   };
 
   // Handle following list completion and comparison
@@ -276,7 +296,23 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           break;
 
         case 'LOGOUT_ERROR':
-          console.error('❌ Logout error:', data.error);
+          console.error('Logout error:', data.error);
+          break;
+
+        case 'USER_ID_FETCHED':
+          if (data.username && data.userId) {
+            const promise = userIdFetchPromisesRef.current.get(data.username);
+            if (promise) {
+              promise.resolve(data.userId);
+              userIdFetchPromisesRef.current.delete(data.username);
+            }
+          } else if (data.username && data.error) {
+            const promise = userIdFetchPromisesRef.current.get(data.username);
+            if (promise) {
+              promise.reject(new Error(data.error));
+              userIdFetchPromisesRef.current.delete(data.username);
+            }
+          }
           break;
       }
     } catch (error) {
@@ -326,6 +362,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     isSyncing,
     showLogin,
     disconnect: handleDisconnect,
+    fetchUserId,
   };
 
   return (
@@ -339,7 +376,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             <View className="flex-row items-center justify-between border-b border-gray-200 p-4">
               <Text className="text-lg font-semibold">Connect Instagram</Text>
               <Pressable className="px-4 py-2 active:opacity-70" onPress={closeLoginModal}>
-                <Text className="text-base font-medium text-blue-500">Close</Text>
+                <Text className="text-base font-medium text-blue-500">Cancel</Text>
               </Pressable>
             </View>
             <WebView
@@ -544,6 +581,39 @@ const instagramAPI = `
         sendMessage('FETCH_ERROR', {
           error: error.message,
           userId: userId
+        });
+      }
+    },
+
+    // Fetch user ID by username
+    fetchUserId: async function(username) {
+      try {
+        const response = await fetch('https://www.instagram.com/api/v1/users/web_profile_info/?username=' + username, {
+          credentials: 'include',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-IG-App-ID': '${INSTAGRAM_APP_ID}'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch user profile: ' + response.status);
+        }
+
+        const data = await response.json();
+
+        if (data.data && data.data.user && data.data.user.id) {
+          sendMessage('USER_ID_FETCHED', {
+            username: username,
+            userId: data.data.user.id
+          });
+        } else {
+          throw new Error('User ID not found in response');
+        }
+      } catch (error) {
+        sendMessage('USER_ID_FETCHED', {
+          username: username,
+          error: error.message
         });
       }
     }

@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Instagram } from 'lucide-react-native';
+import { Instagram, HatGlasses } from 'lucide-react-native';
 
 export default function TabLayout() {
   return (
@@ -10,6 +10,14 @@ export default function TabLayout() {
           title: 'Home',
           tabBarLabel: 'Home',
           tabBarIcon: ({ color, size }) => <Instagram color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="tracking"
+        options={{
+          title: 'Tracking',
+          tabBarLabel: 'Tracking',
+          tabBarIcon: ({ color, size }) => <HatGlasses color={color} size={size} />,
         }}
       />
     </Tabs>
