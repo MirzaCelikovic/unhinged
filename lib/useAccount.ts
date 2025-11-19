@@ -40,6 +40,34 @@ const updateAccount = async (
   }
 };
 
+// Connect Instagram account
+const connectInstagram = async (
+  api: ReturnType<typeof useApi>,
+  uuid: string,
+  userId: string,
+  username: string
+): Promise<void> => {
+  try {
+    await api.post(`/api/v1/account/${uuid}/instagram/`, {
+      instagram_user_id: userId,
+      instagram_username: username,
+    });
+  } catch (error) {
+    console.error('Error connecting Instagram:', error);
+    throw error;
+  }
+};
+
+// Disconnect Instagram account
+const disconnectInstagram = async (api: ReturnType<typeof useApi>, uuid: string): Promise<void> => {
+  try {
+    await api.delete(`/api/v1/account/${uuid}/instagram/`);
+  } catch (error) {
+    console.error('Error disconnecting Instagram:', error);
+    throw error;
+  }
+};
+
 // Hook to fetch account by UUID
 export const useAccount = (uuid: string | null) => {
   const api = useApi();
@@ -75,6 +103,42 @@ export const useUpdateAccount = () => {
     },
     onError: (error: AxiosError) => {
       console.error('Account update failed:', error);
+      throw error;
+    },
+  });
+};
+
+// Hook to connect Instagram
+export const useConnectInstagram = () => {
+  const api = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation<void, AxiosError, { uuid: string; userId: string; username: string }>({
+    mutationFn: ({ uuid, userId, username }) => connectInstagram(api, uuid, userId, username),
+    onSuccess: (_, variables) => {
+      console.log('Instagram connected successfully');
+      queryClient.invalidateQueries({ queryKey: ['account', variables.uuid] });
+    },
+    onError: (error: AxiosError) => {
+      console.error('Instagram connection failed:', error);
+      throw error;
+    },
+  });
+};
+
+// Hook to disconnect Instagram
+export const useDisconnectInstagram = () => {
+  const api = useApi();
+  const queryClient = useQueryClient();
+
+  return useMutation<void, AxiosError, { uuid: string }>({
+    mutationFn: ({ uuid }) => disconnectInstagram(api, uuid),
+    onSuccess: (_, variables) => {
+      console.log('Instagram disconnected successfully');
+      queryClient.invalidateQueries({ queryKey: ['account', variables.uuid] });
+    },
+    onError: (error: AxiosError) => {
+      console.error('Instagram disconnection failed:', error);
       throw error;
     },
   });

@@ -46,6 +46,18 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Create new account mutation
   const createAccount = useCreateAccount();
 
+  // Handle 404 error - account no longer exists
+  useEffect(() => {
+    const handleAccountNotFound = async () => {
+      if (fetchError && 'response' in fetchError && fetchError.response?.status === 404) {
+        console.log('Account not found (404), clearing stored ID and creating new account');
+        await storage.removeItem(ACCOUNT_ID_KEY);
+        setStoredAccountId(null);
+      }
+    };
+    handleAccountNotFound();
+  }, [fetchError]);
+
   // Create new account if no account ID exists
   useEffect(() => {
     const createNewAccount = async () => {
