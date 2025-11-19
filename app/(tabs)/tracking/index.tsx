@@ -1,16 +1,15 @@
 import { View, Text, FlatList, Pressable, ActivityIndicator, TextInput, Alert } from 'react-native';
 import { useState } from 'react';
-import { X } from 'lucide-react-native';
+import { router } from 'expo-router';
 import { useAccountContext } from '~/contexts/AccountContext';
 import { useInstagram } from '~/contexts/InstagramContext';
-import { useTracks, useAddTrack, useRemoveTrack } from '~/lib/useTracks';
+import { useTracks, useAddTrack } from '~/lib/useTracks';
 
 export default function Tracking() {
   const { account } = useAccountContext();
   const { fetchUserId } = useInstagram();
   const { data: tracks = [], isLoading } = useTracks(account?.uuid || null);
   const addTrack = useAddTrack();
-  const removeTrack = useRemoveTrack();
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newUsername, setNewUsername] = useState('');
@@ -43,20 +42,6 @@ export default function Tracking() {
     }
   };
 
-  const handleRemoveTrack = (userId: string, username: string) => {
-    if (!account?.uuid) return;
-
-    Alert.alert('Remove Track', `Stop tracking @${username}?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: () => {
-          removeTrack.mutate({ accountId: account.uuid, userId });
-        },
-      },
-    ]);
-  };
 
   const renderAddForm = () => (
     <View className="w-full items-center gap-3 px-8">
@@ -125,17 +110,17 @@ export default function Tracking() {
         keyExtractor={(item) => item.user_id}
         contentContainerClassName="pt-16"
         renderItem={({ item }) => (
-          <View className="flex-row items-center justify-between border-b border-gray-100 p-4">
-            <View className="flex-1">
-              <Text className="text-base font-semibold">@{item.username}</Text>
-              <Text className="text-sm text-gray-500">{item.user_id}</Text>
-            </View>
-            <Pressable
-              className="p-2 active:opacity-70"
-              onPress={() => handleRemoveTrack(item.user_id, item.username)}>
-              <X color="#ef4444" size={20} />
-            </Pressable>
-          </View>
+          <Pressable
+            className="border-b border-gray-100 p-4 active:bg-gray-50"
+            onPress={() =>
+              router.push({
+                pathname: '/(tabs)/tracking/account',
+                params: { userId: item.user_id, username: item.username },
+              })
+            }>
+            <Text className="text-base font-semibold">@{item.username}</Text>
+            <Text className="text-sm text-gray-500">{item.user_id}</Text>
+          </Pressable>
         )}
         ListFooterComponent={
           showAddForm ? (

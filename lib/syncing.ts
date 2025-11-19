@@ -6,6 +6,13 @@ interface User {
   username: string;
 }
 
+export interface ActivityItem {
+  date: string; // ISO date string (YYYY-MM-DD)
+  newFollows: string[]; // usernames
+  unfollows: string[]; // usernames
+  isTrackingStart?: boolean;
+}
+
 /**
  * Sync following list for an Instagram account
  * Handles baseline detection, change tracking, and storing in SQLite
@@ -160,4 +167,80 @@ export const syncFollowersList = async (
   );
 
   console.log(`Synced followers for ${trackedAccountId}: +${newFollowers.length} -${lostFollowers.length} ~${usernameChanges.length} (baseline: ${isBaseline})`);
+};
+
+/**
+ * Get activity feed for a tracked account
+ * Returns following changes grouped by date
+ */
+export const getFollowingActivity = async (
+  db: SQLite.SQLiteDatabase,
+  trackedUserId: string
+): Promise<ActivityItem[]> => {
+  // Get all following changes (excluding baseline)
+  const newFollows = await db.getAllAsync<{
+    followed_username: string;
+    first_seen_at: string;
+  }>(
+    `SELECT followed_username, first_seen_at
+     FROM followings
+     WHERE tracked_account_id = ?
+       AND is_baseline = 0
+     ORDER BY first_seen_at DESC`,
+    [trackedUserId]
+  );
+
+  const unfollows = await db.getAllAsync<{
+    followed_username: string;
+    ended_at: string;
+  }>(
+    `SELECT followed_username, ended_at
+     FROM followings
+     WHERE tracked_account_id = ?
+       AND ended_at IS NOT NULL
+     ORDER BY ended_at DESC`,
+    [trackedUserId]
+  );
+
+  // Get the tracking start date (baseline date)
+  const trackingStart = await db.getFirstAsync<{ date_created: string }>(
+    `SELECT date_created
+     FROM sync_state
+     WHERE instagram_user_id = ?`,
+    [trackedUserId]
+  );
+
+  // Group by date
+  const activityByDate = new Map<string, ActivityItem>();
+
+  // Add new follows
+  newFollows.forEach((follow) => {
+    const date = follow.first_seen_at.split('T')[0];
+    if (!activityByDate.has(date)) {
+      activityByDate.set(date, { date, newFollows: [], unfollows: [] });
+    }
+    activityByDate.get(date)!.newFollows.push(follow.followed_username);
+  });
+
+  // Add unfollows
+  unfollows.forEach((unfollow) => {
+    const date = unfollow.ended_at.split('T')[0];
+    if (!activityByDate.has(date)) {
+      activityByDate.set(date, { date, newFollows: [], unfollows: [] });
+    }
+    activityByDate.get(date)!.unfollows.push(unfollow.followed_username);
+  });
+
+  // Add tracking start date
+  if (trackingStart) {
+    const startDate = trackingStart.date_created.split('T')[0];
+    if (!activityByDate.has(startDate)) {
+      activityByDate.set(startDate, { date: startDate, newFollows: [], unfollows: [], isTrackingStart: true });
+    } else {
+      activityByDate.get(startDate)!.isTrackingStart = true;
+    }
+  }
+
+  // Convert to array and sort by date descending
+  return Array.from(activityByDate.values()).sort((a, b) => b.date.localeCompare(a.date));
 };
