@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useRef, useEffect } from 'r
 import { View, Modal, Text, Pressable } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useStorage } from '~/lib/useStorage';
-import { useUpdateAccount } from '~/lib/useAccount';
+import { useConnectInstagram, useDisconnectInstagram } from '~/lib/useAccount';
 import { useAccountContext } from './AccountContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -52,7 +52,8 @@ export const useInstagram = () => {
 export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Account context
   const { account } = useAccountContext();
-  const updateAccount = useUpdateAccount();
+  const connectInstagram = useConnectInstagram();
+  const disconnectInstagram = useDisconnectInstagram();
 
   // State
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -210,14 +211,12 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           setIsLoggedIn(true);
           pendingFetchUserIdRef.current = data.userId!;
 
-          // Update account with Instagram credentials
-          if (account?.uuid) {
-            updateAccount.mutate({
+          // Connect Instagram account
+          if (account?.uuid && data.userId && data.username) {
+            connectInstagram.mutate({
               uuid: account.uuid,
-              updates: {
-                instagram_user_id: data.userId!,
-                instagram_username: data.username || null,
-              },
+              userId: data.userId,
+              username: data.username,
             });
           }
           break;
@@ -230,14 +229,10 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           fetchingUsersRef.current.clear();
           webViewRef.current?.clearCache?.(true);
 
-          // Clear Instagram credentials from account
+          // Disconnect Instagram account
           if (account?.uuid) {
-            updateAccount.mutate({
+            disconnectInstagram.mutate({
               uuid: account.uuid,
-              updates: {
-                instagram_user_id: null,
-                instagram_username: null,
-              },
             });
           }
           break;
