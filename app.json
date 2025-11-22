@@ -10,11 +10,7 @@
     "experiments": {
       "tsconfigPaths": true
     },
-    "plugins": [
-      "expo-router",
-      "expo-secure-store",
-      "expo-sqlite"
-    ],
+    "plugins": ["expo-router", "expo-secure-store", "expo-sqlite"],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -23,12 +19,10 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.unhinged.ios",
+      "bundleIdentifier": "so.unhinged.app",
       "appleTeamId": "DUZR4LXSY7"
     },
     "android": {

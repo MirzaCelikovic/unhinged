@@ -4,6 +4,7 @@ import { getCurrentUTCTimestamp } from './database';
 interface User {
   id: string;
   username: string;
+  profile_pic_url?: string | null;
 }
 
 export interface ActivityItem {
@@ -33,13 +34,13 @@ export const syncFollowingList = async (
   const isBaseline = !syncState || syncState.has_completed_baseline === 0;
 
   // Get existing followings that are still active
-  const existing = await db.getAllAsync<{ followed_user_id: string; followed_username: string }>(
-    'SELECT followed_user_id, followed_username FROM followings WHERE tracked_account_id = ? AND ended_at IS NULL',
+  const existing = await db.getAllAsync<{ followed_user_id: string; followed_username: string; profile_pic_url: string | null }>(
+    'SELECT followed_user_id, followed_username, profile_pic_url FROM followings WHERE tracked_account_id = ? AND ended_at IS NULL',
     [trackedAccountId]
   );
 
-  const existingMap = new Map(existing.map((e) => [e.followed_user_id, e.followed_username]));
-  const currentMap = new Map(currentUsers.map((u) => [u.id, u.username]));
+  const existingMap = new Map(existing.map((e) => [e.followed_user_id, { username: e.followed_username, profile_pic_url: e.profile_pic_url }]));
+  const currentMap = new Map(currentUsers.map((u) => [u.id, { username: u.username, profile_pic_url: u.profile_pic_url }]));
 
   // Find new follows
   const newFollows = currentUsers.filter((u) => !existingMap.has(u.id));
@@ -47,17 +48,20 @@ export const syncFollowingList = async (
   // Find unfollows (existed before but not in current list)
   const unfollows = existing.filter((e) => !currentMap.has(e.followed_user_id));
 
-  // Find username changes (same ID but different username)
+  // Find username or profile pic changes (same ID but different username or profile_pic_url)
   const usernameChanges = existing.filter(
-    (e) => currentMap.has(e.followed_user_id) && currentMap.get(e.followed_user_id) !== e.followed_username
+    (e) => {
+      const current = currentMap.get(e.followed_user_id);
+      return current && (current.username !== e.followed_username || current.profile_pic_url !== e.profile_pic_url);
+    }
   );
 
   // Insert new follows
   for (const user of newFollows) {
     await db.runAsync(
-      `INSERT INTO followings (tracked_account_id, followed_user_id, followed_username, is_baseline, first_seen_at, last_seen_at, date_created, date_updated)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [trackedAccountId, user.id, user.username, isBaseline ? 1 : 0, now, now, now, now]
+      `INSERT INTO followings (tracked_account_id, followed_user_id, followed_username, profile_pic_url, is_baseline, first_seen_at, last_seen_at, date_created, date_updated)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [trackedAccountId, user.id, user.username, user.profile_pic_url || null, isBaseline ? 1 : 0, now, now, now, now]
     );
   }
 
@@ -69,11 +73,11 @@ export const syncFollowingList = async (
     );
   }
 
-  // Update username changes and last_seen_at for existing active follows
+  // Update username/profile_pic changes and last_seen_at for existing active follows
   for (const user of currentUsers.filter((u) => existingMap.has(u.id))) {
     await db.runAsync(
-      'UPDATE followings SET followed_username = ?, last_seen_at = ?, date_updated = ? WHERE tracked_account_id = ? AND followed_user_id = ? AND ended_at IS NULL',
-      [user.username, now, now, trackedAccountId, user.id]
+      'UPDATE followings SET followed_username = ?, profile_pic_url = ?, last_seen_at = ?, date_updated = ? WHERE tracked_account_id = ? AND followed_user_id = ? AND ended_at IS NULL',
+      [user.username, user.profile_pic_url || null, now, now, trackedAccountId, user.id]
     );
   }
 
@@ -111,13 +115,13 @@ export const syncFollowersList = async (
   const isBaseline = !syncState || syncState.has_completed_baseline === 0;
 
   // Get existing followers that are still active
-  const existing = await db.getAllAsync<{ follower_user_id: string; follower_username: string }>(
-    'SELECT follower_user_id, follower_username FROM followers WHERE tracked_account_id = ? AND ended_at IS NULL',
+  const existing = await db.getAllAsync<{ follower_user_id: string; follower_username: string; profile_pic_url: string | null }>(
+    'SELECT follower_user_id, follower_username, profile_pic_url FROM followers WHERE tracked_account_id = ? AND ended_at IS NULL',
     [trackedAccountId]
   );
 
-  const existingMap = new Map(existing.map((e) => [e.follower_user_id, e.follower_username]));
-  const currentMap = new Map(currentUsers.map((u) => [u.id, u.username]));
+  const existingMap = new Map(existing.map((e) => [e.follower_user_id, { username: e.follower_username, profile_pic_url: e.profile_pic_url }]));
+  const currentMap = new Map(currentUsers.map((u) => [u.id, { username: u.username, profile_pic_url: u.profile_pic_url }]));
 
   // Find new followers
   const newFollowers = currentUsers.filter((u) => !existingMap.has(u.id));
@@ -125,17 +129,20 @@ export const syncFollowersList = async (
   // Find lost followers (existed before but not in current list)
   const lostFollowers = existing.filter((e) => !currentMap.has(e.follower_user_id));
 
-  // Find username changes
+  // Find username or profile pic changes
   const usernameChanges = existing.filter(
-    (e) => currentMap.has(e.follower_user_id) && currentMap.get(e.follower_user_id) !== e.follower_username
+    (e) => {
+      const current = currentMap.get(e.follower_user_id);
+      return current && (current.username !== e.follower_username || current.profile_pic_url !== e.profile_pic_url);
+    }
   );
 
   // Insert new followers
   for (const user of newFollowers) {
     await db.runAsync(
-      `INSERT INTO followers (tracked_account_id, follower_user_id, follower_username, is_baseline, first_seen_at, last_seen_at, date_created, date_updated)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [trackedAccountId, user.id, user.username, isBaseline ? 1 : 0, now, now, now, now]
+      `INSERT INTO followers (tracked_account_id, follower_user_id, follower_username, profile_pic_url, is_baseline, first_seen_at, last_seen_at, date_created, date_updated)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [trackedAccountId, user.id, user.username, user.profile_pic_url || null, isBaseline ? 1 : 0, now, now, now, now]
     );
   }
 
@@ -147,11 +154,11 @@ export const syncFollowersList = async (
     );
   }
 
-  // Update username changes and last_seen_at for existing active followers
+  // Update username/profile_pic changes and last_seen_at for existing active followers
   for (const user of currentUsers.filter((u) => existingMap.has(u.id))) {
     await db.runAsync(
-      'UPDATE followers SET follower_username = ?, last_seen_at = ?, date_updated = ? WHERE tracked_account_id = ? AND follower_user_id = ? AND ended_at IS NULL',
-      [user.username, now, now, trackedAccountId, user.id]
+      'UPDATE followers SET follower_username = ?, profile_pic_url = ?, last_seen_at = ?, date_updated = ? WHERE tracked_account_id = ? AND follower_user_id = ? AND ended_at IS NULL',
+      [user.username, user.profile_pic_url || null, now, now, trackedAccountId, user.id]
     );
   }
 

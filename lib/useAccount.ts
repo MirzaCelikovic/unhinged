@@ -49,8 +49,8 @@ const connectInstagram = async (
 ): Promise<void> => {
   try {
     await api.post(`/api/v1/account/${uuid}/instagram/`, {
-      instagram_user_id: userId,
-      instagram_username: username,
+      user_id: userId,
+      username: username,
     });
   } catch (error) {
     console.error('Error connecting Instagram:', error);

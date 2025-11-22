@@ -362,8 +362,8 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = com.unhinged.ios;
-				PRODUCT_NAME = Unhinged;
+				PRODUCT_BUNDLE_IDENTIFIER = "so.unhinged.app";
+				PRODUCT_NAME = "Unhinged";
 				SWIFT_OBJC_BRIDGING_HEADER = "Unhinged/Unhinged-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -394,8 +394,8 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = com.unhinged.ios;
-				PRODUCT_NAME = Unhinged;
+				PRODUCT_BUNDLE_IDENTIFIER = "so.unhinged.app";
+				PRODUCT_NAME = "Unhinged";
 				SWIFT_OBJC_BRIDGING_HEADER = "Unhinged/Unhinged-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
