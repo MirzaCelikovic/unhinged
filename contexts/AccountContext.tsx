@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, Platform } from 'react-native';
 import { useAccount, useCreateAccount } from '~/lib/useAccount';
 import { useTracks } from '~/lib/useTracks';
 import { useSecureStorage } from '~/lib/useSecureStorage';
 import { Account, Instagram } from '~/lib/types';
+import { CustomerIO } from 'customerio-reactnative';
+import * as Notifications from 'expo-notifications';
 
 const ACCOUNT_ID_KEY = 'account_id';
 
@@ -86,6 +88,36 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const account = existingAccount || createAccount.data || null;
   const isLoading =
     isCheckingStorage || isFetchingAccount || isFetchingTracks || createAccount.isPending;
+
+  // Identify user with Customer.io when account is available
+  useEffect(() => {
+    const identifyCustomerIO = async () => {
+      if (account?.uuid) {
+        console.log('🔧 Identifying user with Customer.io:', account.uuid);
+        CustomerIO.identify({
+          userId: account.uuid,
+        });
+
+        // Register device push token only if permission is already granted
+        try {
+          const { status } = await Notifications.getPermissionsAsync();
+          if (status === 'granted') {
+            const { data: deviceToken } = await Notifications.getDevicePushTokenAsync();
+            if (Platform.OS === 'ios' && deviceToken) {
+              console.log('🔧 Registering iOS push token with Customer.io:', deviceToken);
+              CustomerIO.registerDeviceToken(deviceToken);
+            }
+          } else {
+            console.log('⚠️ Push notification permission not granted yet');
+          }
+        } catch (error) {
+          console.log('⚠️ Could not get push token:', error);
+        }
+      }
+    };
+
+    identifyCustomerIO();
+  }, [account?.uuid]);
 
   // Show loading screen while initializing
   if (isLoading) {

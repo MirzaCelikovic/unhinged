@@ -1,7 +1,110 @@
 PODS:
+  - "AnalyticsSwiftCIO (1.7.3+cio.1)":
+    - JSONSafeEncoding (= 2.0.0)
+    - Sovran (= 1.1.2)
+  - customerio-reactnative (5.1.1):
+    - customerio-reactnative/nopush (= 5.1.1)
+    - CustomerIO/DataPipelines (= 4.0.0)
+    - CustomerIO/MessagingInApp (= 4.0.0)
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
+  - customerio-reactnative-richpush/apn (5.1.1):
+    - CustomerIO/MessagingPushAPN (= 4.0.0)
+  - customerio-reactnative/apn (5.1.1):
+    - CustomerIO/DataPipelines (= 4.0.0)
+    - CustomerIO/MessagingInApp (= 4.0.0)
+    - CustomerIO/MessagingPushAPN (= 4.0.0)
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
+  - customerio-reactnative/nopush (5.1.1):
+    - CustomerIO/DataPipelines (= 4.0.0)
+    - CustomerIO/MessagingInApp (= 4.0.0)
+    - CustomerIO/MessagingPush (= 4.0.0)
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
+  - CustomerIO/DataPipelines (4.0.0):
+    - CustomerIODataPipelines (= 4.0.0)
+  - CustomerIO/MessagingInApp (4.0.0):
+    - CustomerIOMessagingInApp (= 4.0.0)
+  - CustomerIO/MessagingPush (4.0.0):
+    - CustomerIOMessagingPush (= 4.0.0)
+  - CustomerIO/MessagingPushAPN (4.0.0):
+    - CustomerIOMessagingPushAPN (= 4.0.0)
+  - CustomerIOCommon (4.0.0)
+  - CustomerIODataPipelines (4.0.0):
+    - "AnalyticsSwiftCIO (= 1.7.3+cio.1)"
+    - CustomerIOCommon (= 4.0.0)
+    - CustomerIOTrackingMigration (= 4.0.0)
+  - CustomerIOMessagingInApp (4.0.0):
+    - CustomerIOCommon (= 4.0.0)
+  - CustomerIOMessagingPush (4.0.0):
+    - CustomerIOCommon (= 4.0.0)
+  - CustomerIOMessagingPushAPN (4.0.0):
+    - CustomerIOMessagingPush (= 4.0.0)
+  - CustomerIOTrackingMigration (4.0.0):
+    - CustomerIOCommon (= 4.0.0)
   - EXApplication (7.0.7):
     - ExpoModulesCore
   - EXConstants (18.0.10):
+    - ExpoModulesCore
+  - EXNotifications (0.32.13):
     - ExpoModulesCore
   - Expo (54.0.23):
     - ExpoModulesCore
@@ -72,6 +175,7 @@ PODS:
   - hermes-engine (0.81.5):
     - hermes-engine/Pre-built (= 0.81.5)
   - hermes-engine/Pre-built (0.81.5)
+  - JSONSafeEncoding (2.0.0)
   - RCTDeprecation (0.81.5)
   - RCTRequired (0.81.5)
   - RCTTypeSafety (0.81.5):
@@ -2051,11 +2155,16 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - Sovran (1.1.2)
   - Yoga (0.0.0)
 
 DEPENDENCIES:
+  - customerio-reactnative (from `../node_modules/customerio-reactnative`)
+  - customerio-reactnative-richpush/apn (from `../node_modules/customerio-reactnative`)
+  - customerio-reactnative/apn (from `../node_modules/customerio-reactnative`)
   - EXApplication (from `../node_modules/expo-application/ios`)
   - EXConstants (from `../node_modules/expo-constants/ios`)
+  - EXNotifications (from `../node_modules/expo-notifications/ios`)
   - Expo (from `../node_modules/expo`)
   - ExpoAsset (from `../node_modules/expo-asset/ios`)
   - ExpoFileSystem (from `../node_modules/expo-file-system/ios`)
@@ -2142,11 +2251,30 @@ DEPENDENCIES:
   - RNWorklets (from `../node_modules/react-native-worklets`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
+SPEC REPOS:
+  trunk:
+    - AnalyticsSwiftCIO
+    - CustomerIO
+    - CustomerIOCommon
+    - CustomerIODataPipelines
+    - CustomerIOMessagingInApp
+    - CustomerIOMessagingPush
+    - CustomerIOMessagingPushAPN
+    - CustomerIOTrackingMigration
+    - JSONSafeEncoding
+    - Sovran
+
 EXTERNAL SOURCES:
+  customerio-reactnative:
+    :path: "../node_modules/customerio-reactnative"
+  customerio-reactnative-richpush:
+    :path: "../node_modules/customerio-reactnative"
   EXApplication:
     :path: "../node_modules/expo-application/ios"
   EXConstants:
     :path: "../node_modules/expo-constants/ios"
+  EXNotifications:
+    :path: "../node_modules/expo-notifications/ios"
   Expo:
     :path: "../node_modules/expo"
   ExpoAsset:
@@ -2318,8 +2446,19 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
+  AnalyticsSwiftCIO: cbded90bbfe53072cb1fa1bc091d249e99ef7c56
+  CustomerIO: a39c21c31fd93e19b7348bbac60a1916951d5c1f
+  customerio-reactnative: b536a77418bb4e7bf023183e04fcf41b2434a0cf
+  customerio-reactnative-richpush: 72a8a45489ad88da86b4d4e6bdcd7553f33915a9
+  CustomerIOCommon: a5084ba7733b6d2ee2d0c9218679cd82e04e143d
+  CustomerIODataPipelines: ce85ff106a997079d19e5d69bfe87e62a3e67a18
+  CustomerIOMessagingInApp: d9f9cd8a066f4a6b956a4f4970e6ca0a50f50a65
+  CustomerIOMessagingPush: bab17dc62eb77f9a6b8d93c842a92b04cf2e1e46
+  CustomerIOMessagingPushAPN: e2424ec6399bf8da3ea763ca4a106c6261af19e3
+  CustomerIOTrackingMigration: b0c63d68744a1d46a96b1f7a09ad640c04e253ff
   EXApplication: a9d1c46d473d36f61302a9a81db2379441f3f094
   EXConstants: e6e50cdfcb4524f40121d1fdcff24e97b7dcd2fd
+  EXNotifications: 5edf06b6b41a52d8b5b3eccf0e951dc8a880a50b
   Expo: 38470d89b7f4a9c365ea5bd4cdfd6ebf89cd76c7
   ExpoAsset: 3c3b7dd9b1318846a02ef05ce420e63d542aeb9f
   ExpoFileSystem: 56f081328f5b48a6dcc8302eee51d4f2d9d0049b
@@ -2332,6 +2471,7 @@ SPEC CHECKSUMS:
   ExpoSQLite: 36b8723223f322148606473507da446b1912500c
   FBLazyVector: e95a291ad2dadb88e42b06e0c5fb8262de53ec12
   hermes-engine: 9f4dfe93326146a1c99eb535b1cb0b857a3cd172
+  JSONSafeEncoding: 54722ebc4fe1482e3e60a8450e1287481e32dd8b
   RCTDeprecation: 943572d4be82d480a48f4884f670135ae30bf990
   RCTRequired: 8f3cfc90cc25cf6e420ddb3e7caaaabc57df6043
   RCTTypeSafety: 16a4144ca3f959583ab019b57d5633df10b5e97c
@@ -2403,8 +2543,9 @@ SPEC CHECKSUMS:
   RNScreens: dd61bc3a3e6f6901ad833efa411917d44827cf51
   RNSVG: a97976dfa46d3edffa2c6ef5837b16fe8e031375
   RNWorklets: 28ee7370ca8da356fcc914e3e68b97e9752196d2
+  Sovran: 117d186f9e9cd47a231ee48dace5cd064a4b8ec8
   Yoga: 5934998fbeaef7845dbf698f698518695ab4cd1a
 
-PODFILE CHECKSUM: b28bfc6a8951baf1fe28682d46f26d7b470282a5
+PODFILE CHECKSUM: 4c2b6c1835ac826727d1a6342b946d75d168fd9d
 
 COCOAPODS: 1.16.2

@@ -1,0 +1,60 @@
+import CioDataPipelines
+import CioInternalCommon
+import CioMessagingInApp
+
+class CustomerIOSDKInitializer {
+    static func initialize() {
+        // Override SDK client info to include Expo metadata in user agent
+        let pluginVersion = "2.10.1"
+        DIGraphShared.shared.override(
+            value: CustomerIOSdkClient(source: "Expo", sdkVersion: pluginVersion),
+            forType: SdkClient.self
+        )
+
+        let cdpApiKey = "2d855adb91d014d623db"
+        let siteId: String? = nil
+        let region = CioInternalCommon.Region.getRegion(from: "eu")
+
+        let builder = SDKConfigBuilder(cdpApiKey: cdpApiKey)
+        setIfDefined(value: nil, thenPassItTo: builder.logLevel, transformingBy: CioLogLevel.getLogLevel)
+        setIfDefined(value: region, thenPassItTo: builder.region)
+        setIfDefined(value: nil, thenPassItTo: builder.autoTrackDeviceAttributes)
+        setIfDefined(value: nil, thenPassItTo: builder.trackApplicationLifecycleEvents)
+        setIfDefined(value: nil, thenPassItTo: builder.screenViewUse) { ScreenView.getScreenView($0) }
+        setIfDefined(value: nil, thenPassItTo: builder.migrationSiteId)
+
+        CustomerIO.initialize(withConfig: builder.build())
+
+        if let siteId = siteId {
+            let inAppConfig = MessagingInAppConfigBuilder(siteId: siteId, region: region).build()
+            MessagingInApp.initialize(withConfig: inAppConfig)
+            let logger = DIGraphShared.shared.logger
+            // Retrieves ReactInAppEventListener from DI graph, populated when it is accessed in React Native SDK.
+            if let listener: InAppEventListener? = DIGraphShared.shared.getOverriddenInstance() {
+                logger.debug("[Expo][InApp] React InAppEventListener found in DI graph and set")
+                MessagingInApp.shared.setEventListener(listener)
+            } else {
+                logger.debug("[Expo][InApp] React InAppEventListener not found in DI graph, will be set by React Native module when accessed")
+            }
+        }
+    }
+
+    /// Apply a value to a setter only if it's non-nil
+    private static func setIfDefined<Raw>(
+        value rawValue: Raw?,
+        thenPassItTo handler: (Raw) -> Any
+    ) {
+        setIfDefined(value: rawValue, thenPassItTo: handler) { $0 }
+    }
+
+    /// Apply a value after transforming it, only if both the original and transformed values are non-nil
+    private static func setIfDefined<Raw, Transformed>(
+        value rawValue: Raw?,
+        thenPassItTo handler: (Transformed) -> Any,
+        transformingBy transform: (Raw) -> Transformed?
+    ) {
+        if let value = rawValue, let result = transform(value) {
+            _ = handler(result)
+        }
+    }
+}

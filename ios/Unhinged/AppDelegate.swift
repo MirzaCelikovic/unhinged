@@ -4,6 +4,8 @@ import ReactAppDependencyProvider
 
 @UIApplicationMain
 public class AppDelegate: ExpoAppDelegate {
+  let cioSdkHandler = CioSdkAppDelegateHandler()
+
   var window: UIWindow?
 
   var reactNativeDelegate: ExpoReactNativeFactoryDelegate?
@@ -29,6 +31,8 @@ public class AppDelegate: ExpoAppDelegate {
       launchOptions: launchOptions)
 #endif
 
+      cioSdkHandler.application(application, didFinishLaunchingWithOptions: launchOptions)
+
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
@@ -49,6 +53,20 @@ public class AppDelegate: ExpoAppDelegate {
   ) -> Bool {
     let result = RCTLinkingManager.application(application, continue: userActivity, restorationHandler: restorationHandler)
     return super.application(application, continue: userActivity, restorationHandler: restorationHandler) || result
+  }
+
+  // Handle device token registration
+  public override func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+    // Call CustomerIO SDK handler
+    cioSdkHandler.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
+    super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
+  }
+
+  // Handle remote notification registration errors
+  public override func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+    // Call CustomerIO SDK handler
+    cioSdkHandler.application(application, didFailToRegisterForRemoteNotificationsWithError: error)
+    super.application(application, didFailToRegisterForRemoteNotificationsWithError: error)
   }
 }
 
