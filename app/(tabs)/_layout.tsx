@@ -19,6 +19,7 @@ export default function TabLayout() {
           title: 'Tracking',
           tabBarLabel: 'Tracking',
           tabBarIcon: ({ color, size }) => <HatGlasses color={color} size={size} />,
+          headerShown: false,
         }}
       />
       <Tabs.Screen

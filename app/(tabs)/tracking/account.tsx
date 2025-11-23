@@ -2,7 +2,6 @@ import { View, Text, Pressable, Alert, ScrollView, ActivityIndicator } from 'rea
 import { useLocalSearchParams, router } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
-import { ArrowLeft } from 'lucide-react-native';
 import { useAccountContext } from '~/contexts/AccountContext';
 import { useRemoveTrack } from '~/lib/useTracks';
 import { getFollowingActivity, ActivityItem } from '~/lib/syncing';
@@ -58,19 +57,6 @@ export default function TrackingAccount() {
 
   return (
     <View className="flex-1 bg-white">
-      {/* Header */}
-      <View className="border-b border-gray-200 px-4 pb-4 pt-16">
-        <View className="flex-row items-center gap-3">
-          <Pressable onPress={() => router.back()} className="active:opacity-70">
-            <ArrowLeft size={24} color="#000" />
-          </Pressable>
-          <View className="flex-1">
-            <Text className="text-2xl font-bold">@{username}</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Content */}
       {isLoading ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#6b7280" />

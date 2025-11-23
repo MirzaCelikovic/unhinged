@@ -6,14 +6,17 @@ export default function TrackingLayout() {
       <Stack.Screen
         name="index"
         options={{
-          headerShown: false,
+          headerShown: true,
+          headerTitle: 'Tracking',
         }}
       />
       <Stack.Screen
         name="account"
-        options={{
-          headerShown: false,
-        }}
+        options={({ route }) => ({
+          headerShown: true,
+          headerTitle: route.params?.username ? `@${route.params.username}` : 'Account',
+          headerBackTitle: 'Tracking',
+        })}
       />
     </Stack>
   );
