@@ -3,9 +3,12 @@ import { Stack } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { AccountProvider } from '~/contexts/AccountContext';
 import { InstagramProvider } from '~/contexts/InstagramContext';
+import { SheetProvider } from '~/contexts/SheetContext';
 import { initializeDatabase } from '~/lib/database';
 import { CustomerIO, CioRegion } from 'customerio-reactnative';
 import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import '../global.css';
 
 const qc = new QueryClient();
@@ -22,16 +25,22 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <SQLiteProvider databaseName="unhinged.db" onInit={initializeDatabase}>
-      <QueryClientProvider client={qc}>
-        <AccountProvider>
-          <InstagramProvider>
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            </Stack>
-          </InstagramProvider>
-        </AccountProvider>
-      </QueryClientProvider>
-    </SQLiteProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SQLiteProvider databaseName="unhinged.db" onInit={initializeDatabase}>
+        <QueryClientProvider client={qc}>
+          <AccountProvider>
+            <BottomSheetModalProvider>
+              <SheetProvider>
+                <InstagramProvider>
+                  <Stack>
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  </Stack>
+                </InstagramProvider>
+              </SheetProvider>
+            </BottomSheetModalProvider>
+          </AccountProvider>
+        </QueryClientProvider>
+      </SQLiteProvider>
+    </GestureHandlerRootView>
   );
 }

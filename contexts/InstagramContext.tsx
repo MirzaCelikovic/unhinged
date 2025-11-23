@@ -5,8 +5,10 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useStorage } from '~/lib/useStorage';
 import { useConnectInstagram, useDisconnectInstagram } from '~/lib/useAccount';
 import { useAccountContext } from './AccountContext';
+import { useSheets } from './SheetContext';
 import { syncFollowingList } from '~/lib/syncing';
 import { clearAllData } from '~/lib/database';
+import * as Notifications from 'expo-notifications';
 
 // Constants
 const INSTAGRAM_APP_ID = '936619743392459';
@@ -61,6 +63,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const { account, trackedAccounts } = useAccountContext();
   const connectInstagram = useConnectInstagram();
   const disconnectInstagram = useDisconnectInstagram();
+  const { showNotificationsSheet } = useSheets();
 
   // State
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -266,6 +269,17 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               username: data.username,
             });
           }
+
+          // Show notification sheet if permission is undetermined
+          const checkAndShowNotificationSheet = async () => {
+            const { status } = await Notifications.getPermissionsAsync();
+            console.log('🔔 Notification permission status after login:', status);
+            if (status === 'undetermined') {
+              console.log('🔔 Showing notifications sheet');
+              showNotificationsSheet();
+            }
+          };
+          checkAndShowNotificationSheet();
           break;
 
         case 'LOGOUT_SUCCESS':

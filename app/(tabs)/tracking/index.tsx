@@ -1,9 +1,10 @@
-import { View, Text, FlatList, Pressable, ActivityIndicator, TextInput, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator, TextInput, Alert } from 'react-native';
 import { useState } from 'react';
 import { router } from 'expo-router';
 import { useAccountContext } from '~/contexts/AccountContext';
 import { useInstagram } from '~/contexts/InstagramContext';
 import { useTracks, useAddTrack } from '~/lib/useTracks';
+import { ChevronRight, Plus } from 'lucide-react-native';
 
 export default function Tracking() {
   const { account } = useAccountContext();
@@ -44,33 +45,33 @@ export default function Tracking() {
 
 
   const renderAddForm = () => (
-    <View className="w-full items-center gap-3 px-8">
+    <View className="bg-gray-100 rounded-2xl p-4 gap-3">
       <TextInput
-        className="w-full border border-gray-300 rounded-lg p-3"
+        className="bg-white border border-gray-300 rounded-lg p-3 text-base"
         placeholder="Instagram Username"
         value={newUsername}
         onChangeText={setNewUsername}
         autoCapitalize="none"
         autoCorrect={false}
       />
-      <View className="w-full flex-row gap-2">
+      <View className="flex-row gap-2">
         <Pressable
-          className="flex-1 bg-gray-300 py-3 rounded-lg active:opacity-70"
+          className="flex-1 bg-white py-3 rounded-lg active:opacity-70"
           onPress={() => {
             setShowAddForm(false);
             setNewUsername('');
           }}
           disabled={isFetchingUserId || addTrack.isPending}>
-          <Text className="text-center font-semibold">Cancel</Text>
+          <Text className="text-center font-semibold text-gray-900">Cancel</Text>
         </Pressable>
         <Pressable
-          className="flex-1 bg-blue-500 py-3 rounded-lg active:opacity-70"
+          className="flex-1 bg-blue-500 py-3 rounded-lg active:bg-blue-600"
           onPress={handleAddTrack}
           disabled={isFetchingUserId || addTrack.isPending}>
           {isFetchingUserId || addTrack.isPending ? (
             <ActivityIndicator color="white" size="small" />
           ) : (
-            <Text className="text-center font-semibold text-white">Continue</Text>
+            <Text className="text-center font-semibold text-white">Add Account</Text>
           )}
         </Pressable>
       </View>
@@ -104,39 +105,39 @@ export default function Tracking() {
 
   // List with accounts
   return (
-    <View className="flex-1 bg-white">
-      <FlatList
-        data={tracks}
-        keyExtractor={(item) => item.user_id}
-        contentContainerClassName="pt-16"
-        renderItem={({ item }) => (
-          <Pressable
-            className="border-b border-gray-100 p-4 active:bg-gray-50"
-            onPress={() =>
-              router.push({
-                pathname: '/(tabs)/tracking/account',
-                params: { userId: item.user_id, username: item.username },
-              })
-            }>
-            <Text className="text-base font-semibold">@{item.username}</Text>
-            <Text className="text-sm text-gray-500">{item.user_id}</Text>
-          </Pressable>
-        )}
-        ListFooterComponent={
-          showAddForm ? (
+    <ScrollView className="flex-1 bg-white">
+      <View className="p-4">
+        <Text className="text-base font-medium text-gray-500 uppercase mb-3">Tracked Accounts</Text>
+
+        <View className="gap-3">
+          {tracks.map((item) => (
+            <Pressable
+              key={item.user_id}
+              className="bg-gray-100 rounded-2xl p-4 flex-row items-center justify-between active:bg-gray-200"
+              onPress={() =>
+                router.push({
+                  pathname: '/(tabs)/tracking/account',
+                  params: { userId: item.user_id, username: item.username },
+                })
+              }>
+              <Text className="text-lg font-semibold text-gray-900">@{item.username}</Text>
+              <ChevronRight size={20} color="#9ca3af" />
+            </Pressable>
+          ))}
+
+          {showAddForm ? (
             renderAddForm()
           ) : (
-            <View className="p-4">
-              <Pressable
-                className="bg-gray-300 py-3 rounded-lg active:opacity-70"
-                onPress={() => setShowAddForm(true)}>
-                <Text className="text-center font-semibold">Add account</Text>
-              </Pressable>
-            </View>
-          )
-        }
-      />
-    </View>
+            <Pressable
+              className="bg-gray-100 rounded-2xl p-4 flex-row items-center justify-center gap-2 active:bg-gray-200"
+              onPress={() => setShowAddForm(true)}>
+              <Plus size={20} color="#6b7280" />
+              <Text className="text-lg font-semibold text-gray-900">Add Account</Text>
+            </Pressable>
+          )}
+        </View>
+      </View>
+    </ScrollView>
   );
 }
 

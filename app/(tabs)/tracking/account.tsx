@@ -66,7 +66,6 @@ export default function TrackingAccount() {
           </Pressable>
           <View className="flex-1">
             <Text className="text-2xl font-bold">@{username}</Text>
-            <Text className="text-sm text-gray-500">{userId}</Text>
           </View>
         </View>
       </View>
@@ -78,38 +77,43 @@ export default function TrackingAccount() {
         </View>
       ) : activity.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
-          <Text className="text-center text-gray-500">No activity yet</Text>
+          <Text className="text-center text-gray-500 text-base">No activity yet. Sync to start tracking changes.</Text>
         </View>
       ) : (
         <ScrollView className="flex-1">
-          {activity.map((item, index) => (
-            <View key={index} className="border-b border-gray-100 p-4">
-              <Text className="text-sm font-semibold text-gray-600 mb-2">{item.date}</Text>
+          <View className="p-4">
+            <Text className="text-base font-medium text-gray-500 uppercase mb-3">Activity</Text>
+            <View className="gap-3">
+              {activity.map((item, index) => (
+                <View key={index} className="bg-gray-100 rounded-2xl p-4">
+                  <Text className="text-sm font-semibold text-gray-500 uppercase mb-2">{item.date}</Text>
 
-              {item.unfollows.length > 0 && (
-                <Text className="text-base mb-1">
-                  Stopped following {item.unfollows.map((u) => `@${u}`).join(', ')}
-                </Text>
-              )}
+                  {item.unfollows.length > 0 && (
+                    <Text className="text-base text-gray-900 mb-1">
+                      Stopped following {item.unfollows.map((u) => `@${u}`).join(', ')}
+                    </Text>
+                  )}
 
-              {item.newFollows.length > 0 && (
-                <Text className="text-base mb-1">
-                  Started following {item.newFollows.map((u) => `@${u}`).join(', ')}
-                </Text>
-              )}
+                  {item.newFollows.length > 0 && (
+                    <Text className="text-base text-gray-900 mb-1">
+                      Started following {item.newFollows.map((u) => `@${u}`).join(', ')}
+                    </Text>
+                  )}
 
-              {item.isTrackingStart && item.newFollows.length === 0 && item.unfollows.length === 0 && (
-                <Text className="text-base text-gray-500">Started tracking this account</Text>
-              )}
+                  {item.isTrackingStart && item.newFollows.length === 0 && item.unfollows.length === 0 && (
+                    <Text className="text-base text-gray-500">Started tracking this account</Text>
+                  )}
+                </View>
+              ))}
             </View>
-          ))}
+          </View>
         </ScrollView>
       )}
 
       {/* Stop Tracking Button */}
       <View className="border-t border-gray-200 p-4">
         <Pressable
-          className="bg-red-500 py-3 rounded-lg active:opacity-70"
+          className="bg-red-500 py-3 rounded-lg active:bg-red-600"
           onPress={handleStopTracking}
           disabled={removeTrack.isPending}>
           <Text className="text-center font-semibold text-white">
