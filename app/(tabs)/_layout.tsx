@@ -27,6 +27,7 @@ export default function TabLayout() {
           title: 'Settings',
           tabBarLabel: 'Settings',
           tabBarIcon: ({ color, size }) => <Settings color={color} size={size} />,
+          headerShown: false,
         }}
       />
     </Tabs>

@@ -6,6 +6,8 @@ import { useSecureStorage } from '~/lib/useSecureStorage';
 import { Account, Instagram } from '~/lib/types';
 import { CustomerIO } from 'customerio-reactnative';
 import * as Notifications from 'expo-notifications';
+import { useApi } from '~/lib/api';
+import { useQueryClient } from '@tanstack/react-query';
 
 const ACCOUNT_ID_KEY = 'account_id';
 
@@ -13,6 +15,7 @@ interface AccountContextType {
   account: Account | null;
   trackedAccounts: Instagram[];
   isLoading: boolean;
+  updateAccountSettings: (settings: Record<string, boolean>) => Promise<void>;
 }
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
@@ -27,6 +30,8 @@ export const useAccountContext = () => {
 
 export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const storage = useSecureStorage();
+  const api = useApi();
+  const queryClient = useQueryClient();
   const [storedAccountId, setStoredAccountId] = useState<string | null>(null);
   const [isCheckingStorage, setIsCheckingStorage] = useState(true);
 
@@ -119,6 +124,35 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     identifyCustomerIO();
   }, [account?.uuid]);
 
+  // Set Customer.io profile attributes when account changes
+  useEffect(() => {
+    if (account) {
+      CustomerIO.setProfileAttributes({
+        notification_account: account.notification_account,
+        notification_tracked: account.notification_tracked,
+        notification_marketing: account.notification_marketing,
+      });
+      console.log('🔧 Updated Customer.io profile attributes');
+    }
+  }, [account?.notification_account, account?.notification_tracked, account?.notification_marketing]);
+
+  // Update account settings
+  const updateAccountSettings = async (settings: Record<string, boolean>) => {
+    if (!account?.uuid) {
+      throw new Error('No account available');
+    }
+
+    try {
+      await api.patch(`/api/v1/account/${account.uuid}/settings/`, settings);
+      console.log('Updated account settings:', settings);
+      // Invalidate account query to refetch updated data
+      queryClient.invalidateQueries({ queryKey: ['account', account.uuid] });
+    } catch (error) {
+      console.error('Error updating account settings:', error);
+      throw error;
+    }
+  };
+
   // Show loading screen while initializing
   if (isLoading) {
     return (
@@ -132,6 +166,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     account,
     trackedAccounts,
     isLoading,
+    updateAccountSettings,
   };
 
   return <AccountContext.Provider value={value}>{children}</AccountContext.Provider>;
