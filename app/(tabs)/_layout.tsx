@@ -1,15 +1,28 @@
 import { Tabs } from 'expo-router';
-import { Instagram, HatGlasses, Settings } from 'lucide-react-native';
+import { House, HatGlasses, Settings } from 'lucide-react-native';
 
 export default function TabLayout() {
   return (
-    <Tabs>
+    <Tabs
+      screenOptions={{
+        tabBarStyle: {
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          position: 'absolute',
+        },
+        tabBarActiveTintColor: '#000000',
+        tabBarInactiveTintColor: '#6b7280',
+        tabBarShowLabel: false,
+        tabBarIconStyle: {
+          marginTop: 8,
+        },
+      }}>
       <Tabs.Screen
         name="home"
         options={{
           title: 'Home',
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color, size }) => <Instagram color={color} size={size} />,
+          tabBarIcon: ({ color }) => <House color={color} size={28} />,
           headerShown: false,
         }}
       />
@@ -18,7 +31,7 @@ export default function TabLayout() {
         options={{
           title: 'Tracking',
           tabBarLabel: 'Tracking',
-          tabBarIcon: ({ color, size }) => <HatGlasses color={color} size={size} />,
+          tabBarIcon: ({ color }) => <HatGlasses color={color} size={28} />,
           headerShown: false,
         }}
       />
@@ -27,7 +40,7 @@ export default function TabLayout() {
         options={{
           title: 'Settings',
           tabBarLabel: 'Settings',
-          tabBarIcon: ({ color, size }) => <Settings color={color} size={size} />,
+          tabBarIcon: ({ color }) => <Settings color={color} size={28} />,
           headerShown: false,
         }}
       />
