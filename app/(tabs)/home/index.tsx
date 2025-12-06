@@ -9,13 +9,17 @@ import {
 } from 'react-native';
 import { useInstagram } from '~/contexts/InstagramContext';
 import { useEffect, useState } from 'react';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight, RefreshCcw } from 'lucide-react-native';
 import { useFollowerStats } from '~/lib/useFollowerStats';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSQLiteContext } from 'expo-sqlite';
 import { router } from 'expo-router';
 import Circles from '~/assets/circles.svg';
 import Instagram from '~/assets/instagram.svg';
 import Button from '~/components/Button';
+import InstagramCard from '~/components/InstagramCard';
+import ActivityList from '~/components/ActivityList';
+import { Instagram as InstagramType } from '~/lib/types';
 
 function NotConnected({ onConnect }: { onConnect: () => void }) {
   return (
@@ -42,8 +46,10 @@ function NotConnected({ onConnect }: { onConnect: () => void }) {
 export default function Index() {
   const { isLoggedIn, isSyncing, showLogin, disconnect, sync, userId } = useInstagram();
   const { data: stats } = useFollowerStats(userId);
+  const db = useSQLiteContext();
   const queryClient = useQueryClient();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [instagramAccount, setInstagramAccount] = useState<InstagramType | null>(null);
 
   // Update current time every minute to refresh the "X mins ago" display
   useEffect(() => {
@@ -61,6 +67,36 @@ export default function Index() {
       queryClient.invalidateQueries({ queryKey: ['followerStats', userId] });
     }
   }, [isSyncing, userId]);
+
+  // Fetch Instagram account data
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchInstagramAccount = async () => {
+      try {
+        const account = await db.getFirstAsync<InstagramType>(
+          `SELECT
+            i.user_id,
+            i.username,
+            i.profile_pic_url,
+            i.biography,
+            i.media_count,
+            i.date_created,
+            i.date_updated,
+            (SELECT COUNT(*) FROM followings WHERE tracked_account_id = i.user_id AND ended_at IS NULL) as following_count,
+            (SELECT COUNT(*) FROM followers WHERE tracked_account_id = i.user_id AND ended_at IS NULL) as followers_count
+           FROM instagrams i
+           WHERE i.user_id = ?`,
+          [userId]
+        );
+        setInstagramAccount(account || null);
+      } catch (error) {
+        console.error('Error fetching Instagram account:', error);
+      }
+    };
+
+    fetchInstagramAccount();
+  }, [userId, isSyncing]);
 
   const formatLastSyncTime = (timestamp: string | null): string => {
     if (!timestamp) return 'Never synced';
@@ -100,69 +136,28 @@ export default function Index() {
         <Circles width={700} height={700} />
       </View>
       <ScrollView className="flex-1">
-        <View className="p-4">
+        <View className="p-4 pt-32">
           {/* Header with last sync time and refresh button */}
-          <View className="mb-3 flex-row items-center justify-between">
-            <Text className="text-base font-medium uppercase text-gray-500">
+          <View className="flex-row items-center justify-between px-3 py-1">
+            <Text className="font-roboto-medium text-sm uppercase tracking-wide text-black">
               {formatLastSyncTime(stats.lastSyncedAt)}
             </Text>
-            <Pressable className="px-4 py-2 active:opacity-70" onPress={sync} disabled={isSyncing}>
-              <Text className="text-base font-medium text-blue-500">
+            <Pressable className="py-2 active:opacity-70" onPress={sync} disabled={isSyncing}>
+              <Text className="font-roboto-medium text-sm uppercase tracking-wide text-black">
                 {isSyncing ? 'Syncing...' : 'Refresh'}
               </Text>
             </Pressable>
           </View>
 
-          {/* Stats Cards */}
-          <View className="gap-3">
-            <Pressable
-              className="flex-row items-center justify-between rounded-2xl bg-gray-100 p-4 active:bg-gray-200"
-              onPress={() => router.push('/home/accounts?type=notFollowingBack')}>
-              <Text className="text-lg font-semibold text-gray-900">Not following you back</Text>
-              <View className="flex-row items-center gap-2">
-                <Text className="text-lg font-semibold text-gray-500">
-                  {stats.notFollowingBack}
-                </Text>
-                <ChevronRight size={20} color="#9ca3af" />
-              </View>
-            </Pressable>
+          {/* Instagram Account Card */}
+          {instagramAccount && (
+            <View className="mb-6">
+              <InstagramCard account={instagramAccount} />
+            </View>
+          )}
 
-            <Pressable
-              className="flex-row items-center justify-between rounded-2xl bg-gray-100 p-4 active:bg-gray-200"
-              onPress={() => router.push('/home/accounts?type=notFollowingYouBack')}>
-              <Text className="text-lg font-semibold text-gray-900">You're not following back</Text>
-              <View className="flex-row items-center gap-2">
-                <Text className="text-lg font-semibold text-gray-500">
-                  {stats.notFollowingYouBack}
-                </Text>
-                <ChevronRight size={20} color="#9ca3af" />
-              </View>
-            </Pressable>
-
-            <Pressable
-              className="flex-row items-center justify-between rounded-2xl bg-gray-100 p-4 active:bg-gray-200"
-              onPress={() => router.push('/home/accounts?type=recentlyUnfollowed')}>
-              <Text className="text-lg font-semibold text-gray-900">Recently unfollowed you</Text>
-              <View className="flex-row items-center gap-2">
-                <Text className="text-lg font-semibold text-gray-500">
-                  {stats.recentlyUnfollowed}
-                </Text>
-                <ChevronRight size={20} color="#9ca3af" />
-              </View>
-            </Pressable>
-
-            <Pressable
-              className="flex-row items-center justify-between rounded-2xl bg-gray-100 p-4 active:bg-gray-200"
-              onPress={() => router.push('/home/accounts?type=recentlyFollowed')}>
-              <Text className="text-lg font-semibold text-gray-900">Recently followed you</Text>
-              <View className="flex-row items-center gap-2">
-                <Text className="text-lg font-semibold text-gray-500">
-                  {stats.recentlyFollowed}
-                </Text>
-                <ChevronRight size={20} color="#9ca3af" />
-              </View>
-            </Pressable>
-          </View>
+          {/* Activity List */}
+          <ActivityList stats={stats} />
         </View>
       </ScrollView>
     </View>

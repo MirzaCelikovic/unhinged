@@ -43,8 +43,11 @@ export default function AccountsScreen() {
             );
             const followerIds = new Set(followers.map(f => f.follower_user_id));
 
-            const followings = await db.getAllAsync<{ followed_user_id: string; followed_username: string; profile_pic_url: string | null }>(
-              'SELECT followed_user_id, followed_username, profile_pic_url FROM followings WHERE tracked_account_id = ? AND ended_at IS NULL',
+            const followings = await db.getAllAsync<{ followed_user_id: string; username: string; profile_pic_url: string | null }>(
+              `SELECT f.followed_user_id, i.username, i.profile_pic_url
+               FROM followings f
+               JOIN instagrams i ON f.followed_user_id = i.user_id
+               WHERE f.tracked_account_id = ? AND f.ended_at IS NULL`,
               [userId]
             );
 
@@ -52,7 +55,7 @@ export default function AccountsScreen() {
               .filter(f => !followerIds.has(f.followed_user_id))
               .map(f => ({
                 id: f.followed_user_id,
-                username: f.followed_username,
+                username: f.username,
                 profile_pic_url: f.profile_pic_url,
               }));
             break;
@@ -66,8 +69,11 @@ export default function AccountsScreen() {
             );
             const followingIds = new Set(followings.map(f => f.followed_user_id));
 
-            const followers = await db.getAllAsync<{ follower_user_id: string; follower_username: string; profile_pic_url: string | null }>(
-              'SELECT follower_user_id, follower_username, profile_pic_url FROM followers WHERE tracked_account_id = ? AND ended_at IS NULL',
+            const followers = await db.getAllAsync<{ follower_user_id: string; username: string; profile_pic_url: string | null }>(
+              `SELECT f.follower_user_id, i.username, i.profile_pic_url
+               FROM followers f
+               JOIN instagrams i ON f.follower_user_id = i.user_id
+               WHERE f.tracked_account_id = ? AND f.ended_at IS NULL`,
               [userId]
             );
 
@@ -75,7 +81,7 @@ export default function AccountsScreen() {
               .filter(f => !followingIds.has(f.follower_user_id))
               .map(f => ({
                 id: f.follower_user_id,
-                username: f.follower_username,
+                username: f.username,
                 profile_pic_url: f.profile_pic_url,
               }));
             break;
@@ -86,14 +92,17 @@ export default function AccountsScreen() {
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-            const unfollowers = await db.getAllAsync<{ follower_user_id: string; follower_username: string; profile_pic_url: string | null }>(
-              'SELECT follower_user_id, follower_username, profile_pic_url FROM followers WHERE tracked_account_id = ? AND ended_at IS NOT NULL AND ended_at >= ?',
+            const unfollowers = await db.getAllAsync<{ follower_user_id: string; username: string; profile_pic_url: string | null }>(
+              `SELECT f.follower_user_id, i.username, i.profile_pic_url
+               FROM followers f
+               JOIN instagrams i ON f.follower_user_id = i.user_id
+               WHERE f.tracked_account_id = ? AND f.ended_at IS NOT NULL AND f.ended_at >= ?`,
               [userId, thirtyDaysAgo.toISOString()]
             );
 
             data = unfollowers.map(f => ({
               id: f.follower_user_id,
-              username: f.follower_username,
+              username: f.username,
               profile_pic_url: f.profile_pic_url,
             }));
             break;
@@ -104,14 +113,17 @@ export default function AccountsScreen() {
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-            const newFollowers = await db.getAllAsync<{ follower_user_id: string; follower_username: string; profile_pic_url: string | null }>(
-              'SELECT follower_user_id, follower_username, profile_pic_url FROM followers WHERE tracked_account_id = ? AND is_baseline = 0 AND first_seen_at >= ?',
+            const newFollowers = await db.getAllAsync<{ follower_user_id: string; username: string; profile_pic_url: string | null }>(
+              `SELECT f.follower_user_id, i.username, i.profile_pic_url
+               FROM followers f
+               JOIN instagrams i ON f.follower_user_id = i.user_id
+               WHERE f.tracked_account_id = ? AND f.is_baseline = 0 AND f.first_seen_at >= ?`,
               [userId, thirtyDaysAgo.toISOString()]
             );
 
             data = newFollowers.map(f => ({
               id: f.follower_user_id,
-              username: f.follower_username,
+              username: f.username,
               profile_pic_url: f.profile_pic_url,
             }));
             break;

@@ -6,7 +6,7 @@ import { useStorage } from '~/lib/useStorage';
 import { useConnectInstagram, useDisconnectInstagram } from '~/lib/useAccount';
 import { useAccountContext } from './AccountContext';
 import { useSheets } from './SheetContext';
-import { syncFollowingList } from '~/lib/syncing';
+import { syncFollowingList, syncFollowersList } from '~/lib/syncing';
 import { clearAllData } from '~/lib/database';
 import * as Notifications from 'expo-notifications';
 
@@ -25,17 +25,20 @@ interface InstagramContextType {
   showLogin: () => void;
   disconnect: () => void;
   fetchUserId: (username: string) => Promise<string>;
+  fetchAccountMetadata: (username: string) => Promise<void>;
   sync: () => void;
 }
 
 interface WebViewMessage {
-  type: 'LOGIN_SUCCESS' | 'LOGOUT_SUCCESS' | 'LOGIN_STATUS_CHECK' | 'FOLLOWING_COMPLETE' | 'FETCH_ERROR' | 'LOGOUT_ERROR' | 'USER_ID_FETCHED';
+  type: 'LOGIN_SUCCESS' | 'LOGOUT_SUCCESS' | 'LOGIN_STATUS_CHECK' | 'FOLLOWING_COMPLETE' | 'FOLLOWERS_COMPLETE' | 'FETCH_ERROR' | 'LOGOUT_ERROR' | 'USER_ID_FETCHED' | 'ACCOUNT_METADATA_FETCHED';
   userId?: string;
   username?: string;
   success?: boolean;
   users?: Array<{ id: string; username: string }>;
   isMainUser?: boolean;
   error?: string;
+  biography?: string | null;
+  mediaCount?: number | null;
 }
 
 interface User {
@@ -102,6 +105,32 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         window.instagramAPI.fetchFollowing('${userIdToFetch}', ${isMainUser});
       } else {
         console.error('❌ window.instagramAPI.fetchFollowing not available');
+      }
+    `);
+  };
+
+  // Fetch followers list for a user (internal helper)
+  const fetchFollowers = (userIdToFetch: string, isMainUser: boolean = false) => {
+    if (!webViewRef.current) {
+      console.warn('⚠️ fetchFollowers: WebView not ready');
+      return;
+    }
+
+    if (fetchingUsersRef.current.has(`followers_${userIdToFetch}`)) {
+      console.log('⏭️ Skipping duplicate fetch for followers:', userIdToFetch);
+      return;
+    }
+
+    console.log('🔄 fetchFollowers:', userIdToFetch, 'webViewReady:', webViewReady);
+    fetchingUsersRef.current.add(`followers_${userIdToFetch}`);
+    setIsSyncing(true);
+
+    injectJS(`
+      console.log('📱 Injecting fetchFollowers for userId:', '${userIdToFetch}');
+      if (window.instagramAPI?.fetchFollowers) {
+        window.instagramAPI.fetchFollowers('${userIdToFetch}', ${isMainUser});
+      } else {
+        console.error('❌ window.instagramAPI.fetchFollowers not available');
       }
     `);
   };
@@ -186,12 +215,30 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     console.log('🔄 Starting sync - userId:', userId, 'tracked accounts:', trackedAccounts.length);
 
-    // Sync the main user
+    // Sync the main user (following + followers)
     fetchFollowing(userId, false);
+    fetchFollowers(userId, false);
 
-    // Sync all tracked accounts
+    // Fetch metadata for main user
+    if (account?.instagram_username) {
+      injectJS(`
+        if (window.instagramAPI?.fetchAccountMetadata) {
+          window.instagramAPI.fetchAccountMetadata('${account.instagram_username}');
+        }
+      `);
+    }
+
+    // Sync all tracked accounts (following + followers)
     trackedAccounts.forEach((trackedAccount) => {
       fetchFollowing(trackedAccount.user_id, false);
+      fetchFollowers(trackedAccount.user_id, false);
+
+      // Fetch metadata for tracked account
+      injectJS(`
+        if (window.instagramAPI?.fetchAccountMetadata) {
+          window.instagramAPI.fetchAccountMetadata('${trackedAccount.username}');
+        }
+      `);
     });
   };
 
@@ -224,6 +271,22 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     });
   };
 
+  // Fetch account metadata (bio, media count, etc.) by navigating to profile
+  const fetchAccountMetadata = (username: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (!webViewRef.current) {
+        reject(new Error('WebView not ready'));
+        return;
+      }
+
+      injectJS(`
+        if (window.instagramAPI?.fetchAccountMetadata) {
+          window.instagramAPI.fetchAccountMetadata('${username}');
+        }
+      `);
+    });
+  };
+
   // Handle following list completion
   const handleFollowingComplete = async (userId: string, users: User[]) => {
     // Deduplicate users
@@ -236,6 +299,21 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       await syncFollowingList(db, userId, deduplicatedUsers);
     } catch (error) {
       console.error(`Error syncing following list for ${userId}:`, error);
+    }
+  };
+
+  // Handle followers list completion
+  const handleFollowersComplete = async (userId: string, users: User[]) => {
+    // Deduplicate users
+    const deduplicatedUsers = Array.from(
+      new Map(users.map((user) => [user.id, user])).values()
+    );
+
+    try {
+      // Sync to SQLite
+      await syncFollowersList(db, userId, deduplicatedUsers);
+    } catch (error) {
+      console.error(`Error syncing followers list for ${userId}:`, error);
     }
   };
 
@@ -332,9 +410,20 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           }
           break;
 
+        case 'FOLLOWERS_COMPLETE':
+          fetchingUsersRef.current.delete(`followers_${data.userId!}`);
+          handleFollowersComplete(data.userId!, data.users!);
+
+          // Check if all fetches are complete
+          if (fetchingUsersRef.current.size === 0) {
+            setIsSyncing(false);
+          }
+          break;
+
         case 'FETCH_ERROR':
           if (data.userId) {
             fetchingUsersRef.current.delete(data.userId);
+            fetchingUsersRef.current.delete(`followers_${data.userId}`);
           }
           console.error('❌ Error:', data.error);
 
@@ -360,6 +449,29 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               promise.reject(new Error(data.error));
               userIdFetchPromisesRef.current.delete(data.username);
             }
+          }
+          break;
+
+        case 'ACCOUNT_METADATA_FETCHED':
+          if (data.userId && data.username) {
+            const updateMetadata = async () => {
+              try {
+                const now = new Date().toISOString();
+                await db.runAsync(
+                  `INSERT INTO instagrams (user_id, username, profile_pic_url, biography, media_count, date_created, date_updated)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)
+                   ON CONFLICT(user_id) DO UPDATE SET
+                     biography = ?,
+                     media_count = ?,
+                     date_updated = ?`,
+                  [data.userId, data.username, null, data.biography, data.mediaCount, now, now, data.biography, data.mediaCount, now]
+                );
+                console.log(`✅ Updated metadata for ${data.username}: bio="${data.biography}", posts=${data.mediaCount}`);
+              } catch (error) {
+                console.error('Error updating account metadata:', error);
+              }
+            };
+            updateMetadata();
           }
           break;
       }
@@ -411,6 +523,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     showLogin,
     disconnect: handleDisconnect,
     fetchUserId,
+    fetchAccountMetadata,
     sync,
   };
 
@@ -638,6 +751,61 @@ const instagramAPI = `
       }
     },
 
+    // Fetch followers list
+    fetchFollowers: async function(userId, isMainUser) {
+      try {
+        let allUsers = [];
+        let hasMore = true;
+        let maxId = null;
+
+        while (hasMore) {
+          let url = 'https://www.instagram.com/api/v1/friendships/' + userId + '/followers/?count=50';
+          if (maxId) url += '&max_id=' + maxId;
+
+          const response = await fetch(url, {
+            credentials: 'include',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-IG-App-ID': '${INSTAGRAM_APP_ID}'
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch followers: ' + response.status);
+          }
+
+          const data = await response.json();
+
+          if (data.users && data.users.length > 0) {
+            allUsers = allUsers.concat(
+              data.users.map(function(user) {
+                return {
+                  id: user.id || user.pk,
+                  username: user.username,
+                  profile_pic_url: user.profile_pic_url || null
+                };
+              })
+            );
+          }
+
+          hasMore = data.has_more || false;
+          maxId = data.next_max_id || null;
+        }
+
+        sendMessage('FOLLOWERS_COMPLETE', {
+          users: allUsers,
+          totalCount: allUsers.length,
+          userId: userId,
+          isMainUser: isMainUser || false
+        });
+      } catch (error) {
+        sendMessage('FETCH_ERROR', {
+          error: error.message,
+          userId: userId
+        });
+      }
+    },
+
     // Fetch user ID by username
     fetchUserId: async function(username) {
       try {
@@ -668,6 +836,39 @@ const instagramAPI = `
           username: username,
           error: error.message
         });
+      }
+    },
+
+    // Fetch account metadata by making API call
+    fetchAccountMetadata: async function(username) {
+      try {
+        const response = await fetch('https://www.instagram.com/api/v1/users/web_profile_info/?username=' + username, {
+          credentials: 'include',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-IG-App-ID': '${INSTAGRAM_APP_ID}'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch profile: ' + response.status);
+        }
+
+        const data = await response.json();
+
+        if (data.data && data.data.user) {
+          const user = data.data.user;
+          sendMessage('ACCOUNT_METADATA_FETCHED', {
+            userId: user.id,
+            username: user.username,
+            biography: user.biography || null,
+            mediaCount: user.edge_owner_to_timeline_media ? user.edge_owner_to_timeline_media.count : null
+          });
+        } else {
+          throw new Error('User data not found in response');
+        }
+      } catch (error) {
+        console.error('❌ Failed to fetch account metadata:', error.message);
       }
     }
   };

@@ -6,6 +6,19 @@ const CURRENT_DB_VERSION = 1;
 const migrations: { [version: number]: (db: SQLite.SQLiteDatabase) => Promise<void> } = {
   1: async (db: SQLite.SQLiteDatabase) => {
     await db.execAsync(`
+      -- Master table of all Instagram users we've encountered
+      CREATE TABLE IF NOT EXISTS instagrams (
+        user_id TEXT PRIMARY KEY,
+        username TEXT NOT NULL,
+        profile_pic_url TEXT,
+        biography TEXT,
+        media_count INTEGER,
+        date_created TEXT NOT NULL,
+        date_updated TEXT NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_instagrams_username ON instagrams(username);
+
       -- Track sync status for each Instagram account we're monitoring
       CREATE TABLE IF NOT EXISTS sync_state (
         instagram_user_id TEXT PRIMARY KEY,
@@ -20,8 +33,6 @@ const migrations: { [version: number]: (db: SQLite.SQLiteDatabase) => Promise<vo
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tracked_account_id TEXT NOT NULL,
         followed_user_id TEXT NOT NULL,
-        followed_username TEXT NOT NULL,
-        profile_pic_url TEXT,
         is_baseline INTEGER NOT NULL DEFAULT 0,
         first_seen_at TEXT NOT NULL,
         last_seen_at TEXT NOT NULL,
@@ -29,7 +40,8 @@ const migrations: { [version: number]: (db: SQLite.SQLiteDatabase) => Promise<vo
         date_created TEXT NOT NULL,
         date_updated TEXT NOT NULL,
 
-        UNIQUE(tracked_account_id, followed_user_id)
+        UNIQUE(tracked_account_id, followed_user_id),
+        FOREIGN KEY(followed_user_id) REFERENCES instagrams(user_id)
       );
 
       CREATE INDEX IF NOT EXISTS idx_followings_tracked ON followings(tracked_account_id);
@@ -41,8 +53,6 @@ const migrations: { [version: number]: (db: SQLite.SQLiteDatabase) => Promise<vo
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tracked_account_id TEXT NOT NULL,
         follower_user_id TEXT NOT NULL,
-        follower_username TEXT NOT NULL,
-        profile_pic_url TEXT,
         is_baseline INTEGER NOT NULL DEFAULT 0,
         first_seen_at TEXT NOT NULL,
         last_seen_at TEXT NOT NULL,
@@ -50,7 +60,8 @@ const migrations: { [version: number]: (db: SQLite.SQLiteDatabase) => Promise<vo
         date_created TEXT NOT NULL,
         date_updated TEXT NOT NULL,
 
-        UNIQUE(tracked_account_id, follower_user_id)
+        UNIQUE(tracked_account_id, follower_user_id),
+        FOREIGN KEY(follower_user_id) REFERENCES instagrams(user_id)
       );
 
       CREATE INDEX IF NOT EXISTS idx_followers_tracked ON followers(tracked_account_id);
@@ -103,5 +114,6 @@ export const clearAllData = async (db: SQLite.SQLiteDatabase): Promise<void> => 
     DELETE FROM followings;
     DELETE FROM followers;
     DELETE FROM sync_state;
+    DELETE FROM instagrams;
   `);
 };
