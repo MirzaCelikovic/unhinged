@@ -1,10 +1,12 @@
-import { View, Text, ScrollView, Pressable, ActivityIndicator, TextInput, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator, TextInput, Alert, StyleSheet } from 'react-native';
 import { useState } from 'react';
 import { router } from 'expo-router';
 import { useAccountContext } from '~/contexts/AccountContext';
 import { useInstagram } from '~/contexts/InstagramContext';
 import { useTracks, useAddTrack } from '~/lib/useTracks';
 import { ChevronRight, Plus } from 'lucide-react-native';
+import Circles from '~/assets/circles.svg';
+import NotTracking from '~/components/NotTracking';
 
 export default function Tracking() {
   const { account } = useAccountContext();
@@ -26,11 +28,17 @@ export default function Tracking() {
 
     try {
       setIsFetchingUserId(true);
-      const userId = await fetchUserId(username);
+      const result = await fetchUserId(username);
+
+      // Check if account is accessible (either public or we follow them)
+      if (result.isPrivate && !result.followedByViewer) {
+        Alert.alert('Error', 'This account is private and you don\'t follow them. Please follow them first or choose a public account.');
+        return;
+      }
 
       await addTrack.mutateAsync({
         accountId: account.uuid,
-        userId: userId,
+        userId: result.userId,
         username: username,
       });
 
@@ -80,33 +88,28 @@ export default function Tracking() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View className="bg-background flex-1 items-center justify-center">
+        <View style={StyleSheet.absoluteFill} className="items-center justify-center">
+          <Circles width={700} height={700} />
+        </View>
         <ActivityIndicator size="large" color="#6b7280" />
       </View>
     );
   }
 
-  // Empty state with centered button/form
+  // Empty state
   if (tracks.length === 0) {
-    return (
-      <View className="flex-1 items-center justify-center bg-white">
-        {showAddForm ? (
-          renderAddForm()
-        ) : (
-          <Pressable
-            className="bg-blue-500 px-6 py-3 rounded-lg active:opacity-70"
-            onPress={() => setShowAddForm(true)}>
-            <Text className="text-white text-lg font-semibold">Start tracking</Text>
-          </Pressable>
-        )}
-      </View>
-    );
+    return <NotTracking />;
   }
 
   // List with accounts
   return (
-    <ScrollView className="flex-1 bg-white">
-      <View className="p-4">
+    <View className="bg-background flex-1">
+      <View style={StyleSheet.absoluteFill} className="items-center justify-center">
+        <Circles width={700} height={700} />
+      </View>
+      <ScrollView className="flex-1">
+        <View className="p-4 pt-32">
         <Text className="text-base font-medium text-gray-500 uppercase mb-3">Tracked Accounts</Text>
 
         <View className="gap-3">
@@ -136,8 +139,9 @@ export default function Tracking() {
             </Pressable>
           )}
         </View>
-      </View>
-    </ScrollView>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 

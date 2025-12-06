@@ -56,6 +56,7 @@ export default function RootLayout() {
                 <InstagramProvider>
                   <Stack>
                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                    <Stack.Screen name="track" options={{ presentation: 'modal', headerShown: false }} />
                   </Stack>
                 </InstagramProvider>
               </SheetProvider>

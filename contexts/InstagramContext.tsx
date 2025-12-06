@@ -17,6 +17,12 @@ const LOGIN_CHECK_DELAY_MS = 500;
 const FETCH_FOLLOWING_DELAY_MS = 1000;
 
 // Types
+interface UserIdResult {
+  userId: string;
+  isPrivate: boolean;
+  followedByViewer: boolean;
+}
+
 interface InstagramContextType {
   isLoggedIn: boolean | null;
   userId: string | null;
@@ -24,8 +30,9 @@ interface InstagramContextType {
   isSyncing: boolean;
   showLogin: () => void;
   disconnect: () => void;
-  fetchUserId: (username: string) => Promise<string>;
+  fetchUserId: (username: string) => Promise<UserIdResult>;
   fetchAccountMetadata: (username: string) => Promise<void>;
+  syncUser: (userId: string) => Promise<void>;
   sync: () => void;
 }
 
@@ -39,6 +46,8 @@ interface WebViewMessage {
   error?: string;
   biography?: string | null;
   mediaCount?: number | null;
+  isPrivate?: boolean;
+  followedByViewer?: boolean;
 }
 
 interface User {
@@ -81,7 +90,9 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const justLoggedInRef = useRef(false);
   const pendingFetchUserIdRef = useRef<string | null>(null);
   const pendingLoginCheckRef = useRef<string | null>(null);
-  const userIdFetchPromisesRef = useRef<Map<string, { resolve: (userId: string) => void; reject: (error: Error) => void }>>(new Map());
+  const userIdFetchPromisesRef = useRef<Map<string, { resolve: (result: UserIdResult) => void; reject: (error: Error) => void }>>(new Map());
+  const metadataFetchPromisesRef = useRef<Map<string, { resolve: () => void; reject: (error: Error) => void }>>(new Map());
+  const syncUserPromisesRef = useRef<Map<string, { resolve: () => void; reject: (error: Error) => void; followingComplete: boolean; followersComplete: boolean }>>(new Map());
 
   // Fetch following list for a user (internal helper)
   const fetchFollowing = (userIdToFetch: string, isMainUser: boolean = false) => {
@@ -206,6 +217,28 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     `);
   };
 
+  // Sync a specific user (returns promise that resolves when both following and followers are complete)
+  const syncUser = (userIdToSync: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (!isLoggedIn) {
+        reject(new Error('Not logged in'));
+        return;
+      }
+
+      // Track this sync
+      syncUserPromisesRef.current.set(userIdToSync, {
+        resolve,
+        reject,
+        followingComplete: false,
+        followersComplete: false,
+      });
+
+      // Fetch both following and followers
+      fetchFollowing(userIdToSync, false);
+      fetchFollowers(userIdToSync, false);
+    });
+  };
+
   // Public API to sync all accounts (main user + tracked accounts)
   const sync = () => {
     if (!isLoggedIn || !userId) {
@@ -278,6 +311,8 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         reject(new Error('WebView not ready'));
         return;
       }
+
+      metadataFetchPromisesRef.current.set(username, { resolve, reject });
 
       injectJS(`
         if (window.instagramAPI?.fetchAccountMetadata) {
@@ -404,6 +439,16 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           fetchingUsersRef.current.delete(data.userId!);
           handleFollowingComplete(data.userId!, data.users!);
 
+          // Check if syncUser promise should be resolved
+          const syncPromiseFollowing = syncUserPromisesRef.current.get(data.userId!);
+          if (syncPromiseFollowing) {
+            syncPromiseFollowing.followingComplete = true;
+            if (syncPromiseFollowing.followingComplete && syncPromiseFollowing.followersComplete) {
+              syncPromiseFollowing.resolve();
+              syncUserPromisesRef.current.delete(data.userId!);
+            }
+          }
+
           // Check if all fetches are complete
           if (fetchingUsersRef.current.size === 0) {
             setIsSyncing(false);
@@ -413,6 +458,16 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         case 'FOLLOWERS_COMPLETE':
           fetchingUsersRef.current.delete(`followers_${data.userId!}`);
           handleFollowersComplete(data.userId!, data.users!);
+
+          // Check if syncUser promise should be resolved
+          const syncPromiseFollowers = syncUserPromisesRef.current.get(data.userId!);
+          if (syncPromiseFollowers) {
+            syncPromiseFollowers.followersComplete = true;
+            if (syncPromiseFollowers.followingComplete && syncPromiseFollowers.followersComplete) {
+              syncPromiseFollowers.resolve();
+              syncUserPromisesRef.current.delete(data.userId!);
+            }
+          }
 
           // Check if all fetches are complete
           if (fetchingUsersRef.current.size === 0) {
@@ -440,7 +495,11 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           if (data.username && data.userId) {
             const promise = userIdFetchPromisesRef.current.get(data.username);
             if (promise) {
-              promise.resolve(data.userId);
+              promise.resolve({
+                userId: data.userId,
+                isPrivate: data.isPrivate || false,
+                followedByViewer: data.followedByViewer || false,
+              });
               userIdFetchPromisesRef.current.delete(data.username);
             }
           } else if (data.username && data.error) {
@@ -467,8 +526,20 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                   [data.userId, data.username, null, data.biography, data.mediaCount, now, now, data.biography, data.mediaCount, now]
                 );
                 console.log(`✅ Updated metadata for ${data.username}: bio="${data.biography}", posts=${data.mediaCount}`);
+
+                // Resolve promise if one exists
+                const promise = metadataFetchPromisesRef.current.get(data.username);
+                if (promise) {
+                  promise.resolve();
+                  metadataFetchPromisesRef.current.delete(data.username);
+                }
               } catch (error) {
                 console.error('Error updating account metadata:', error);
+                const promise = metadataFetchPromisesRef.current.get(data.username);
+                if (promise) {
+                  promise.reject(new Error('Failed to update metadata'));
+                  metadataFetchPromisesRef.current.delete(data.username);
+                }
               }
             };
             updateMetadata();
@@ -524,6 +595,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     disconnect: handleDisconnect,
     fetchUserId,
     fetchAccountMetadata,
+    syncUser,
     sync,
   };
 
@@ -824,9 +896,12 @@ const instagramAPI = `
         const data = await response.json();
 
         if (data.data && data.data.user && data.data.user.id) {
+          const user = data.data.user;
           sendMessage('USER_ID_FETCHED', {
             username: username,
-            userId: data.data.user.id
+            userId: user.id,
+            isPrivate: user.is_private || false,
+            followedByViewer: user.followed_by_viewer || false
           });
         } else {
           throw new Error('User ID not found in response');

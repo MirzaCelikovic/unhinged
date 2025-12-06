@@ -7,11 +7,12 @@ module.exports = {
     extend: {
       colors: {
         // App theme colors - customize these to match your brand
-        background: '#FFE51F', // Default screen background (light gray)
+        background: '#FFE51F', // Default screen background
         surface: '#ffffff', // Card/surface background
         primary: '#3b82f6', // Primary blue
         secondary: '#6b7280', // Secondary gray
         accent: '#8b5cf6', // Accent purple
+        error: '#D8514B', // Error red
         text: {
           primary: '#111827', // Primary text color
           secondary: '#6b7280', // Secondary text color
