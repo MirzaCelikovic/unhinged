@@ -82,10 +82,11 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [[isLoadingUserId, userId], setUserId] = useStorage('instagram_user_id');
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [webViewReady, setWebViewReady] = useState(false);
+  const [apiWebViewReady, setApiWebViewReady] = useState(false);
 
   // Refs
-  const webViewRef = useRef<WebView>(null);
+  const loginWebViewRef = useRef<WebView>(null);
+  const apiWebViewRef = useRef<WebView>(null);
   const fetchingUsersRef = useRef<Set<string>>(new Set());
   const justLoggedInRef = useRef(false);
   const pendingFetchUserIdRef = useRef<string | null>(null);
@@ -96,8 +97,8 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Fetch following list for a user (internal helper)
   const fetchFollowing = (userIdToFetch: string, isMainUser: boolean = false) => {
-    if (!webViewRef.current) {
-      console.warn('⚠️ fetchFollowing: WebView not ready');
+    if (!apiWebViewRef.current) {
+      console.warn('⚠️ fetchFollowing: API WebView not ready');
       return;
     }
 
@@ -106,24 +107,24 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
 
-    console.log('🔄 fetchFollowing:', userIdToFetch, 'webViewReady:', webViewReady);
+    console.log('🔄 fetchFollowing:', userIdToFetch, 'apiWebViewReady:', apiWebViewReady);
     fetchingUsersRef.current.add(userIdToFetch);
     setIsSyncing(true);
 
-    injectJS(`
+    apiWebViewRef.current.injectJavaScript(`(function(){
       console.log('📱 Injecting fetchFollowing for userId:', '${userIdToFetch}');
       if (window.instagramAPI?.fetchFollowing) {
         window.instagramAPI.fetchFollowing('${userIdToFetch}', ${isMainUser});
       } else {
         console.error('❌ window.instagramAPI.fetchFollowing not available');
       }
-    `);
+    })(); true;`);
   };
 
   // Fetch followers list for a user (internal helper)
   const fetchFollowers = (userIdToFetch: string, isMainUser: boolean = false) => {
-    if (!webViewRef.current) {
-      console.warn('⚠️ fetchFollowers: WebView not ready');
+    if (!apiWebViewRef.current) {
+      console.warn('⚠️ fetchFollowers: API WebView not ready');
       return;
     }
 
@@ -132,41 +133,41 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
 
-    console.log('🔄 fetchFollowers:', userIdToFetch, 'webViewReady:', webViewReady);
+    console.log('🔄 fetchFollowers:', userIdToFetch, 'apiWebViewReady:', apiWebViewReady);
     fetchingUsersRef.current.add(`followers_${userIdToFetch}`);
     setIsSyncing(true);
 
-    injectJS(`
+    apiWebViewRef.current.injectJavaScript(`(function(){
       console.log('📱 Injecting fetchFollowers for userId:', '${userIdToFetch}');
       if (window.instagramAPI?.fetchFollowers) {
         window.instagramAPI.fetchFollowers('${userIdToFetch}', ${isMainUser});
       } else {
         console.error('❌ window.instagramAPI.fetchFollowers not available');
       }
-    `);
+    })(); true;`);
   };
 
-  // Check login status when userId and WebView are ready
+  // Check login status when userId and API WebView are ready
   useEffect(() => {
     if (isLoadingUserId) return;
 
-    if (userId && webViewReady) {
+    if (userId && apiWebViewReady) {
       if (!justLoggedInRef.current) {
         checkLoginStatus(userId);
       }
-    } else if (!userId && webViewReady) {
+    } else if (!userId && apiWebViewReady) {
       setIsLoggedIn(false);
       clearWebViewSession();
     } else if (!userId) {
       setIsLoggedIn(false);
-    } else if (userId && !webViewReady) {
+    } else if (userId && !apiWebViewReady) {
       pendingLoginCheckRef.current = userId;
     }
-  }, [isLoadingUserId, userId, webViewReady]);
+  }, [isLoadingUserId, userId, apiWebViewReady]);
 
-  // Verify account matches and sync on fresh login
+  // Verify account matches (removed automatic sync - now handled by InitialSync component)
   useEffect(() => {
-    if (!isLoggedIn || !webViewReady || !userId || !account) return;
+    if (!isLoggedIn || !apiWebViewReady || !userId || !account) return;
 
     // Check if logged-in Instagram account matches the backend account
     if (account.instagram_user_id && account.instagram_user_id !== userId) {
@@ -181,21 +182,20 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
 
-    // Sync only if this is a fresh login (justLoggedInRef is set in LOGIN_SUCCESS handler)
+    // Reset fresh login flag (sync is now handled by InitialSync component)
     if (justLoggedInRef.current) {
       justLoggedInRef.current = false;
-      sync();
     }
-  }, [isLoggedIn, webViewReady, userId, account]);
+  }, [isLoggedIn, apiWebViewReady, userId, account]);
 
-  // Inject JavaScript helper
+  // Inject JavaScript helper (uses API WebView)
   const injectJS = (code: string) => {
-    webViewRef.current?.injectJavaScript(`(function(){${code}})(); true;`);
+    apiWebViewRef.current?.injectJavaScript(`(function(){${code}})(); true;`);
   };
 
   // Clear WebView session
   const clearWebViewSession = () => {
-    if (!webViewRef.current) return;
+    if (!apiWebViewRef.current) return;
 
     injectJS(`
       if (window.instagramAPI?.clearSession) {
@@ -203,12 +203,12 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     `);
 
-    webViewRef.current.clearCache?.(true);
+    apiWebViewRef.current.clearCache?.(true);
   };
 
   // Check if user is still logged in
   const checkLoginStatus = (userIdToCheck: string) => {
-    if (!webViewRef.current) return;
+    if (!apiWebViewRef.current) return;
 
     injectJS(`
       if (window.instagramAPI?.checkLoginStatus) {
@@ -277,7 +277,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Disconnect (logout)
   const handleDisconnect = () => {
-    if (!webViewRef.current || !userId) return;
+    if (!apiWebViewRef.current || !userId) return;
 
     injectJS(`
       if (window.instagramAPI?.logout) {
@@ -287,10 +287,10 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   // Fetch user ID by username
-  const fetchUserId = (username: string): Promise<string> => {
+  const fetchUserId = (username: string): Promise<UserIdResult> => {
     return new Promise((resolve, reject) => {
-      if (!webViewRef.current) {
-        reject(new Error('WebView not ready'));
+      if (!apiWebViewRef.current) {
+        reject(new Error('API WebView not ready'));
         return;
       }
 
@@ -307,16 +307,30 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Fetch account metadata (bio, media count, etc.) by navigating to profile
   const fetchAccountMetadata = (username: string): Promise<void> => {
     return new Promise((resolve, reject) => {
-      if (!webViewRef.current) {
-        reject(new Error('WebView not ready'));
+      if (!apiWebViewRef.current) {
+        console.log('❌ API WebView not ready for fetchAccountMetadata');
+        reject(new Error('API WebView not ready'));
         return;
       }
 
+      if (!apiWebViewReady) {
+        console.log('⏳ API WebView not ready yet, waiting...');
+        // Wait a bit for WebView to load
+        setTimeout(() => {
+          fetchAccountMetadata(username).then(resolve).catch(reject);
+        }, 500);
+        return;
+      }
+
+      console.log('📝 Storing promise for username:', username, 'apiWebViewReady:', apiWebViewReady);
       metadataFetchPromisesRef.current.set(username, { resolve, reject });
 
+      console.log('💉 Injecting fetchAccountMetadata for:', username);
       injectJS(`
         if (window.instagramAPI?.fetchAccountMetadata) {
           window.instagramAPI.fetchAccountMetadata('${username}');
+        } else {
+          console.error('❌ window.instagramAPI.fetchAccountMetadata not available');
         }
       `);
     });
@@ -354,11 +368,13 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Close login modal and stop polling
   const closeLoginModal = () => {
-    injectJS(`
-      if (window.instagramAPI?.stopLoginPolling) {
-        window.instagramAPI.stopLoginPolling();
-      }
-    `);
+    if (loginWebViewRef.current) {
+      loginWebViewRef.current.injectJavaScript(`(function(){
+        if (window.instagramAPI?.stopLoginPolling) {
+          window.instagramAPI.stopLoginPolling();
+        }
+      })(); true;`);
+    }
     setShowLoginModal(false);
   };
 
@@ -408,7 +424,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               await clearAllData(db);
 
               // Clear WebView cache and session
-              webViewRef.current?.clearCache?.(true);
+              apiWebViewRef.current?.clearCache?.(true);
               clearWebViewSession();
 
               // Disconnect Instagram account from backend
@@ -551,18 +567,22 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  // Handle WebView load
-  const handleWebViewLoad = () => {
-    setWebViewReady(true);
-
-    // Start login polling when WebView loads in login modal
-    if (showLoginModal) {
-      injectJS(`
+  // Handle login WebView load
+  const handleLoginWebViewLoad = () => {
+    console.log('📲 Login WebView loaded');
+    if (loginWebViewRef.current) {
+      loginWebViewRef.current.injectJavaScript(`(function(){
         if (window.instagramAPI?.startLoginPolling) {
           window.instagramAPI.startLoginPolling();
         }
-      `);
+      })(); true;`);
     }
+  };
+
+  // Handle API WebView load
+  const handleApiWebViewLoad = () => {
+    console.log('📲 API WebView loaded');
+    setApiWebViewReady(true);
 
     // Execute pending login check
     if (pendingLoginCheckRef.current) {
@@ -603,8 +623,8 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     <InstagramContext.Provider value={value}>
       {children}
 
-      {/* WebView - visible in modal for login, hidden for background API calls */}
-      {showLoginModal ? (
+      {/* Login WebView - only shown in modal for login */}
+      {showLoginModal && (
         <Modal visible={showLoginModal} animationType="slide" presentationStyle="pageSheet">
           <View className="flex-1 bg-white">
             <View className="flex-row items-center justify-between border-b border-gray-200 p-4">
@@ -614,28 +634,29 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               </Pressable>
             </View>
             <WebView
-              ref={webViewRef}
+              ref={loginWebViewRef}
               source={{ uri: 'https://www.instagram.com/accounts/login/' }}
               className="flex-1"
               onMessage={handleMessage}
-              onLoad={handleWebViewLoad}
+              onLoad={handleLoginWebViewLoad}
               injectedJavaScriptBeforeContentLoaded={instagramAPI}
               sharedCookiesEnabled={true}
             />
           </View>
         </Modal>
-      ) : (
-        <View style={{ height: 0, width: 0, opacity: 0 }}>
-          <WebView
-            ref={webViewRef}
-            source={{ uri: 'https://www.instagram.com/' }}
-            onMessage={handleMessage}
-            onLoad={handleWebViewLoad}
-            injectedJavaScriptBeforeContentLoaded={instagramAPI}
-            sharedCookiesEnabled={true}
-          />
-        </View>
       )}
+
+      {/* API WebView - always mounted but hidden, used for all API calls */}
+      <View style={{ height: 0, width: 0, opacity: 0 }}>
+        <WebView
+          ref={apiWebViewRef}
+          source={{ uri: 'https://www.instagram.com/' }}
+          onMessage={handleMessage}
+          onLoad={handleApiWebViewLoad}
+          injectedJavaScriptBeforeContentLoaded={instagramAPI}
+          sharedCookiesEnabled={true}
+        />
+      </View>
     </InstagramContext.Provider>
   );
 };
@@ -917,6 +938,7 @@ const instagramAPI = `
     // Fetch account metadata by making API call
     fetchAccountMetadata: async function(username) {
       try {
+        console.log('🌐 [WebView] Fetching metadata for:', username);
         const response = await fetch('https://www.instagram.com/api/v1/users/web_profile_info/?username=' + username, {
           credentials: 'include',
           headers: {
@@ -924,6 +946,8 @@ const instagramAPI = `
             'X-IG-App-ID': '${INSTAGRAM_APP_ID}'
           }
         });
+
+        console.log('🌐 [WebView] Response status:', response.status);
 
         if (!response.ok) {
           throw new Error('Failed to fetch profile: ' + response.status);
@@ -933,6 +957,7 @@ const instagramAPI = `
 
         if (data.data && data.data.user) {
           const user = data.data.user;
+          console.log('🌐 [WebView] Sending ACCOUNT_METADATA_FETCHED for:', user.username);
           sendMessage('ACCOUNT_METADATA_FETCHED', {
             userId: user.id,
             username: user.username,

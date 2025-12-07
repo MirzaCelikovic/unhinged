@@ -24,6 +24,7 @@ const migrations: { [version: number]: (db: SQLite.SQLiteDatabase) => Promise<vo
         instagram_user_id TEXT PRIMARY KEY,
         has_completed_baseline INTEGER NOT NULL DEFAULT 0,
         last_synced_at TEXT,
+        last_viewed_at TEXT,
         date_created TEXT NOT NULL,
         date_updated TEXT NOT NULL
       );

@@ -65,8 +65,12 @@ export const syncFollowingList = async (
   for (const user of newFollows) {
     await db.runAsync(
       `INSERT INTO followings (tracked_account_id, followed_user_id, is_baseline, first_seen_at, last_seen_at, date_created, date_updated)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [trackedAccountId, user.id, isBaseline ? 1 : 0, now, now, now, now]
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(tracked_account_id, followed_user_id) DO UPDATE SET
+         last_seen_at = ?,
+         ended_at = NULL,
+         date_updated = ?`,
+      [trackedAccountId, user.id, isBaseline ? 1 : 0, now, now, now, now, now, now]
     );
   }
 
@@ -151,8 +155,12 @@ export const syncFollowersList = async (
   for (const user of newFollowers) {
     await db.runAsync(
       `INSERT INTO followers (tracked_account_id, follower_user_id, is_baseline, first_seen_at, last_seen_at, date_created, date_updated)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [trackedAccountId, user.id, isBaseline ? 1 : 0, now, now, now, now]
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(tracked_account_id, follower_user_id) DO UPDATE SET
+         last_seen_at = ?,
+         ended_at = NULL,
+         date_updated = ?`,
+      [trackedAccountId, user.id, isBaseline ? 1 : 0, now, now, now, now, now, now]
     );
   }
 

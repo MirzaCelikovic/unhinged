@@ -18,15 +18,60 @@ import Circles from '~/assets/circles.svg';
 import InstagramCard from '~/components/InstagramCard';
 import ActivityList from '~/components/ActivityList';
 import NotConnected from '~/components/NotConnected';
+import InitialSync from '~/components/InitialSync';
 import { Instagram as InstagramType } from '~/lib/types';
+import { useAccountContext } from '~/contexts/AccountContext';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, runOnJS } from 'react-native-reanimated';
+
+type HomeState = 'notConnected' | 'initialSync' | 'connected';
 
 export default function Index() {
   const { isLoggedIn, isSyncing, showLogin, disconnect, sync, userId } = useInstagram();
+  const { account } = useAccountContext();
   const { data: stats } = useFollowerStats(userId);
   const db = useSQLiteContext();
   const queryClient = useQueryClient();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [instagramAccount, setInstagramAccount] = useState<InstagramType | null>(null);
+  const [homeState, setHomeState] = useState<HomeState | null>(null);
+  const contentOpacity = useSharedValue(1);
+
+  // Set initial home state when login status is determined
+  useEffect(() => {
+    if (isLoggedIn === null) return; // Wait for login check
+
+    if (homeState !== null) return; // Already initialized
+
+    if (isLoggedIn === false) {
+      setHomeState('notConnected');
+    } else {
+      // Returning user - go straight to connected
+      setHomeState('connected');
+    }
+  }, [isLoggedIn, homeState]);
+
+  // Handle login state changes (for fresh logins after initial load)
+  useEffect(() => {
+    if (isLoggedIn === true && homeState === 'notConnected') {
+      // Just logged in - transition to initial sync
+      contentOpacity.value = withTiming(0, { duration: 200 }, (finished) => {
+        if (finished) {
+          runOnJS(setHomeState)('initialSync');
+        }
+      });
+    } else if (isLoggedIn === false && homeState === 'connected') {
+      // Logged out - go back to not connected
+      setHomeState('notConnected');
+    }
+  }, [isLoggedIn, homeState]);
+
+  // Handle state transitions with fade in
+  useEffect(() => {
+    if (homeState === 'initialSync' || homeState === 'connected') {
+      contentOpacity.value = 0;
+      contentOpacity.value = withTiming(1, { duration: 200 });
+    }
+  }, [homeState]);
 
   // Update current time every minute to refresh the "X mins ago" display
   useEffect(() => {
@@ -44,6 +89,19 @@ export default function Index() {
       queryClient.invalidateQueries({ queryKey: ['followerStats', userId] });
     }
   }, [isSyncing, userId]);
+
+  const handleInitialSyncComplete = () => {
+    // Invalidate queries to fetch fresh data
+    if (userId) {
+      queryClient.invalidateQueries({ queryKey: ['followerStats', userId] });
+    }
+
+    contentOpacity.value = withTiming(0, { duration: 200 }, (finished) => {
+      if (finished) {
+        runOnJS(setHomeState)('connected');
+      }
+    });
+  };
 
   // Fetch Instagram account data
   useEffect(() => {
@@ -90,6 +148,10 @@ export default function Index() {
     return `Updated ${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
   };
 
+  const contentAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: contentOpacity.value,
+  }));
+
   // Show spinner while checking login status
   if (isLoggedIn === null) {
     return (
@@ -102,17 +164,32 @@ export default function Index() {
     );
   }
 
-  // Show login button if not logged in
-  if (!isLoggedIn) {
-    return <NotConnected onConnect={showLogin} />;
-  }
-
   return (
     <View className="bg-background flex-1">
       <View style={StyleSheet.absoluteFill} className="items-center justify-center">
         <Circles width={700} height={700} />
       </View>
-      <ScrollView className="flex-1">
+
+      {homeState === 'notConnected' && (
+        <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
+          <NotConnected onConnect={showLogin} />
+        </Animated.View>
+      )}
+
+      {homeState === 'initialSync' && userId && account?.instagram_username && (
+        <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
+          <InitialSync
+            userId={userId}
+            username={account.instagram_username}
+            onComplete={handleInitialSyncComplete}
+            isMainAccount={true}
+          />
+        </Animated.View>
+      )}
+
+      {homeState === 'connected' && (
+        <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
+          <ScrollView className="flex-1">
         <View className="p-4 pt-32">
           {/* Header with last sync time and refresh button */}
           <View className="flex-row items-center justify-between px-3 py-1">
@@ -136,7 +213,9 @@ export default function Index() {
           {/* Activity List */}
           <ActivityList stats={stats} />
         </View>
-      </ScrollView>
+          </ScrollView>
+        </Animated.View>
+      )}
     </View>
   );
 }

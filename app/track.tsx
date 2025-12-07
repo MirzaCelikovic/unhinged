@@ -43,16 +43,20 @@ export default function TrackModal() {
     setIsLoading(true);
 
     try {
+      console.log('🔍 Fetching user ID for:', trimmedUsername);
       // Fetch user ID and check if we have access
       const result = await fetchUserId(trimmedUsername);
+      console.log('✅ Got result:', result);
 
       // Check if account is accessible (either public or we follow them)
       if (result.isPrivate && !result.followedByViewer) {
+        console.log('❌ Account is private and not followed');
         setError('You are not following this account');
         return;
       }
 
       // Valid account - fade out and move to syncing state
+      console.log('✅ Valid account, transitioning to syncing');
       setUserId(result.userId);
       setUsername(trimmedUsername);
       contentOpacity.value = withTiming(0, { duration: 200 }, (finished) => {
@@ -61,6 +65,7 @@ export default function TrackModal() {
         }
       });
     } catch (err) {
+      console.log('❌ Error fetching user:', err);
       setError('Account not found');
     } finally {
       setIsLoading(false);

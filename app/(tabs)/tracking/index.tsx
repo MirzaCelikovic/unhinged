@@ -1,90 +1,93 @@
-import { View, Text, ScrollView, Pressable, ActivityIndicator, TextInput, Alert, StyleSheet } from 'react-native';
-import { useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  ActivityIndicator,
+  StyleSheet,
+  Image,
+} from 'react-native';
 import { router } from 'expo-router';
+import { useState, useEffect } from 'react';
 import { useAccountContext } from '~/contexts/AccountContext';
-import { useInstagram } from '~/contexts/InstagramContext';
-import { useTracks, useAddTrack } from '~/lib/useTracks';
-import { ChevronRight, Plus } from 'lucide-react-native';
+import { useTracks } from '~/lib/useTracks';
+import { useSQLiteContext } from 'expo-sqlite';
+import { CircleChevronRight } from 'lucide-react-native';
 import Circles from '~/assets/circles.svg';
 import NotTracking from '~/components/NotTracking';
+import Button from '~/components/Button';
+import { Instagram } from '~/lib/types';
+import { useAccountActivity } from '~/lib/useAccountActivity';
+
+interface TrackedAccountItemProps {
+  userId: string;
+  username: string;
+  accountData?: Instagram;
+}
+
+function TrackedAccountItem({ userId, username, accountData }: TrackedAccountItemProps) {
+  const { data: activity } = useAccountActivity(userId);
+
+  return (
+    <Pressable
+      className="flex-row items-center justify-between rounded-3xl bg-gray-100 p-4 active:opacity-50"
+      onPress={() =>
+        router.push({
+          pathname: '/(tabs)/tracking/account',
+          params: { userId, username },
+        })
+      }>
+      <View className="flex-row items-center gap-3">
+        {accountData?.profile_pic_url ? (
+          <Image
+            source={{ uri: accountData.profile_pic_url }}
+            className="h-[60px] w-[60px] rounded-full"
+          />
+        ) : (
+          <View className="h-[60px] w-[60px] rounded-full bg-gray-300" />
+        )}
+        <Text className="font-roboto-bold text-xl text-gray-900">@{username}</Text>
+      </View>
+      <View className="flex-row items-center gap-2">
+        {activity.hasNewActivity && <View className="bg-error h-3 w-3 rounded-full" />}
+        <CircleChevronRight size={24} color="black" />
+      </View>
+    </Pressable>
+  );
+}
 
 export default function Tracking() {
   const { account } = useAccountContext();
-  const { fetchUserId } = useInstagram();
   const { data: tracks = [], isLoading } = useTracks(account?.uuid || null);
-  const addTrack = useAddTrack();
+  const db = useSQLiteContext();
+  const [trackedAccountsData, setTrackedAccountsData] = useState<Map<string, Instagram>>(new Map());
 
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newUsername, setNewUsername] = useState('');
-  const [isFetchingUserId, setIsFetchingUserId] = useState(false);
+  // Fetch Instagram data for all tracked accounts
+  useEffect(() => {
+    if (tracks.length === 0) return;
 
-  const handleAddTrack = async () => {
-    if (!account?.uuid || !newUsername.trim()) {
-      Alert.alert('Error', 'Please enter a username');
-      return;
-    }
+    const fetchTrackedData = async () => {
+      const dataMap = new Map<string, Instagram>();
 
-    const username = newUsername.trim();
-
-    try {
-      setIsFetchingUserId(true);
-      const result = await fetchUserId(username);
-
-      // Check if account is accessible (either public or we follow them)
-      if (result.isPrivate && !result.followedByViewer) {
-        Alert.alert('Error', 'This account is private and you don\'t follow them. Please follow them first or choose a public account.');
-        return;
+      for (const track of tracks) {
+        try {
+          const account = await db.getFirstAsync<Instagram>(
+            'SELECT user_id, username, profile_pic_url, biography, media_count FROM instagrams WHERE user_id = ?',
+            [track.user_id]
+          );
+          if (account) {
+            dataMap.set(track.user_id, account);
+          }
+        } catch (error) {
+          console.error('Error fetching tracked account data:', error);
+        }
       }
 
-      await addTrack.mutateAsync({
-        accountId: account.uuid,
-        userId: result.userId,
-        username: username,
-      });
+      setTrackedAccountsData(dataMap);
+    };
 
-      setNewUsername('');
-      setShowAddForm(false);
-    } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to add track');
-    } finally {
-      setIsFetchingUserId(false);
-    }
-  };
-
-
-  const renderAddForm = () => (
-    <View className="bg-gray-100 rounded-2xl p-4 gap-3">
-      <TextInput
-        className="bg-white border border-gray-300 rounded-lg p-3 text-base"
-        placeholder="Instagram Username"
-        value={newUsername}
-        onChangeText={setNewUsername}
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
-      <View className="flex-row gap-2">
-        <Pressable
-          className="flex-1 bg-white py-3 rounded-lg active:opacity-70"
-          onPress={() => {
-            setShowAddForm(false);
-            setNewUsername('');
-          }}
-          disabled={isFetchingUserId || addTrack.isPending}>
-          <Text className="text-center font-semibold text-gray-900">Cancel</Text>
-        </Pressable>
-        <Pressable
-          className="flex-1 bg-blue-500 py-3 rounded-lg active:bg-blue-600"
-          onPress={handleAddTrack}
-          disabled={isFetchingUserId || addTrack.isPending}>
-          {isFetchingUserId || addTrack.isPending ? (
-            <ActivityIndicator color="white" size="small" />
-          ) : (
-            <Text className="text-center font-semibold text-white">Add Account</Text>
-          )}
-        </Pressable>
-      </View>
-    </View>
-  );
+    fetchTrackedData();
+  }, [tracks]);
 
   if (isLoading) {
     return (
@@ -108,40 +111,31 @@ export default function Tracking() {
       <View style={StyleSheet.absoluteFill} className="items-center justify-center">
         <Circles width={700} height={700} />
       </View>
-      <ScrollView className="flex-1">
-        <View className="p-4 pt-32">
-        <Text className="text-base font-medium text-gray-500 uppercase mb-3">Tracked Accounts</Text>
-
-        <View className="gap-3">
-          {tracks.map((item) => (
-            <Pressable
-              key={item.user_id}
-              className="bg-gray-100 rounded-2xl p-4 flex-row items-center justify-between active:bg-gray-200"
-              onPress={() =>
-                router.push({
-                  pathname: '/(tabs)/tracking/account',
-                  params: { userId: item.user_id, username: item.username },
-                })
-              }>
-              <Text className="text-lg font-semibold text-gray-900">@{item.username}</Text>
-              <ChevronRight size={20} color="#9ca3af" />
-            </Pressable>
-          ))}
-
-          {showAddForm ? (
-            renderAddForm()
-          ) : (
-            <Pressable
-              className="bg-gray-100 rounded-2xl p-4 flex-row items-center justify-center gap-2 active:bg-gray-200"
-              onPress={() => setShowAddForm(true)}>
-              <Plus size={20} color="#6b7280" />
-              <Text className="text-lg font-semibold text-gray-900">Add Account</Text>
-            </Pressable>
-          )}
+      <View className="flex-1 justify-between p-4 pt-32">
+        {/* Tracked accounts list */}
+        <View>
+          <View className="gap-3">
+            {tracks.map((item) => (
+              <TrackedAccountItem
+                key={item.user_id}
+                userId={item.user_id}
+                username={item.username}
+                accountData={trackedAccountsData.get(item.user_id)}
+              />
+            ))}
+          </View>
         </View>
+
+        {/* Add another account CTA - bottom aligned */}
+        <View className="background-red items-center pb-24">
+          <Text className="font-roboto-extrablack px-2 text-center text-4xl tracking-tighter">
+            Why stop now? The more the messier.
+          </Text>
+          <View className="mt-6 w-full">
+            <Button label="Track account" mode="add" onPress={() => router.push('/track')} />
+          </View>
         </View>
-      </ScrollView>
+      </View>
     </View>
   );
 }
-

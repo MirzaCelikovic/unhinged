@@ -18,6 +18,7 @@ interface InitialSyncProps {
   userId: string;
   username: string;
   onComplete: () => void;
+  isMainAccount?: boolean;
 }
 
 type SyncStepState = 'waiting' | 'active' | 'completed';
@@ -89,7 +90,7 @@ function SyncStep({ label, state }: SyncStepProps) {
   );
 }
 
-export default function InitialSync({ userId, username, onComplete }: InitialSyncProps) {
+export default function InitialSync({ userId, username, onComplete, isMainAccount = false }: InitialSyncProps) {
   const [step1, setStep1] = useState<SyncStepState>('active');
   const [step2, setStep2] = useState<SyncStepState>('waiting');
   const [step3, setStep3] = useState<SyncStepState>('waiting');
@@ -102,17 +103,28 @@ export default function InitialSync({ userId, username, onComplete }: InitialSyn
       if (!account?.uuid) return;
 
       try {
-        // Step 1: Save tracked account in backend and fetch metadata
+        // Step 1: Save account in backend and fetch metadata
         setStep1('active');
-        await addTrack.mutateAsync({
-          accountId: account.uuid,
-          userId: userId,
-          username: username,
-        });
-        // Fetch account metadata
+
+        if (!isMainAccount) {
+          // For tracked accounts: add to tracks
+          console.log('📝 Adding track for:', username);
+          await addTrack.mutateAsync({
+            accountId: account.uuid,
+            userId: userId,
+            username: username,
+          });
+          console.log('✅ Track added');
+        }
+        // Note: For main account, it's already connected via LOGIN_SUCCESS handler
+
+        // Fetch account metadata (bio, media count)
+        console.log('📡 Fetching metadata for:', username);
         await fetchAccountMetadata(username);
+        console.log('✅ Metadata fetched');
         // Add 2s delay for UX
         await new Promise((resolve) => setTimeout(resolve, 2000));
+        console.log('✅ Step 1 completed');
         setStep1('completed');
 
         // Step 2: Fetch following and followers from Instagram

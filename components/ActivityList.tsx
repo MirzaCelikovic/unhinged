@@ -41,7 +41,7 @@ export default function ActivityList({ stats }: ActivityListProps) {
             <Text className="text-lg font-semibold text-gray-900">{item.label}</Text>
             <View className="flex-row items-center gap-2">
               <Text className="px-4 text-lg font-semibold text-gray-500">{item.count}</Text>
-              <CircleChevronRight size={20} color="black" />
+              <CircleChevronRight size={24} color="black" />
             </View>
           </Pressable>
           {index < items.length - 1 && <View className="mx-4 h-[1px] bg-gray-100" />}
