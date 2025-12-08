@@ -7,32 +7,30 @@ import {
   StyleSheet,
   SafeAreaView,
 } from 'react-native';
-import { useInstagram } from '~/contexts/InstagramContext';
+import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext';
+import { useInstagram } from '~/lib/useInstagram';
 import { useEffect, useState } from 'react';
 import { ChevronRight, RefreshCcw } from 'lucide-react-native';
 import { useFollowerStats } from '~/lib/useFollowerStats';
 import { useQueryClient } from '@tanstack/react-query';
-import { useSQLiteContext } from 'expo-sqlite';
 import { router } from 'expo-router';
 import Circles from '~/assets/circles.svg';
 import InstagramCard from '~/components/InstagramCard';
 import ActivityList from '~/components/ActivityList';
 import NotConnected from '~/components/NotConnected';
 import InitialSync from '~/components/InitialSync';
-import { Instagram as InstagramType } from '~/lib/types';
 import { useAccountContext } from '~/contexts/AccountContext';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, runOnJS } from 'react-native-reanimated';
 
 type HomeState = 'notConnected' | 'initialSync' | 'connected';
 
 export default function Index() {
-  const { isLoggedIn, isSyncing, showLogin, disconnect, sync, userId } = useInstagram();
+  const { isLoggedIn, isSyncing, showLogin, disconnect, sync, userId } = useInstagramContext();
   const { account } = useAccountContext();
+  const { data: instagram } = useInstagram(userId);
   const { data: stats } = useFollowerStats(userId);
-  const db = useSQLiteContext();
   const queryClient = useQueryClient();
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [instagramAccount, setInstagramAccount] = useState<InstagramType | null>(null);
   const [homeState, setHomeState] = useState<HomeState | null>(null);
   const contentOpacity = useSharedValue(1);
 
@@ -103,35 +101,6 @@ export default function Index() {
     });
   };
 
-  // Fetch Instagram account data
-  useEffect(() => {
-    if (!userId) return;
-
-    const fetchInstagramAccount = async () => {
-      try {
-        const account = await db.getFirstAsync<InstagramType>(
-          `SELECT
-            i.user_id,
-            i.username,
-            i.profile_pic_url,
-            i.biography,
-            i.media_count,
-            i.date_created,
-            i.date_updated,
-            (SELECT COUNT(*) FROM followings WHERE tracked_account_id = i.user_id AND ended_at IS NULL) as following_count,
-            (SELECT COUNT(*) FROM followers WHERE tracked_account_id = i.user_id AND ended_at IS NULL) as followers_count
-           FROM instagrams i
-           WHERE i.user_id = ?`,
-          [userId]
-        );
-        setInstagramAccount(account || null);
-      } catch (error) {
-        console.error('Error fetching Instagram account:', error);
-      }
-    };
-
-    fetchInstagramAccount();
-  }, [userId, isSyncing]);
 
   const formatLastSyncTime = (timestamp: string | null): string => {
     if (!timestamp) return 'Never synced';
@@ -204,9 +173,9 @@ export default function Index() {
           </View>
 
           {/* Instagram Account Card */}
-          {instagramAccount && (
+          {instagram && (
             <View className="mb-6">
-              <InstagramCard account={instagramAccount} />
+              <InstagramCard account={instagram} />
             </View>
           )}
 

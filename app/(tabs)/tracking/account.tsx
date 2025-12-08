@@ -2,7 +2,7 @@ import { View, Alert, ScrollView, StyleSheet, SafeAreaView, Pressable } from 're
 import { useLocalSearchParams, router } from 'expo-router';
 import { X } from 'lucide-react-native';
 import { useAccountContext } from '~/contexts/AccountContext';
-import { useRemoveTrackedInstagram } from '~/lib/useInstagram';
+import { useInstagram, useRemoveTrackedInstagram } from '~/lib/useInstagram';
 import { useFollowerStats } from '~/lib/useFollowerStats';
 import Circles from '~/assets/circles.svg';
 import Logo from '~/assets/logo_black.svg';
@@ -12,11 +12,11 @@ import Button from '~/components/Button';
 
 export default function TrackingAccount() {
   const { userId, username } = useLocalSearchParams<{ userId: string; username: string }>();
-  const { account, trackedInstagrams } = useAccountContext();
+  const { account } = useAccountContext();
   const removeTrackedInstagram = useRemoveTrackedInstagram();
 
-  // Find the Instagram data for this account from the context
-  const instagram = trackedInstagrams.find((ig) => ig.user_id === userId);
+  // Get Instagram data for this account
+  const { data: instagram } = useInstagram(userId || null);
 
   // Get follower stats for this account
   const { data: stats } = useFollowerStats(userId || null);

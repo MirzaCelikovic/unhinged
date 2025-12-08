@@ -38,7 +38,16 @@ interface InstagramContextType {
 }
 
 interface WebViewMessage {
-  type: 'LOGIN_SUCCESS' | 'LOGOUT_SUCCESS' | 'LOGIN_STATUS_CHECK' | 'FOLLOWING_COMPLETE' | 'FOLLOWERS_COMPLETE' | 'FETCH_ERROR' | 'LOGOUT_ERROR' | 'USER_ID_FETCHED' | 'ACCOUNT_METADATA_FETCHED';
+  type:
+    | 'LOGIN_SUCCESS'
+    | 'LOGOUT_SUCCESS'
+    | 'LOGIN_STATUS_CHECK'
+    | 'FOLLOWING_COMPLETE'
+    | 'FOLLOWERS_COMPLETE'
+    | 'FETCH_ERROR'
+    | 'LOGOUT_ERROR'
+    | 'USER_ID_FETCHED'
+    | 'ACCOUNT_METADATA_FETCHED';
   userId?: string;
   username?: string;
   success?: boolean;
@@ -46,7 +55,10 @@ interface WebViewMessage {
   isMainUser?: boolean;
   error?: string;
   biography?: string | null;
+  profilePicUrl?: string | null;
   mediaCount?: number | null;
+  followersCount?: number | null;
+  followingCount?: number | null;
   isPrivate?: boolean;
   followedByViewer?: boolean;
 }
@@ -93,9 +105,23 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const justLoggedInRef = useRef(false);
   const pendingFetchUserIdRef = useRef<string | null>(null);
   const pendingLoginCheckRef = useRef<string | null>(null);
-  const userIdFetchPromisesRef = useRef<Map<string, { resolve: (result: UserIdResult) => void; reject: (error: Error) => void }>>(new Map());
-  const metadataFetchPromisesRef = useRef<Map<string, { resolve: () => void; reject: (error: Error) => void }>>(new Map());
-  const syncUserPromisesRef = useRef<Map<string, { resolve: () => void; reject: (error: Error) => void; followingComplete: boolean; followersComplete: boolean }>>(new Map());
+  const userIdFetchPromisesRef = useRef<
+    Map<string, { resolve: (result: UserIdResult) => void; reject: (error: Error) => void }>
+  >(new Map());
+  const metadataFetchPromisesRef = useRef<
+    Map<string, { resolve: () => void; reject: (error: Error) => void }>
+  >(new Map());
+  const syncUserPromisesRef = useRef<
+    Map<
+      string,
+      {
+        resolve: () => void;
+        reject: (error: Error) => void;
+        followingComplete: boolean;
+        followersComplete: boolean;
+      }
+    >
+  >(new Map());
 
   // Fetch following list for a user (internal helper)
   const fetchFollowing = (userIdToFetch: string, isMainUser: boolean = false) => {
@@ -248,7 +274,12 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
 
-    console.log('🔄 Starting sync - userId:', userId, 'tracked accounts:', trackedInstagrams.length);
+    console.log(
+      '🔄 Starting sync - userId:',
+      userId,
+      'tracked accounts:',
+      trackedInstagrams.length
+    );
 
     // Sync the main user (following + followers)
     fetchFollowing(userId, false);
@@ -324,7 +355,12 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return;
       }
 
-      console.log('📝 Storing promise for username:', username, 'apiWebViewReady:', apiWebViewReady);
+      console.log(
+        '📝 Storing promise for username:',
+        username,
+        'apiWebViewReady:',
+        apiWebViewReady
+      );
       metadataFetchPromisesRef.current.set(username, { resolve, reject });
 
       console.log('💉 Injecting fetchAccountMetadata for:', username);
@@ -341,9 +377,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Handle following list completion
   const handleFollowingComplete = async (userId: string, users: User[]) => {
     // Deduplicate users
-    const deduplicatedUsers = Array.from(
-      new Map(users.map((user) => [user.id, user])).values()
-    );
+    const deduplicatedUsers = Array.from(new Map(users.map((user) => [user.id, user])).values());
 
     try {
       // Sync to SQLite
@@ -360,9 +394,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Handle followers list completion
   const handleFollowersComplete = async (userId: string, users: User[]) => {
     // Deduplicate users
-    const deduplicatedUsers = Array.from(
-      new Map(users.map((user) => [user.id, user])).values()
-    );
+    const deduplicatedUsers = Array.from(new Map(users.map((user) => [user.id, user])).values());
 
     try {
       // Sync to SQLite
@@ -506,7 +538,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             fetchingUsersRef.current.delete(data.userId);
             fetchingUsersRef.current.delete(`followers_${data.userId}`);
           }
-          console.error('❌ Error:', data.error);
+          console.log('❌ Error:', data.error);
 
           if (fetchingUsersRef.current.size === 0) {
             setIsSyncing(false);
@@ -542,23 +574,38 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             const updateMetadata = async () => {
               try {
                 const now = new Date().toISOString();
-                console.log(`📝 Storing metadata for ${data.username}:`, {
-                  userId: data.userId,
-                  profilePicUrl: data.profilePicUrl,
-                  biography: data.biography,
-                  mediaCount: data.mediaCount
-                });
                 await db.runAsync(
-                  `INSERT INTO instagrams (user_id, username, profile_pic_url, biography, media_count, date_created, date_updated)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)
+                  `INSERT INTO instagrams (user_id, username, biography, profile_pic_url, media_count, followers_count, following_count, date_created, date_updated)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                    ON CONFLICT(user_id) DO UPDATE SET
-                     profile_pic_url = ?,
                      biography = ?,
+                     profile_pic_url = ?,
                      media_count = ?,
+                     followers_count = ?,
+                     following_count = ?,
                      date_updated = ?`,
-                  [data.userId, data.username, data.profilePicUrl, data.biography, data.mediaCount, now, now, data.profilePicUrl, data.biography, data.mediaCount, now]
+                  [
+                    data.userId,
+                    data.username,
+                    data.biography,
+                    data.profilePicUrl,
+                    data.mediaCount,
+                    data.followersCount,
+                    data.followingCount,
+                    now,
+                    now,
+                    data.biography,
+                    data.profilePicUrl,
+                    data.mediaCount,
+                    data.followersCount,
+                    data.followingCount,
+                    now,
+                  ]
                 );
-                console.log(`✅ Updated metadata for ${data.username}: pic="${data.profilePicUrl}", bio="${data.biography}", posts=${data.mediaCount}`);
+                console.log(`✅ Updated metadata for ${data.username}`);
+
+                // Invalidate instagram cache for this user
+                queryClient.invalidateQueries({ queryKey: ['instagram', data.userId] });
 
                 // Resolve promise if one exists
                 const promise = metadataFetchPromisesRef.current.get(data.username);
@@ -812,6 +859,7 @@ const instagramAPI = `
         let allUsers = [];
         let hasMore = true;
         let maxId = null;
+        let pageNum = 0;
 
         while (hasMore) {
           let url = 'https://www.instagram.com/api/v1/friendships/' + userId + '/following/?count=50';
@@ -867,9 +915,10 @@ const instagramAPI = `
         let allUsers = [];
         let hasMore = true;
         let maxId = null;
+        let pageNum = 0;
 
         while (hasMore) {
-          let url = 'https://www.instagram.com/api/v1/friendships/' + userId + '/followers/?count=50';
+          let url = 'https://www.instagram.com/api/v1/friendships/' + userId + '/followers/?count=50&search_surface=follow_list_page';
           if (maxId) url += '&max_id=' + maxId;
 
           const response = await fetch(url, {
@@ -974,17 +1023,19 @@ const instagramAPI = `
 
         if (data.data && data.data.user) {
           const user = data.data.user;
+          const followersCount = user.edge_followed_by ? user.edge_followed_by.count : null;
+          const followingCount = user.edge_follow ? user.edge_follow.count : null;
           const profilePicUrl = user.profile_pic_url_hd || user.profile_pic_url || null;
-          console.log('🌐 [WebView] Sending ACCOUNT_METADATA_FETCHED for:', user.username);
-          console.log('🌐 [WebView] Profile pic URL:', profilePicUrl);
-          console.log('🌐 [WebView] Biography:', user.biography);
-          console.log('🌐 [WebView] Media count:', user.edge_owner_to_timeline_media ? user.edge_owner_to_timeline_media.count : null);
+          const mediaCount = user.edge_owner_to_timeline_media ? user.edge_owner_to_timeline_media.count : null;
+
           sendMessage('ACCOUNT_METADATA_FETCHED', {
             userId: user.id,
             username: user.username,
             biography: user.biography || null,
-            mediaCount: user.edge_owner_to_timeline_media ? user.edge_owner_to_timeline_media.count : null,
-            profilePicUrl: profilePicUrl
+            profilePicUrl: profilePicUrl,
+            mediaCount: mediaCount,
+            followersCount: followersCount,
+            followingCount: followingCount
           });
         } else {
           throw new Error('User data not found in response');

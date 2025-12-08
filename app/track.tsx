@@ -14,7 +14,7 @@ import StartTracking from '~/components/StartTracking';
 import InitialSync from '~/components/InitialSync';
 import StartedTracking from '~/components/StartedTracking';
 import { useInstagram } from '~/contexts/InstagramContext';
-import { useSQLiteContext } from 'expo-sqlite';
+import { useAccountContext } from '~/contexts/AccountContext';
 import { Instagram as InstagramType } from '~/lib/types';
 
 type TrackState = 'start' | 'syncing' | 'tracking';
@@ -25,9 +25,8 @@ export default function TrackModal() {
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [trackedAccount, setTrackedAccount] = useState<InstagramType | null>(null);
   const { fetchUserId } = useInstagram();
-  const db = useSQLiteContext();
+  const { trackedInstagrams } = useAccountContext();
   const contentOpacity = useSharedValue(1);
 
   const handleContinue = async (inputUsername: string) => {
@@ -73,28 +72,7 @@ export default function TrackModal() {
   };
 
   const handleSyncComplete = async () => {
-    // Fetch the tracked account data from database
-    try {
-      const account = await db.getFirstAsync<InstagramType>(
-        `SELECT
-          i.user_id,
-          i.username,
-          i.profile_pic_url,
-          i.biography,
-          i.media_count,
-          i.date_created,
-          i.date_updated,
-          (SELECT COUNT(*) FROM followings WHERE tracked_account_id = i.user_id AND ended_at IS NULL) as following_count,
-          (SELECT COUNT(*) FROM followers WHERE tracked_account_id = i.user_id AND ended_at IS NULL) as followers_count
-         FROM instagrams i
-         WHERE i.user_id = ?`,
-        [userId]
-      );
-      setTrackedAccount(account || null);
-    } catch (error) {
-      console.error('Error fetching tracked account:', error);
-    }
-
+    // Transition to tracking state - data will come from context
     contentOpacity.value = withTiming(0, { duration: 200 }, (finished) => {
       if (finished) {
         runOnJS(setState)('tracking');
@@ -149,9 +127,12 @@ export default function TrackModal() {
         </Animated.View>
       )}
 
-      {state === 'tracking' && trackedAccount && (
+      {state === 'tracking' && (
         <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
-          <StartedTracking account={trackedAccount} onContinue={() => router.back()} />
+          <StartedTracking
+            account={trackedInstagrams.find((ig) => ig.user_id === userId) || null}
+            onContinue={() => router.back()}
+          />
         </Animated.View>
       )}
     </View>

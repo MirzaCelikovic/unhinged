@@ -28,23 +28,23 @@ export const syncFollowingList = async (
   // Upsert all users into instagrams table first
   for (const user of currentUsers) {
     await db.runAsync(
-      `INSERT INTO instagrams (user_id, username, profile_pic_url, biography, media_count, date_created, date_updated)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO instagrams (user_id, username, biography, profile_pic_url, media_count, followers_count, following_count, date_created, date_updated)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(user_id) DO UPDATE SET
          username = ?,
          profile_pic_url = ?,
          date_updated = ?`,
-      [user.id, user.username, user.profile_pic_url || null, null, null, now, now, user.username, user.profile_pic_url || null, now]
+      [user.id, user.username, null, user.profile_pic_url || null, null, null, null, now, now, user.username, user.profile_pic_url || null, now]
     );
   }
 
-  // Check if baseline has been completed
-  const syncState = await db.getFirstAsync<{ has_completed_baseline: number }>(
-    'SELECT has_completed_baseline FROM sync_state WHERE instagram_user_id = ?',
+  // Check if this is the first sync (baseline) by seeing if any followings exist for this account
+  const existingCount = await db.getFirstAsync<{ count: number }>(
+    'SELECT COUNT(*) as count FROM followings WHERE tracked_account_id = ?',
     [trackedAccountId]
   );
 
-  const isBaseline = !syncState || syncState.has_completed_baseline === 0;
+  const isBaseline = existingCount?.count === 0;
 
   // Get existing followings that are still active
   const existing = await db.getAllAsync<{ followed_user_id: string }>(
@@ -121,23 +121,23 @@ export const syncFollowersList = async (
   // Upsert all users into instagrams table first
   for (const user of currentUsers) {
     await db.runAsync(
-      `INSERT INTO instagrams (user_id, username, profile_pic_url, biography, media_count, date_created, date_updated)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO instagrams (user_id, username, biography, profile_pic_url, media_count, followers_count, following_count, date_created, date_updated)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(user_id) DO UPDATE SET
          username = ?,
          profile_pic_url = ?,
          date_updated = ?`,
-      [user.id, user.username, user.profile_pic_url || null, null, null, now, now, user.username, user.profile_pic_url || null, now]
+      [user.id, user.username, null, user.profile_pic_url || null, null, null, null, now, now, user.username, user.profile_pic_url || null, now]
     );
   }
 
-  // Check if baseline has been completed
-  const syncState = await db.getFirstAsync<{ has_completed_baseline: number }>(
-    'SELECT has_completed_baseline FROM sync_state WHERE instagram_user_id = ?',
+  // Check if this is the first sync (baseline) by seeing if any followers exist for this account
+  const existingCount = await db.getFirstAsync<{ count: number }>(
+    'SELECT COUNT(*) as count FROM followers WHERE tracked_account_id = ?',
     [trackedAccountId]
   );
 
-  const isBaseline = !syncState || syncState.has_completed_baseline === 0;
+  const isBaseline = existingCount?.count === 0;
 
   // Get existing followers that are still active
   const existing = await db.getAllAsync<{ follower_user_id: string }>(

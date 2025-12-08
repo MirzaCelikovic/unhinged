@@ -65,13 +65,13 @@ const fetchInstagramsData = async (db: any, userIds: string[]): Promise<Map<stri
       `SELECT
         user_id,
         username,
-        profile_pic_url,
         biography,
+        profile_pic_url,
         media_count,
+        followers_count,
+        following_count,
         date_created,
-        date_updated,
-        (SELECT COUNT(*) FROM followings WHERE tracked_account_id = instagrams.user_id AND ended_at IS NULL) as following_count,
-        (SELECT COUNT(*) FROM followers WHERE tracked_account_id = instagrams.user_id AND ended_at IS NULL) as followers_count
+        date_updated
       FROM instagrams
       WHERE user_id IN (${placeholders})`,
       userIds
@@ -88,6 +88,38 @@ const fetchInstagramsData = async (db: any, userIds: string[]): Promise<Map<stri
     console.error('Error fetching instagrams data from SQLite:', error);
     throw error;
   }
+};
+
+// Hook to fetch a single Instagram account by userId
+export const useInstagram = (userId: string | null) => {
+  const db = useSQLiteContext();
+
+  return useQuery<Instagram | null>({
+    queryKey: ['instagram', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+
+      const instagram = await db.getFirstAsync<Instagram>(
+        `SELECT
+          user_id,
+          username,
+          biography,
+          profile_pic_url,
+          media_count,
+          followers_count,
+          following_count,
+          date_created,
+          date_updated
+        FROM instagrams
+        WHERE user_id = ?`,
+        [userId]
+      );
+
+      return instagram || null;
+    },
+    enabled: !!userId,
+    initialData: null,
+  });
 };
 
 // Hook to fetch tracked Instagram accounts with local data
