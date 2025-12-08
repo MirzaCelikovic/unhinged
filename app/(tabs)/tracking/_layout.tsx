@@ -1,5 +1,6 @@
-import { Stack } from 'expo-router';
-import { View, SafeAreaView } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
+import { View, SafeAreaView, Pressable } from 'react-native';
+import { CircleChevronLeft } from 'lucide-react-native';
 import Logo from '~/assets/logo_black.svg';
 
 function LogoHeader() {
@@ -31,11 +32,10 @@ export default function TrackingLayout() {
       />
       <Stack.Screen
         name="account"
-        options={({ route }) => ({
-          headerShown: true,
-          headerTitle: route.params?.username ? `@${route.params.username}` : 'Account',
-          headerBackTitle: 'Tracking',
-        })}
+        options={{
+          presentation: 'modal',
+          headerShown: false,
+        }}
       />
     </Stack>
   );

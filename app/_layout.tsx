@@ -19,7 +19,7 @@ const qc = new QueryClient();
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    'RobotoFlex': require('../assets/fonts/RobotoFlex-Regular.ttf'),
+    RobotoFlex: require('../assets/fonts/RobotoFlex-Regular.ttf'),
     'RobotoFlex-Medium': require('../assets/fonts/RobotoFlex-Medium.ttf'),
     'RobotoFlex-Bold': require('../assets/fonts/RobotoFlex-Bold.ttf'),
     'RobotoFlex-Black': require('../assets/fonts/RobotoFlex-Black.ttf'),
@@ -56,7 +56,14 @@ export default function RootLayout() {
                 <InstagramProvider>
                   <Stack>
                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                    <Stack.Screen name="track" options={{ presentation: 'modal', headerShown: false }} />
+                    <Stack.Screen
+                      name="track"
+                      options={{ presentation: 'modal', headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="tracking"
+                      options={{ presentation: 'modal', headerShown: false }}
+                    />
                   </Stack>
                 </InstagramProvider>
               </SheetProvider>

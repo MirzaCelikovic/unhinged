@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useRef, useEffect } from 'r
 import { View, Modal, Text, Pressable } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useSQLiteContext } from 'expo-sqlite';
+import { useQueryClient } from '@tanstack/react-query';
 import { useStorage } from '~/lib/useStorage';
 import { useConnectInstagram, useDisconnectInstagram } from '~/lib/useAccount';
 import { useAccountContext } from './AccountContext';
@@ -70,9 +71,10 @@ export const useInstagram = () => {
 export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Database
   const db = useSQLiteContext();
+  const queryClient = useQueryClient();
 
   // Account context
-  const { account, trackedAccounts } = useAccountContext();
+  const { account, trackedInstagrams } = useAccountContext();
   const connectInstagram = useConnectInstagram();
   const disconnectInstagram = useDisconnectInstagram();
   const { showNotificationsSheet } = useSheets();
@@ -246,7 +248,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
 
-    console.log('🔄 Starting sync - userId:', userId, 'tracked accounts:', trackedAccounts.length);
+    console.log('🔄 Starting sync - userId:', userId, 'tracked accounts:', trackedInstagrams.length);
 
     // Sync the main user (following + followers)
     fetchFollowing(userId, false);
@@ -262,14 +264,14 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     // Sync all tracked accounts (following + followers)
-    trackedAccounts.forEach((trackedAccount) => {
-      fetchFollowing(trackedAccount.user_id, false);
-      fetchFollowers(trackedAccount.user_id, false);
+    trackedInstagrams.forEach((trackedInstagram) => {
+      fetchFollowing(trackedInstagram.user_id, false);
+      fetchFollowers(trackedInstagram.user_id, false);
 
       // Fetch metadata for tracked account
       injectJS(`
         if (window.instagramAPI?.fetchAccountMetadata) {
-          window.instagramAPI.fetchAccountMetadata('${trackedAccount.username}');
+          window.instagramAPI.fetchAccountMetadata('${trackedInstagram.username}');
         }
       `);
     });
@@ -346,6 +348,10 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       // Sync to SQLite
       await syncFollowingList(db, userId, deduplicatedUsers);
+
+      // Invalidate activity cache to reflect updated data
+      queryClient.invalidateQueries({ queryKey: ['instagramActivity', userId] });
+      queryClient.invalidateQueries({ queryKey: ['followerStats', userId] });
     } catch (error) {
       console.error(`Error syncing following list for ${userId}:`, error);
     }
@@ -361,6 +367,10 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       // Sync to SQLite
       await syncFollowersList(db, userId, deduplicatedUsers);
+
+      // Invalidate activity cache to reflect updated data
+      queryClient.invalidateQueries({ queryKey: ['instagramActivity', userId] });
+      queryClient.invalidateQueries({ queryKey: ['followerStats', userId] });
     } catch (error) {
       console.error(`Error syncing followers list for ${userId}:`, error);
     }
@@ -532,16 +542,23 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             const updateMetadata = async () => {
               try {
                 const now = new Date().toISOString();
+                console.log(`📝 Storing metadata for ${data.username}:`, {
+                  userId: data.userId,
+                  profilePicUrl: data.profilePicUrl,
+                  biography: data.biography,
+                  mediaCount: data.mediaCount
+                });
                 await db.runAsync(
                   `INSERT INTO instagrams (user_id, username, profile_pic_url, biography, media_count, date_created, date_updated)
                    VALUES (?, ?, ?, ?, ?, ?, ?)
                    ON CONFLICT(user_id) DO UPDATE SET
+                     profile_pic_url = ?,
                      biography = ?,
                      media_count = ?,
                      date_updated = ?`,
-                  [data.userId, data.username, null, data.biography, data.mediaCount, now, now, data.biography, data.mediaCount, now]
+                  [data.userId, data.username, data.profilePicUrl, data.biography, data.mediaCount, now, now, data.profilePicUrl, data.biography, data.mediaCount, now]
                 );
-                console.log(`✅ Updated metadata for ${data.username}: bio="${data.biography}", posts=${data.mediaCount}`);
+                console.log(`✅ Updated metadata for ${data.username}: pic="${data.profilePicUrl}", bio="${data.biography}", posts=${data.mediaCount}`);
 
                 // Resolve promise if one exists
                 const promise = metadataFetchPromisesRef.current.get(data.username);
@@ -957,12 +974,17 @@ const instagramAPI = `
 
         if (data.data && data.data.user) {
           const user = data.data.user;
+          const profilePicUrl = user.profile_pic_url_hd || user.profile_pic_url || null;
           console.log('🌐 [WebView] Sending ACCOUNT_METADATA_FETCHED for:', user.username);
+          console.log('🌐 [WebView] Profile pic URL:', profilePicUrl);
+          console.log('🌐 [WebView] Biography:', user.biography);
+          console.log('🌐 [WebView] Media count:', user.edge_owner_to_timeline_media ? user.edge_owner_to_timeline_media.count : null);
           sendMessage('ACCOUNT_METADATA_FETCHED', {
             userId: user.id,
             username: user.username,
             biography: user.biography || null,
-            mediaCount: user.edge_owner_to_timeline_media ? user.edge_owner_to_timeline_media.count : null
+            mediaCount: user.edge_owner_to_timeline_media ? user.edge_owner_to_timeline_media.count : null,
+            profilePicUrl: profilePicUrl
           });
         } else {
           throw new Error('User data not found in response');

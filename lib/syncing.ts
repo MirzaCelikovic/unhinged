@@ -91,14 +91,17 @@ export const syncFollowingList = async (
   }
 
   // Update sync state
+  // Set last_viewed_at on baseline to prevent baseline from showing as "new activity"
+  const lastViewedAt = isBaseline ? now : null;
   await db.runAsync(
-    `INSERT INTO sync_state (instagram_user_id, has_completed_baseline, last_synced_at, date_created, date_updated)
-     VALUES (?, 1, ?, ?, ?)
+    `INSERT INTO sync_state (instagram_user_id, has_completed_baseline, last_synced_at, last_viewed_at, date_created, date_updated)
+     VALUES (?, 1, ?, ?, ?, ?)
      ON CONFLICT(instagram_user_id) DO UPDATE SET
        has_completed_baseline = 1,
        last_synced_at = ?,
+       last_viewed_at = COALESCE(last_viewed_at, ?),
        date_updated = ?`,
-    [trackedAccountId, now, now, now, now, now]
+    [trackedAccountId, now, lastViewedAt, now, now, now, lastViewedAt, now]
   );
 
   console.log(`Synced following for ${trackedAccountId}: +${newFollows.length} -${unfollows.length} (baseline: ${isBaseline})`);
@@ -181,14 +184,17 @@ export const syncFollowersList = async (
   }
 
   // Update sync state
+  // Set last_viewed_at on baseline to prevent baseline from showing as "new activity"
+  const lastViewedAt = isBaseline ? now : null;
   await db.runAsync(
-    `INSERT INTO sync_state (instagram_user_id, has_completed_baseline, last_synced_at, date_created, date_updated)
-     VALUES (?, 1, ?, ?, ?)
+    `INSERT INTO sync_state (instagram_user_id, has_completed_baseline, last_synced_at, last_viewed_at, date_created, date_updated)
+     VALUES (?, 1, ?, ?, ?, ?)
      ON CONFLICT(instagram_user_id) DO UPDATE SET
        has_completed_baseline = 1,
        last_synced_at = ?,
+       last_viewed_at = COALESCE(last_viewed_at, ?),
        date_updated = ?`,
-    [trackedAccountId, now, now, now, now, now]
+    [trackedAccountId, now, lastViewedAt, now, now, now, lastViewedAt, now]
   );
 
   console.log(`Synced followers for ${trackedAccountId}: +${newFollowers.length} -${lostFollowers.length} (baseline: ${isBaseline})`);

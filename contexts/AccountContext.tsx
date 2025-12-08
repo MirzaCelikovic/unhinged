@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { ActivityIndicator, View, Platform } from 'react-native';
 import { useAccount, useCreateAccount } from '~/lib/useAccount';
-import { useTracks } from '~/lib/useTracks';
+import { useTrackedInstagrams } from '~/lib/useInstagram';
 import { useSecureStorage } from '~/lib/useSecureStorage';
 import { Account, Instagram } from '~/lib/types';
 import { CustomerIO } from 'customerio-reactnative';
@@ -13,7 +13,7 @@ const ACCOUNT_ID_KEY = 'account_id';
 
 interface AccountContextType {
   account: Account | null;
-  trackedAccounts: Instagram[];
+  trackedInstagrams: Instagram[];
   isLoading: boolean;
   updateAccountSettings: (settings: Record<string, boolean>) => Promise<void>;
 }
@@ -54,9 +54,9 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Fetch tracked accounts for this account
   const {
-    data: trackedAccounts = [],
+    data: trackedInstagrams = [],
     isLoading: isFetchingTracks,
-  } = useTracks(storedAccountId);
+  } = useTrackedInstagrams(storedAccountId);
 
   // Create new account mutation
   const createAccount = useCreateAccount();
@@ -164,7 +164,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const value: AccountContextType = {
     account,
-    trackedAccounts,
+    trackedInstagrams,
     isLoading,
     updateAccountSettings,
   };

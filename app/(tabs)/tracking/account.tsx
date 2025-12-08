@@ -1,37 +1,25 @@
-import { View, Text, Pressable, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Alert, ScrollView, StyleSheet, SafeAreaView, Pressable } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useState, useEffect } from 'react';
-import { useSQLiteContext } from 'expo-sqlite';
+import { X } from 'lucide-react-native';
 import { useAccountContext } from '~/contexts/AccountContext';
-import { useRemoveTrack } from '~/lib/useTracks';
-import { getFollowingActivity, ActivityItem } from '~/lib/syncing';
+import { useRemoveTrackedInstagram } from '~/lib/useInstagram';
+import { useFollowerStats } from '~/lib/useFollowerStats';
+import Circles from '~/assets/circles.svg';
+import Logo from '~/assets/logo_black.svg';
+import InstagramCard from '~/components/InstagramCard';
+import ActivityList from '~/components/ActivityList';
+import Button from '~/components/Button';
 
 export default function TrackingAccount() {
   const { userId, username } = useLocalSearchParams<{ userId: string; username: string }>();
-  const { account } = useAccountContext();
-  const db = useSQLiteContext();
-  const removeTrack = useRemoveTrack();
+  const { account, trackedInstagrams } = useAccountContext();
+  const removeTrackedInstagram = useRemoveTrackedInstagram();
 
-  const [activity, setActivity] = useState<ActivityItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Find the Instagram data for this account from the context
+  const instagram = trackedInstagrams.find((ig) => ig.user_id === userId);
 
-  useEffect(() => {
-    const fetchActivity = async () => {
-      if (!userId) return;
-
-      setIsLoading(true);
-      try {
-        const data = await getFollowingActivity(db, userId);
-        setActivity(data);
-      } catch (error) {
-        console.error('Error fetching activity:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchActivity();
-  }, [userId, db]);
+  // Get follower stats for this account
+  const { data: stats } = useFollowerStats(userId || null);
 
   const handleStopTracking = () => {
     if (!account?.uuid || !userId) return;
@@ -41,72 +29,55 @@ export default function TrackingAccount() {
       {
         text: 'Stop Tracking',
         style: 'destructive',
-        onPress: () => {
-          removeTrack.mutate(
-            { accountId: account.uuid, userId },
-            {
-              onSuccess: () => {
-                router.back();
-              },
-            }
-          );
+        onPress: async () => {
+          try {
+            await removeTrackedInstagram.mutateAsync({ accountId: account.uuid, userId });
+            // Wait a bit for cache invalidation to propagate
+            setTimeout(() => {
+              router.back();
+            }, 100);
+          } catch (error) {
+            console.error('Failed to remove tracked instagram:', error);
+            Alert.alert('Error', 'Failed to stop tracking. Please try again.');
+          }
         },
       },
     ]);
   };
 
   return (
-    <View className="flex-1 bg-white">
-      {isLoading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#6b7280" />
-        </View>
-      ) : activity.length === 0 ? (
-        <View className="flex-1 items-center justify-center px-8">
-          <Text className="text-center text-gray-500 text-base">No activity yet. Sync to start tracking changes.</Text>
-        </View>
-      ) : (
-        <ScrollView className="flex-1">
-          <View className="p-4">
-            <Text className="text-base font-medium text-gray-500 uppercase mb-3">Activity</Text>
-            <View className="gap-3">
-              {activity.map((item, index) => (
-                <View key={index} className="bg-gray-100 rounded-2xl p-4">
-                  <Text className="text-sm font-semibold text-gray-500 uppercase mb-2">{item.date}</Text>
-
-                  {item.unfollows.length > 0 && (
-                    <Text className="text-base text-gray-900 mb-1">
-                      Stopped following {item.unfollows.map((u) => `@${u}`).join(', ')}
-                    </Text>
-                  )}
-
-                  {item.newFollows.length > 0 && (
-                    <Text className="text-base text-gray-900 mb-1">
-                      Started following {item.newFollows.map((u) => `@${u}`).join(', ')}
-                    </Text>
-                  )}
-
-                  {item.isTrackingStart && item.newFollows.length === 0 && item.unfollows.length === 0 && (
-                    <Text className="text-base text-gray-500">Started tracking this account</Text>
-                  )}
-                </View>
-              ))}
-            </View>
-          </View>
-        </ScrollView>
-      )}
-
-      {/* Stop Tracking Button */}
-      <View className="border-t border-gray-200 p-4">
-        <Pressable
-          className="bg-red-500 py-3 rounded-lg active:bg-red-600"
-          onPress={handleStopTracking}
-          disabled={removeTrack.isPending}>
-          <Text className="text-center font-semibold text-white">
-            {removeTrack.isPending ? 'Removing...' : 'Stop Tracking'}
-          </Text>
-        </Pressable>
+    <View className="bg-background flex-1">
+      <View style={StyleSheet.absoluteFill} className="items-center justify-center">
+        <Circles width={700} height={700} />
       </View>
+
+      {/* Header */}
+      <SafeAreaView>
+        <View className="flex-row items-center justify-between px-4 pb-3">
+          <View className="flex-1 items-center pt-6">
+            <Logo width={160} height={30} />
+          </View>
+          <Pressable
+            className="absolute right-4 p-2 active:opacity-70"
+            onPress={() => router.back()}>
+            <X size={24} color="#000000" />
+          </Pressable>
+        </View>
+      </SafeAreaView>
+
+      {/* Content */}
+      <ScrollView className="flex-1">
+        <View className="gap-4 p-4 pb-24">
+          {instagram && <InstagramCard account={instagram} />}
+          {stats && <ActivityList stats={stats} />}
+          <Button
+            label="Stop Tracking"
+            mode="destructive"
+            onPress={handleStopTracking}
+            loading={removeTrackedInstagram.isPending}
+          />
+        </View>
+      </ScrollView>
     </View>
   );
 }

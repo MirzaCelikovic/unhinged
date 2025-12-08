@@ -8,25 +8,20 @@ import {
   Image,
 } from 'react-native';
 import { router } from 'expo-router';
-import { useState, useEffect } from 'react';
 import { useAccountContext } from '~/contexts/AccountContext';
-import { useTracks } from '~/lib/useTracks';
-import { useSQLiteContext } from 'expo-sqlite';
 import { CircleChevronRight } from 'lucide-react-native';
 import Circles from '~/assets/circles.svg';
 import NotTracking from '~/components/NotTracking';
 import Button from '~/components/Button';
 import { Instagram } from '~/lib/types';
-import { useAccountActivity } from '~/lib/useAccountActivity';
+import { useInstagramActivity } from '~/lib/useInstagramActivity';
 
 interface TrackedAccountItemProps {
-  userId: string;
-  username: string;
-  accountData?: Instagram;
+  account: Instagram;
 }
 
-function TrackedAccountItem({ userId, username, accountData }: TrackedAccountItemProps) {
-  const { data: activity } = useAccountActivity(userId);
+function TrackedAccountItem({ account }: TrackedAccountItemProps) {
+  const { data: activity } = useInstagramActivity(account.user_id);
 
   return (
     <Pressable
@@ -34,19 +29,19 @@ function TrackedAccountItem({ userId, username, accountData }: TrackedAccountIte
       onPress={() =>
         router.push({
           pathname: '/(tabs)/tracking/account',
-          params: { userId, username },
+          params: { userId: account.user_id },
         })
       }>
       <View className="flex-row items-center gap-3">
-        {accountData?.profile_pic_url ? (
+        {account.profile_pic_url ? (
           <Image
-            source={{ uri: accountData.profile_pic_url }}
+            source={{ uri: account.profile_pic_url }}
             className="h-[60px] w-[60px] rounded-full"
           />
         ) : (
           <View className="h-[60px] w-[60px] rounded-full bg-gray-300" />
         )}
-        <Text className="font-roboto-bold text-xl text-gray-900">@{username}</Text>
+        <Text className="font-roboto-bold text-xl text-gray-900">@{account.username}</Text>
       </View>
       <View className="flex-row items-center gap-2">
         {activity.hasNewActivity && <View className="bg-error h-3 w-3 rounded-full" />}
@@ -57,37 +52,7 @@ function TrackedAccountItem({ userId, username, accountData }: TrackedAccountIte
 }
 
 export default function Tracking() {
-  const { account } = useAccountContext();
-  const { data: tracks = [], isLoading } = useTracks(account?.uuid || null);
-  const db = useSQLiteContext();
-  const [trackedAccountsData, setTrackedAccountsData] = useState<Map<string, Instagram>>(new Map());
-
-  // Fetch Instagram data for all tracked accounts
-  useEffect(() => {
-    if (tracks.length === 0) return;
-
-    const fetchTrackedData = async () => {
-      const dataMap = new Map<string, Instagram>();
-
-      for (const track of tracks) {
-        try {
-          const account = await db.getFirstAsync<Instagram>(
-            'SELECT user_id, username, profile_pic_url, biography, media_count FROM instagrams WHERE user_id = ?',
-            [track.user_id]
-          );
-          if (account) {
-            dataMap.set(track.user_id, account);
-          }
-        } catch (error) {
-          console.error('Error fetching tracked account data:', error);
-        }
-      }
-
-      setTrackedAccountsData(dataMap);
-    };
-
-    fetchTrackedData();
-  }, [tracks]);
+  const { trackedInstagrams, isLoading } = useAccountContext();
 
   if (isLoading) {
     return (
@@ -101,7 +66,7 @@ export default function Tracking() {
   }
 
   // Empty state
-  if (tracks.length === 0) {
+  if (trackedInstagrams.length === 0) {
     return <NotTracking />;
   }
 
@@ -115,13 +80,8 @@ export default function Tracking() {
         {/* Tracked accounts list */}
         <View>
           <View className="gap-3">
-            {tracks.map((item) => (
-              <TrackedAccountItem
-                key={item.user_id}
-                userId={item.user_id}
-                username={item.username}
-                accountData={trackedAccountsData.get(item.user_id)}
-              />
+            {trackedInstagrams.map((instagram) => (
+              <TrackedAccountItem key={instagram.user_id} account={instagram} />
             ))}
           </View>
         </View>
@@ -129,7 +89,7 @@ export default function Tracking() {
         {/* Add another account CTA - bottom aligned */}
         <View className="background-red items-center pb-24">
           <Text className="font-roboto-extrablack px-2 text-center text-4xl tracking-tighter">
-            Why stop now? The more the messier.
+            Why stop now? The more, the messier!
           </Text>
           <View className="mt-6 w-full">
             <Button label="Track account" mode="add" onPress={() => router.push('/track')} />

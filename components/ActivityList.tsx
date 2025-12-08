@@ -10,24 +10,34 @@ interface ActivityListProps {
 export default function ActivityList({ stats }: ActivityListProps) {
   const items = [
     {
-      label: 'Not following you back',
-      count: stats.notFollowingBack,
-      route: '/home/accounts?type=notFollowingBack',
+      label: 'Recently followed',
+      count: stats.recentlyFollowed,
+      route: '/home/accounts?type=recentlyFollowed',
     },
     {
-      label: "You're not following back",
-      count: stats.notFollowingYouBack,
-      route: '/home/accounts?type=notFollowingYouBack',
-    },
-    {
-      label: 'Recently unfollowed you',
+      label: 'Recently unfollowed',
       count: stats.recentlyUnfollowed,
       route: '/home/accounts?type=recentlyUnfollowed',
     },
     {
-      label: 'Recently followed you',
-      count: stats.recentlyFollowed,
-      route: '/home/accounts?type=recentlyFollowed',
+      label: 'Followed them',
+      count: stats.recentlyFollowedThem,
+      route: '/home/accounts?type=recentlyFollowedThem',
+    },
+    {
+      label: 'Unfollowed them',
+      count: stats.recentlyUnfollowedThem,
+      route: '/home/accounts?type=recentlyUnfollowedThem',
+    },
+    {
+      label: "They aren't following back",
+      count: stats.notFollowingBack,
+      route: '/home/accounts?type=notFollowingBack',
+    },
+    {
+      label: 'Not following them back',
+      count: stats.notFollowingYouBack,
+      route: '/home/accounts?type=notFollowingYouBack',
     },
   ];
 

@@ -12,7 +12,7 @@ import Animated, {
 import Unhinged from '~/assets/unhinged.svg';
 import { useAccountContext } from '~/contexts/AccountContext';
 import { useInstagram } from '~/contexts/InstagramContext';
-import { useAddTrack } from '~/lib/useTracks';
+import { useAddTrackedInstagram } from '~/lib/useInstagram';
 
 interface InitialSyncProps {
   userId: string;
@@ -96,7 +96,7 @@ export default function InitialSync({ userId, username, onComplete, isMainAccoun
   const [step3, setStep3] = useState<SyncStepState>('waiting');
   const { account } = useAccountContext();
   const { fetchAccountMetadata, syncUser } = useInstagram();
-  const addTrack = useAddTrack();
+  const addTrackedInstagram = useAddTrackedInstagram();
 
   useEffect(() => {
     const runSync = async () => {
@@ -109,7 +109,7 @@ export default function InitialSync({ userId, username, onComplete, isMainAccoun
         if (!isMainAccount) {
           // For tracked accounts: add to tracks
           console.log('📝 Adding track for:', username);
-          await addTrack.mutateAsync({
+          await addTrackedInstagram.mutateAsync({
             accountId: account.uuid,
             userId: userId,
             username: username,

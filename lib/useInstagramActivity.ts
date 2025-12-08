@@ -1,7 +1,7 @@
 import { useSQLiteContext } from 'expo-sqlite';
 import { useQuery } from '@tanstack/react-query';
 
-interface AccountActivity {
+interface InstagramActivity {
   hasNewActivity: boolean;
   newFollowsCount: number;
   unfollowsCount: number;
@@ -9,7 +9,7 @@ interface AccountActivity {
   lostFollowersCount: number;
 }
 
-const fetchAccountActivity = async (db: any, userId: string): Promise<AccountActivity> => {
+const fetchInstagramActivity = async (db: any, userId: string): Promise<InstagramActivity> => {
   // Get last viewed timestamp for this account
   const syncState = await db.getFirstAsync<{ last_viewed_at: string | null }>(
     'SELECT last_viewed_at FROM sync_state WHERE instagram_user_id = ?',
@@ -69,12 +69,12 @@ const fetchAccountActivity = async (db: any, userId: string): Promise<AccountAct
   };
 };
 
-export const useAccountActivity = (userId: string | null) => {
+export const useInstagramActivity = (userId: string | null) => {
   const db = useSQLiteContext();
 
-  return useQuery<AccountActivity>({
-    queryKey: ['accountActivity', userId],
-    queryFn: () => fetchAccountActivity(db, userId!),
+  return useQuery<InstagramActivity>({
+    queryKey: ['instagramActivity', userId],
+    queryFn: () => fetchInstagramActivity(db, userId!),
     enabled: !!userId,
     initialData: {
       hasNewActivity: false,
@@ -86,13 +86,13 @@ export const useAccountActivity = (userId: string | null) => {
   });
 };
 
-// Check if any tracked account has new activity
-const fetchHasAnyActivity = async (db: any, trackedUserIds: string[]): Promise<boolean> => {
+// Check if any tracked Instagram has new activity
+const fetchHasAnyInstagramActivity = async (db: any, trackedUserIds: string[]): Promise<boolean> => {
   if (trackedUserIds.length === 0) return false;
 
   // For each tracked account, check if there's activity since last_viewed_at
   for (const userId of trackedUserIds) {
-    const activity = await fetchAccountActivity(db, userId);
+    const activity = await fetchInstagramActivity(db, userId);
     if (activity.hasNewActivity) {
       return true;
     }
@@ -101,19 +101,19 @@ const fetchHasAnyActivity = async (db: any, trackedUserIds: string[]): Promise<b
   return false;
 };
 
-export const useHasAnyActivity = (trackedUserIds: string[]) => {
+export const useHasAnyInstagramActivity = (trackedUserIds: string[]) => {
   const db = useSQLiteContext();
 
   return useQuery<boolean>({
-    queryKey: ['hasAnyActivity', ...trackedUserIds],
-    queryFn: () => fetchHasAnyActivity(db, trackedUserIds),
+    queryKey: ['hasAnyInstagramActivity', ...trackedUserIds],
+    queryFn: () => fetchHasAnyInstagramActivity(db, trackedUserIds),
     enabled: trackedUserIds.length > 0,
     initialData: false,
   });
 };
 
-// Mark account activity as viewed
-export const markActivityAsViewed = async (db: any, userId: string): Promise<void> => {
+// Mark Instagram activity as viewed
+export const markInstagramActivityAsViewed = async (db: any, userId: string): Promise<void> => {
   const now = new Date().toISOString();
   await db.runAsync(
     `UPDATE sync_state

@@ -1,5 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
-import { Plus, ArrowRight, LoaderCircle, Check } from 'lucide-react-native';
+import { Plus, ArrowRight, LoaderCircle, Check, X } from 'lucide-react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -9,7 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useEffect } from 'react';
 
-type ButtonMode = 'add' | 'next' | 'done';
+type ButtonMode = 'add' | 'next' | 'done' | 'destructive';
 
 interface ButtonProps {
   label: string;
@@ -69,6 +69,8 @@ export default function Button({
         return <ArrowRight {...iconProps} />;
       case 'done':
         return <Check {...iconProps} />;
+      case 'destructive':
+        return <X {...iconProps} />;
       default:
         return null;
     }
