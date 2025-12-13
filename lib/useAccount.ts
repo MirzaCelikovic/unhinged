@@ -136,6 +136,7 @@ export const useDisconnectInstagram = () => {
     onSuccess: (_, variables) => {
       console.log('Instagram disconnected successfully');
       queryClient.invalidateQueries({ queryKey: ['account', variables.uuid] });
+      queryClient.invalidateQueries({ queryKey: ['trackedInstagrams', variables.uuid] });
     },
     onError: (error: AxiosError) => {
       console.error('Instagram disconnection failed:', error);

@@ -1,7 +1,18 @@
-import { Tabs } from 'expo-router';
+import { Tabs, Redirect } from 'expo-router';
 import { House, HatGlasses, Settings } from 'lucide-react-native';
+import { useOnboarding } from '~/lib/useOnboarding';
 
 export default function TabLayout() {
+  const { isLoading, isOnboarded } = useOnboarding();
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (!isOnboarded) {
+    return <Redirect href="/start" />;
+  }
+
   return (
     <Tabs
       screenOptions={{

@@ -48,20 +48,12 @@ export default function RootLayout() {
             <BottomSheetModalProvider>
               <SheetProvider>
                 <InstagramProvider>
-                  <Stack>
-                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                    <Stack.Screen
-                      name="track"
-                      options={{ presentation: 'modal', headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="tracking"
-                      options={{ presentation: 'modal', headerShown: false }}
-                    />
-                    <Stack.Screen
-                      name="list"
-                      options={{ presentation: 'modal', headerShown: false }}
-                    />
+                  <Stack screenOptions={{ headerShown: false }}>
+                    <Stack.Screen name="(tabs)" />
+                    <Stack.Screen name="start" />
+                    <Stack.Screen name="track" options={{ presentation: 'modal' }} />
+                    <Stack.Screen name="tracking" options={{ presentation: 'modal' }} />
+                    <Stack.Screen name="list" options={{ presentation: 'modal' }} />
                   </Stack>
                 </InstagramProvider>
               </SheetProvider>
