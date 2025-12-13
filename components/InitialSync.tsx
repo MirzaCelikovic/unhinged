@@ -1,6 +1,6 @@
 import { View, Text } from 'react-native';
 import { useEffect, useState } from 'react';
-import { Check } from 'lucide-react-native';
+import { Circle, CircleCheck } from 'lucide-react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -79,7 +79,11 @@ function SyncStep({ label, state }: SyncStepProps) {
       {/* Step label and checkmark */}
       <View className="flex-row items-center justify-between">
         <Text className="font-roboto-medium text-lg text-black">{label}</Text>
-        <Check size={24} color={state === 'completed' ? '#000000' : '#9ca3af'} />
+        {state === 'completed' ? (
+          <CircleCheck size={24} color="#000000" />
+        ) : (
+          <Circle size={24} color="#9ca3af" />
+        )}
       </View>
 
       {/* Progress bar */}

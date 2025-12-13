@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { ActivityIndicator, View, Platform } from 'react-native';
+import { Platform } from 'react-native';
+import * as SplashScreen from 'expo-splash-screen';
 import { useAccount, useCreateAccount } from '~/lib/useAccount';
 import { useTrackedInstagrams } from '~/lib/useInstagram';
 import { useSecureStorage } from '~/lib/useSecureStorage';
@@ -153,14 +154,13 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  // Show loading screen while initializing
+  // Hide splash screen and render children only when initialization is complete
   if (isLoading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator size="large" color="#6b7280" />
-      </View>
-    );
+    return null;
   }
+
+  // Hide splash screen now that we're ready
+  SplashScreen.hideAsync();
 
   const value: AccountContextType = {
     account,

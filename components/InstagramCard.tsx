@@ -7,7 +7,7 @@ interface InstagramCardProps {
 
 export default function InstagramCard({ account }: InstagramCardProps) {
   return (
-    <View className="w-full rounded-3xl border-2 border-black bg-white p-4">
+    <View className="w-full rounded-3xl border-2 border-gray-400 bg-white p-4">
       {/* Top row: Profile pic and stats */}
       <View className="flex-row items-center">
         {/* Profile Picture */}
@@ -49,7 +49,7 @@ export default function InstagramCard({ account }: InstagramCardProps) {
       </View>
 
       {/* Username */}
-      <Text className="font-roboto-bold mt-3 text-base">@{account.username}</Text>
+      <Text className="mt-3 font-roboto-bold text-base">@{account.username}</Text>
 
       {/* Biography */}
       <Text className="font-roboto-regular mt-1 text-base text-gray-500" numberOfLines={3}>

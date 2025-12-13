@@ -1,14 +1,20 @@
 import { View, Text, ScrollView } from 'react-native';
 import InstagramCard from '~/components/InstagramCard';
 import Button from '~/components/Button';
-import { Instagram } from '~/lib/types';
+import { useInstagram } from '~/lib/useInstagram';
 
 interface StartedTrackingProps {
-  account: Instagram;
+  userId: string;
   onContinue: () => void;
 }
 
-export default function StartedTracking({ account, onContinue }: StartedTrackingProps) {
+export default function StartedTracking({ userId, onContinue }: StartedTrackingProps) {
+  const { data: account } = useInstagram(userId);
+
+  if (!account) {
+    return null;
+  }
+
   return (
     <View className="flex-1">
       <ScrollView className="flex-1">
@@ -25,7 +31,7 @@ export default function StartedTracking({ account, onContinue }: StartedTracking
         </View>
       </ScrollView>
 
-      <View className="p-4 pb-8">
+      <View className="p-4 pb-12">
         <Button label="Continue" onPress={onContinue} />
       </View>
     </View>

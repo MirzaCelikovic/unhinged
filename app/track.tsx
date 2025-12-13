@@ -13,9 +13,7 @@ import Logo from '~/assets/logo_black.svg';
 import StartTracking from '~/components/StartTracking';
 import InitialSync from '~/components/InitialSync';
 import StartedTracking from '~/components/StartedTracking';
-import { useInstagram } from '~/contexts/InstagramContext';
-import { useAccountContext } from '~/contexts/AccountContext';
-import { Instagram as InstagramType } from '~/lib/types';
+import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext';
 
 type TrackState = 'start' | 'syncing' | 'tracking';
 
@@ -25,8 +23,7 @@ export default function TrackModal() {
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const { fetchUserId } = useInstagram();
-  const { trackedInstagrams } = useAccountContext();
+  const { fetchUserId } = useInstagramContext();
   const contentOpacity = useSharedValue(1);
 
   const handleContinue = async (inputUsername: string) => {
@@ -130,7 +127,7 @@ export default function TrackModal() {
       {state === 'tracking' && (
         <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
           <StartedTracking
-            account={trackedInstagrams.find((ig) => ig.user_id === userId) || null}
+            userId={userId}
             onContinue={() => router.back()}
           />
         </Animated.View>

@@ -42,7 +42,7 @@ export default function ActivityList({ stats }: ActivityListProps) {
   ];
 
   return (
-    <View className="w-full rounded-3xl bg-white px-2 py-2">
+    <View className="w-full rounded-3xl border-2 border-gray-400 bg-white px-2 py-2">
       {items.map((item, index) => (
         <View key={item.route}>
           <Pressable
