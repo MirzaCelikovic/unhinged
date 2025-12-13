@@ -58,6 +58,10 @@ export default function RootLayout() {
                       name="tracking"
                       options={{ presentation: 'modal', headerShown: false }}
                     />
+                    <Stack.Screen
+                      name="list"
+                      options={{ presentation: 'modal', headerShown: false }}
+                    />
                   </Stack>
                 </InstagramProvider>
               </SheetProvider>

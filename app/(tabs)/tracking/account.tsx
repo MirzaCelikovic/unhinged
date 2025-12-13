@@ -1,9 +1,13 @@
 import { View, Alert, ScrollView, StyleSheet, SafeAreaView, Pressable } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
+import { useEffect } from 'react';
+import { useSQLiteContext } from 'expo-sqlite';
+import { useQueryClient } from '@tanstack/react-query';
 import { X } from 'lucide-react-native';
 import { useAccountContext } from '~/contexts/AccountContext';
 import { useInstagram, useRemoveTrackedInstagram } from '~/lib/useInstagram';
 import { useFollowerStats } from '~/lib/useFollowerStats';
+import { markInstagramActivityAsViewed } from '~/lib/useInstagramActivity';
 import Circles from '~/assets/circles.svg';
 import Logo from '~/assets/logo_black.svg';
 import InstagramCard from '~/components/InstagramCard';
@@ -14,12 +18,23 @@ export default function TrackingAccount() {
   const { userId, username } = useLocalSearchParams<{ userId: string; username: string }>();
   const { account } = useAccountContext();
   const removeTrackedInstagram = useRemoveTrackedInstagram();
+  const db = useSQLiteContext();
+  const queryClient = useQueryClient();
 
   // Get Instagram data for this account
   const { data: instagram } = useInstagram(userId || null);
 
   // Get follower stats for this account
   const { data: stats } = useFollowerStats(userId || null);
+
+  // Mark activity as viewed when opening this screen
+  useEffect(() => {
+    if (userId) {
+      markInstagramActivityAsViewed(db, userId).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['instagramActivity', userId] });
+      });
+    }
+  }, [userId]);
 
   const handleStopTracking = () => {
     if (!account?.uuid || !userId) return;
@@ -69,10 +84,9 @@ export default function TrackingAccount() {
       <ScrollView className="flex-1">
         <View className="gap-4 p-4 pb-24">
           {instagram && <InstagramCard account={instagram} />}
-          {stats && <ActivityList stats={stats} />}
+          {stats && userId && <ActivityList stats={stats} userId={userId} />}
           <Button
             label="Stop Tracking"
-            mode="destructive"
             onPress={handleStopTracking}
             loading={removeTrackedInstagram.isPending}
           />

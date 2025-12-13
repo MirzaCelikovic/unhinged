@@ -32,18 +32,6 @@ export default function HomeLayout() {
           header: () => <LogoHeader />,
         }}
       />
-      <Stack.Screen
-        name="accounts"
-        options={({ route }) => ({
-          headerShown: true,
-          headerTitle: TITLES[route.params?.type as keyof typeof TITLES] || 'Accounts',
-          headerBackTitle: 'Home',
-          headerStyle: {
-            backgroundColor: '#FFE51F',
-          },
-          headerShadowVisible: false,
-        })}
-      />
     </Stack>
   );
 }

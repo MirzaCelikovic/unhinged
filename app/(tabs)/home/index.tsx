@@ -180,7 +180,7 @@ export default function Index() {
           )}
 
           {/* Activity List */}
-          <ActivityList stats={stats} />
+          <ActivityList stats={stats} userId={userId!} isMainAccount />
         </View>
           </ScrollView>
         </Animated.View>
