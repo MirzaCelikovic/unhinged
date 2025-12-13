@@ -44,7 +44,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "so.unhinged.app",
+      "bundleIdentifier": "so.unhinged",
       "appleTeamId": "DUZR4LXSY7"
     },
     "android": {

@@ -28,7 +28,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>unhinged</string>
-          <string>so.unhinged.app</string>
+          <string>so.unhinged</string>
         </array>
       </dict>
     </array>
