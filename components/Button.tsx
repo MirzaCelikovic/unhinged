@@ -1,5 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
-import { Plus, ArrowRight, LoaderCircle, Check, X } from 'lucide-react-native';
+import { LoaderCircle } from 'lucide-react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -9,12 +9,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useEffect } from 'react';
 
-type ButtonMode = 'add' | 'next' | 'done' | 'destructive';
-
 interface ButtonProps {
   label: string;
   onPress: () => void;
-  mode?: ButtonMode;
   disabled?: boolean;
   loading?: boolean;
   fullWidth?: boolean;
@@ -23,7 +20,6 @@ interface ButtonProps {
 export default function Button({
   label,
   onPress,
-  mode,
   disabled = false,
   loading = false,
   fullWidth = true,
@@ -46,44 +42,19 @@ export default function Button({
     transform: [{ rotate: `${rotation.value}deg` }],
   }));
 
-  const renderIcon = () => {
-    if (loading) {
-      return (
-        <Animated.View style={animatedStyle}>
-          <LoaderCircle size={20} color="#ffffff" />
-        </Animated.View>
-      );
-    }
-
-    if (!mode) return null;
-
-    const iconProps = {
-      size: 20,
-      color: '#ffffff',
-    };
-
-    switch (mode) {
-      case 'add':
-        return <Plus {...iconProps} />;
-      case 'next':
-        return <ArrowRight {...iconProps} />;
-      case 'done':
-        return <Check {...iconProps} />;
-      case 'destructive':
-        return <X {...iconProps} />;
-      default:
-        return null;
-    }
-  };
-
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
       className={`rounded-3xl bg-black px-6 py-4 active:opacity-80 ${fullWidth ? 'w-full' : ''} ${disabled || loading ? 'opacity-80' : ''}`}>
-      <View className="flex-row items-center justify-between">
-        <Text className="font-roboto-medium text-lg text-white">{label}</Text>
-        {renderIcon()}
+      <View className="flex-row items-center justify-center">
+        {loading ? (
+          <Animated.View style={animatedStyle}>
+            <LoaderCircle size={20} color="#ffffff" />
+          </Animated.View>
+        ) : (
+          <Text className="font-roboto-medium text-lg text-white">{label}</Text>
+        )}
       </View>
     </Pressable>
   );

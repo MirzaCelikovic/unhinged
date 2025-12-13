@@ -92,7 +92,7 @@ export default function Tracking() {
             Why stop now? The more, the messier!
           </Text>
           <View className="mt-6 w-full">
-            <Button label="Track account" mode="add" onPress={() => router.push('/track')} />
+            <Button label="Track account" onPress={() => router.push('/track')} />
           </View>
         </View>
       </View>

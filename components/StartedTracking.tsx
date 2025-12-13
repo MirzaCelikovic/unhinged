@@ -26,7 +26,7 @@ export default function StartedTracking({ account, onContinue }: StartedTracking
       </ScrollView>
 
       <View className="p-4 pb-8">
-        <Button label="Continue" mode="done" onPress={onContinue} />
+        <Button label="Continue" onPress={onContinue} />
       </View>
     </View>
   );

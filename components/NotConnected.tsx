@@ -23,7 +23,7 @@ export default function NotConnected({ onConnect }: NotConnectedProps) {
         </Text>
       </View>
       <View className="p-4 pb-20">
-        <Button label="Connect Instagram" mode="add" onPress={onConnect} />
+        <Button label="Connect Instagram" onPress={onConnect} />
       </View>
     </SafeAreaView>
   );
