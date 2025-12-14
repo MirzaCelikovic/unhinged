@@ -37,6 +37,20 @@ export default function TrackingLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="track"
+        options={{
+          presentation: 'modal',
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="list"
+        options={{
+          presentation: 'modal',
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

@@ -32,6 +32,13 @@ export default function HomeLayout() {
           header: () => <LogoHeader />,
         }}
       />
+      <Stack.Screen
+        name="list"
+        options={{
+          presentation: 'modal',
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

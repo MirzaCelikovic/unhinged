@@ -20,7 +20,7 @@ export default function NotTracking() {
         </Text>
       </View>
       <View className="p-4 pb-20">
-        <Button label="Track account" onPress={() => router.push('/track')} />
+        <Button label="Track account" onPress={() => router.push('/(tabs)/tracking/track')} />
       </View>
     </SafeAreaView>
   );

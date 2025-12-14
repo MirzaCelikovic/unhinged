@@ -1,6 +1,6 @@
 import { View, Text, Pressable } from 'react-native';
 import { CircleChevronRight } from 'lucide-react-native';
-import { router } from 'expo-router';
+import { router, usePathname } from 'expo-router';
 import { FollowerStats, AccountListType, getAccountListLabel } from '~/lib/useFollowerStats';
 
 interface ActivityListProps {
@@ -10,6 +10,9 @@ interface ActivityListProps {
 }
 
 export default function ActivityList({ stats, userId, isMainAccount = false }: ActivityListProps) {
+  const pathname = usePathname();
+  const tab = pathname.includes('/tracking') ? 'tracking' : 'home';
+
   const items: { type: AccountListType; count: number }[] = [
     { type: 'addedFollowing', count: stats.addedFollowing },
     { type: 'removedFollowing', count: stats.removedFollowing },
@@ -25,7 +28,7 @@ export default function ActivityList({ stats, userId, isMainAccount = false }: A
         <View key={item.type}>
           <Pressable
             className="flex-row items-center justify-between p-4 py-6 active:bg-gray-50"
-            onPress={() => router.push(`/list?userId=${userId}&type=${item.type}&isMainAccount=${isMainAccount}`)}>
+            onPress={() => router.push(`/(tabs)/${tab}/list?userId=${userId}&type=${item.type}&isMainAccount=${isMainAccount}`)}>
             <Text className="text-lg font-semibold text-gray-900">
               {getAccountListLabel(item.type, isMainAccount)}
             </Text>

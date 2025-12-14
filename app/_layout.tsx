@@ -61,9 +61,7 @@ export default function RootLayout() {
                   <Stack screenOptions={{ headerShown: false, animation: 'none' }}>
                     <Stack.Screen name="(tabs)" />
                     <Stack.Screen name="start" />
-                    <Stack.Screen name="track" options={{ presentation: 'modal' }} />
                     <Stack.Screen name="tracking" options={{ presentation: 'modal' }} />
-                    <Stack.Screen name="list" options={{ presentation: 'modal' }} />
                   </Stack>
                 </InstagramProvider>
               </SheetProvider>

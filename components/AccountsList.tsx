@@ -1,19 +1,20 @@
 import { View, Text, StyleSheet, SafeAreaView, Pressable, ScrollView, Image } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { X } from 'lucide-react-native';
 import Circles from '~/assets/circles.svg';
 import Logo from '~/assets/logo_black.svg';
 import { useAccountList, AccountListType, getAccountListLabel } from '~/lib/useFollowerStats';
 
-export default function ListModal() {
-  const { userId, type, isMainAccount } = useLocalSearchParams<{
-    userId: string;
-    type: AccountListType;
-    isMainAccount: string;
-  }>();
+interface AccountsListProps {
+  userId: string;
+  type: AccountListType;
+  isMainAccount: boolean;
+}
+
+export default function AccountsList({ userId, type, isMainAccount }: AccountsListProps) {
   const { data: accounts, isLoading } = useAccountList(userId ?? null, type ?? null);
 
-  const title = type ? getAccountListLabel(type, isMainAccount === 'true') : '';
+  const title = type ? getAccountListLabel(type, isMainAccount) : '';
 
   return (
     <View className="flex-1 bg-background">
