@@ -9,8 +9,10 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAccountContext } from '~/contexts/AccountContext';
+import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext';
 import { CircleChevronRight } from 'lucide-react-native';
 import Circles from '~/assets/circles.svg';
+import NotConnected from '~/components/NotConnected';
 import NotTracking from '~/components/NotTracking';
 import Button from '~/components/Button';
 import { Instagram } from '~/lib/types';
@@ -53,6 +55,7 @@ function TrackedAccountItem({ account }: TrackedAccountItemProps) {
 
 export default function Tracking() {
   const { trackedInstagrams, isLoading } = useAccountContext();
+  const { isLoggedIn, showLogin } = useInstagramContext();
 
   if (isLoading) {
     return (
@@ -62,6 +65,18 @@ export default function Tracking() {
         </View>
         <ActivityIndicator size="large" color="#6b7280" />
       </View>
+    );
+  }
+
+  // Not connected state - redirect to home after connecting
+  if (!isLoggedIn) {
+    return (
+      <NotConnected
+        onConnect={() => {
+          showLogin();
+          router.replace('/(tabs)/home');
+        }}
+      />
     );
   }
 
