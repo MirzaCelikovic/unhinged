@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Unhinged",
-    "slug": "unhinged",
+    "slug": "unhinged-app",
     "scheme": "unhinged",
     "version": "1.0.0",
     "web": {
@@ -41,7 +41,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#FFE51F"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "so.unhinged",
@@ -53,6 +55,12 @@
         "backgroundColor": "#ffffff"
       },
       "package": "so.unhinged.app"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "20804e1a-1797-4803-b030-4efe8e5aefd2"
+      }
+    },
+    "owner": "brodd"
   }
 }
