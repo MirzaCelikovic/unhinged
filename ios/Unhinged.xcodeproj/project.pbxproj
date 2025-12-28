@@ -539,7 +539,7 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = "so.unhinged";
+				PRODUCT_BUNDLE_IDENTIFIER = so.unhinged;
 				PRODUCT_NAME = "Unhinged";
 				SWIFT_OBJC_BRIDGING_HEADER = "Unhinged/Unhinged-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -572,7 +572,7 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = "so.unhinged";
+				PRODUCT_BUNDLE_IDENTIFIER = so.unhinged;
 				PRODUCT_NAME = "Unhinged";
 				SWIFT_OBJC_BRIDGING_HEADER = "Unhinged/Unhinged-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
@@ -599,7 +599,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = so.unhinged.app.richpush;
+				PRODUCT_BUNDLE_IDENTIFIER = so.unhinged.richpush;
 				PRODUCT_NAME = NotificationService;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 4.2;
@@ -621,7 +621,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = so.unhinged.app.richpush;
+				PRODUCT_BUNDLE_IDENTIFIER = so.unhinged.richpush;
 				PRODUCT_NAME = NotificationService;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 4.2;
