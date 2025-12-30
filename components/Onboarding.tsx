@@ -7,6 +7,10 @@ import TrackSearch from '~/components/onboarding/TrackSearch';
 import HelpScreen1 from '~/components/onboarding/HelpScreen1';
 import HelpScreen2 from '~/components/onboarding/HelpScreen2';
 import NotificationConsent from '~/components/onboarding/NotificationConsent';
+import ReviewScreen from '~/components/onboarding/ReviewScreen';
+import StatsScreen from '~/components/onboarding/StatsScreen';
+import ComparisonScreen from '~/components/onboarding/ComparisonScreen';
+import ConnectScreen from '~/components/onboarding/ConnectScreen';
 import Logo from '~/assets/logo_black.svg';
 import { Instagram } from '~/lib/types';
 
@@ -42,7 +46,27 @@ interface NotificationsStep {
   type: 'notifications';
 }
 
-type Step = ChoiceStep | UsernameStep | TrackStep | HelpStep | NotificationsStep;
+interface ReviewStep {
+  id: string;
+  type: 'review';
+}
+
+interface StatsStep {
+  id: string;
+  type: 'stats';
+}
+
+interface ComparisonStep {
+  id: string;
+  type: 'comparison';
+}
+
+interface ConnectStep {
+  id: string;
+  type: 'connect';
+}
+
+type Step = ChoiceStep | UsernameStep | TrackStep | HelpStep | NotificationsStep | ReviewStep | StatsStep | ComparisonStep | ConnectStep;
 
 const STEPS: Step[] = [
   {
@@ -89,6 +113,22 @@ const STEPS: Step[] = [
   {
     id: 'notifications',
     type: 'notifications',
+  },
+  {
+    id: 'review',
+    type: 'review',
+  },
+  {
+    id: 'stats',
+    type: 'stats',
+  },
+  {
+    id: 'comparison',
+    type: 'comparison',
+  },
+  {
+    id: 'connect',
+    type: 'connect',
   },
 ];
 
@@ -174,9 +214,11 @@ export default function Onboarding({ onBack, onComplete }: OnboardingProps) {
         )}
         {step.type === 'help1' && <HelpScreen1 onNext={handleNext} />}
         {step.type === 'help2' && <HelpScreen2 onNext={handleNext} />}
-        {step.type === 'notifications' && (
-          <NotificationConsent onComplete={onComplete} />
-        )}
+        {step.type === 'notifications' && <NotificationConsent onComplete={handleNext} />}
+        {step.type === 'review' && <ReviewScreen onNext={handleNext} />}
+        {step.type === 'stats' && <StatsScreen onNext={handleNext} />}
+        {step.type === 'comparison' && <ComparisonScreen onNext={handleNext} />}
+        {step.type === 'connect' && <ConnectScreen onConnect={() => {}} />}
       </View>
     </View>
   );
