@@ -1,5 +1,14 @@
 import { useState, useEffect } from 'react';
-import { View, Text, Pressable, Image, KeyboardAvoidingView, Platform, Keyboard, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  ScrollView,
+} from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Instagram } from '~/lib/types';
 import { fetchPublicProfile } from '~/lib/fetchPublicProfile';
@@ -35,11 +44,7 @@ interface TrackSearchProps {
   onResultFetched: (result: Instagram) => void;
 }
 
-export default function TrackSearch({
-  onNext,
-  savedResult,
-  onResultFetched,
-}: TrackSearchProps) {
+export default function TrackSearch({ onNext, savedResult, onResultFetched }: TrackSearchProps) {
   const [username, setUsername] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState('');
@@ -83,7 +88,7 @@ export default function TrackSearch({
   if (savedResult) {
     return (
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 24 }}>
-        <Text className="mb-8 text-center font-roboto-black text-3xl">What we found</Text>
+        <Text className="mb-8 text-center font-roboto-black text-4xl">What we found</Text>
 
         <InstagramCard account={savedResult} />
 
@@ -93,7 +98,12 @@ export default function TrackSearch({
           {FAKE_ACCOUNTS.map((account) => (
             <View key={account.id} className="overflow-hidden rounded-2xl">
               <View className="flex-row items-center gap-3 bg-white p-4">
-                <Image source={account.image} className="h-12 w-12 rounded-full" blurRadius={8} style={{ transform: [{ scaleX: -1 }] }} />
+                <Image
+                  source={account.image}
+                  className="h-12 w-12 rounded-full"
+                  blurRadius={8}
+                  style={{ transform: [{ scaleX: -1 }] }}
+                />
                 <View className="flex-1 justify-center">
                   <View className="mb-1 h-4 w-32 rounded bg-gray-300" />
                   <Text className="font-roboto text-sm text-gray-400">{account.time}</Text>
@@ -134,7 +144,7 @@ export default function TrackSearch({
         <Animated.View style={svgAnimatedStyle}>
           <Unhinged width={140} height={140} />
         </Animated.View>
-        <Text className="font-roboto-extrablack mt-6 px-2 text-center text-4xl tracking-tighter">
+        <Text className="mt-6 px-2 text-center font-roboto-extrablack text-4xl tracking-tighter">
           Who do you want to track?
         </Text>
         <View className="mt-8 w-full">

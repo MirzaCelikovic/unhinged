@@ -17,7 +17,7 @@ export default function NotificationConsent({ onComplete }: NotificationConsentP
       <Text className="text-center font-roboto-extrablack text-4xl tracking-tighter">
         Don't miss out on{'\n'}what's happening
       </Text>
-      <Text className="font-roboto mt-3 text-center text-base text-gray-600">
+      <Text className="font-roboto mt-3 text-center text-base text-black">
         Get notified when someone unfollows you and more
       </Text>
 

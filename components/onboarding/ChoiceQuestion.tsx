@@ -15,7 +15,7 @@ interface ChoiceQuestionProps {
 export default function ChoiceQuestion({ question, choices, onSelect }: ChoiceQuestionProps) {
   return (
     <View className="flex-1 px-4">
-      <Text className="mb-8 text-center font-roboto-black text-3xl">{question}</Text>
+      <Text className="mb-8 text-center font-roboto-black text-4xl">{question}</Text>
 
       <View className="gap-3">
         {choices.map((choice) => (

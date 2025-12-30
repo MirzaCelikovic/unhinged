@@ -11,7 +11,7 @@ export default function ReviewScreen({ onNext }: ReviewScreenProps) {
       <Text className="text-center font-roboto-extrablack text-4xl tracking-tighter">
         Everyone loves being Unhinged
       </Text>
-      <Text className="font-roboto mt-3 text-center text-base text-gray-600">
+      <Text className="font-roboto mt-3 text-center text-base text-black">
         See what our users have to say
       </Text>
 

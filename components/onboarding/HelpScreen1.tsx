@@ -31,7 +31,7 @@ export default function HelpScreen1({ onNext }: HelpScreen1Props) {
 
       <View className="px-4 pb-8">
         <Text className="mt-8 text-center font-roboto-extrablack text-4xl">Track people privately</Text>
-        <Text className="font-roboto mt-2 text-center text-base text-gray-600">
+        <Text className="font-roboto mt-2 text-center text-base text-black">
           See who starts following them and who follows them back.
         </Text>
         <View className="mt-6">

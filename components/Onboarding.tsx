@@ -1,5 +1,13 @@
 import { useState } from 'react';
 import { View, Pressable } from 'react-native';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  useAnimatedStyle,
+  withTiming,
+  useSharedValue,
+  runOnJS,
+} from 'react-native-reanimated';
 import { CircleChevronLeft } from 'lucide-react-native';
 import ChoiceQuestion from '~/components/onboarding/ChoiceQuestion';
 import UsernameSearch from '~/components/onboarding/UsernameSearch';
@@ -138,14 +146,23 @@ export default function Onboarding({ onBack, onComplete }: OnboardingProps) {
   const [instagramResult, setInstagramResult] = useState<Instagram | null>(null);
   const [trackResult, setTrackResult] = useState<Instagram | null>(null);
 
-  const progress = ((currentStep + 1) / STEPS.length) * 100;
+  const progressWidth = useSharedValue(((0 + 1) / STEPS.length) * 100);
   const step = STEPS[currentStep];
+
+  const progressAnimatedStyle = useAnimatedStyle(() => ({
+    width: `${progressWidth.value}%`,
+  }));
+
+  const goToStep = (newStep: number) => {
+    setCurrentStep(newStep);
+    progressWidth.value = withTiming(((newStep + 1) / STEPS.length) * 100, { duration: 300 });
+  };
 
   const handleBack = () => {
     if (currentStep === 0) {
       onBack();
     } else {
-      setCurrentStep(currentStep - 1);
+      goToStep(currentStep - 1);
     }
   };
 
@@ -153,7 +170,7 @@ export default function Onboarding({ onBack, onComplete }: OnboardingProps) {
     if (currentStep === STEPS.length - 1) {
       onComplete();
     } else {
-      setCurrentStep(currentStep + 1);
+      goToStep(currentStep + 1);
     }
   };
 
@@ -185,40 +202,46 @@ export default function Onboarding({ onBack, onComplete }: OnboardingProps) {
 
         {/* Progress bar */}
         <View className="h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
-          <View className="h-full rounded-full bg-black" style={{ width: `${progress}%` }} />
+          <Animated.View className="h-full rounded-full bg-black" style={progressAnimatedStyle} />
         </View>
       </View>
 
       {/* Content */}
       <View className="flex-1 pt-8">
-        {step.type === 'choice' && (
-          <ChoiceQuestion
-            question={(step as ChoiceStep).question}
-            choices={(step as ChoiceStep).choices}
-            onSelect={handleSelect}
-          />
-        )}
-        {step.type === 'username' && (
-          <UsernameSearch
-            onNext={handleUsernameNext}
-            savedResult={instagramResult}
-            onResultFetched={setInstagramResult}
-          />
-        )}
-        {step.type === 'track' && (
-          <TrackSearch
-            onNext={handleUsernameNext}
-            savedResult={trackResult}
-            onResultFetched={setTrackResult}
-          />
-        )}
-        {step.type === 'help1' && <HelpScreen1 onNext={handleNext} />}
-        {step.type === 'help2' && <HelpScreen2 onNext={handleNext} />}
-        {step.type === 'notifications' && <NotificationConsent onComplete={handleNext} />}
-        {step.type === 'review' && <ReviewScreen onNext={handleNext} />}
-        {step.type === 'stats' && <StatsScreen onNext={handleNext} />}
-        {step.type === 'comparison' && <ComparisonScreen onNext={handleNext} />}
-        {step.type === 'connect' && <ConnectScreen onConnect={() => {}} />}
+        <Animated.View
+          key={step.id}
+          entering={FadeIn.duration(300)}
+          exiting={FadeOut.duration(300)}
+          className="flex-1">
+          {step.type === 'choice' && (
+            <ChoiceQuestion
+              question={(step as ChoiceStep).question}
+              choices={(step as ChoiceStep).choices}
+              onSelect={handleSelect}
+            />
+          )}
+          {step.type === 'username' && (
+            <UsernameSearch
+              onNext={handleUsernameNext}
+              savedResult={instagramResult}
+              onResultFetched={setInstagramResult}
+            />
+          )}
+          {step.type === 'track' && (
+            <TrackSearch
+              onNext={handleUsernameNext}
+              savedResult={trackResult}
+              onResultFetched={setTrackResult}
+            />
+          )}
+          {step.type === 'help1' && <HelpScreen1 onNext={handleNext} />}
+          {step.type === 'help2' && <HelpScreen2 onNext={handleNext} />}
+          {step.type === 'notifications' && <NotificationConsent onComplete={handleNext} />}
+          {step.type === 'review' && <ReviewScreen onNext={handleNext} />}
+          {step.type === 'stats' && <StatsScreen onNext={handleNext} />}
+          {step.type === 'comparison' && <ComparisonScreen onNext={handleNext} />}
+          {step.type === 'connect' && <ConnectScreen onConnect={() => {}} />}
+        </Animated.View>
       </View>
     </View>
   );

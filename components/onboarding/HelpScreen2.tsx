@@ -38,7 +38,7 @@ export default function HelpScreen2({ onNext }: HelpScreen2Props) {
         <Text className="mt-8 text-center font-roboto-extrablack text-4xl">
           See who's not following you back
         </Text>
-        <Text className="font-roboto mt-2 text-center text-base text-gray-600">
+        <Text className="font-roboto mt-2 text-center text-base text-black">
           Clean up your following and unfollow users with one tap
         </Text>
         <View className="mt-6">

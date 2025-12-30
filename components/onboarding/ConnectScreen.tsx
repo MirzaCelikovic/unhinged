@@ -13,8 +13,8 @@ export default function ConnectScreen({ onConnect }: ConnectScreenProps) {
         They'll never know you're watching
       </Text>
       <View className="mt-3 flex-row items-center justify-center">
-        <LockKeyhole size={16} color="#6b7280" />
-        <Text className="font-roboto ml-2 text-center text-base text-gray-600">
+        <LockKeyhole size={16} color="#000000" />
+        <Text className="font-roboto ml-2 text-center text-base text-black">
           Your data is fully secure
         </Text>
       </View>
@@ -24,7 +24,7 @@ export default function ConnectScreen({ onConnect }: ConnectScreenProps) {
           <Shield size={28} color="#000000" />
           <View className="ml-4 flex-1">
             <Text className="font-roboto-bold text-lg">Bank Level Security</Text>
-            <Text className="font-roboto mt-1 text-base text-gray-600">
+            <Text className="font-roboto mt-1 text-base text-black">
               Protected Sync. Log into Instagram. Your connection is secured with bank-grade encryption.
             </Text>
           </View>
@@ -34,7 +34,7 @@ export default function ConnectScreen({ onConnect }: ConnectScreenProps) {
           <FolderCheck size={28} color="#000000" />
           <View className="ml-4 flex-1">
             <Text className="font-roboto-bold text-lg">Secure and Local</Text>
-            <Text className="font-roboto mt-1 text-base text-gray-600">
+            <Text className="font-roboto mt-1 text-base text-black">
               Private, by design. Your data resides securely on your device, giving you total control. We simply don't have the keys to see it.
             </Text>
           </View>
@@ -44,7 +44,7 @@ export default function ConnectScreen({ onConnect }: ConnectScreenProps) {
           <EyeOff size={28} color="#000000" />
           <View className="ml-4 flex-1">
             <Text className="font-roboto-bold text-lg">Discreet & Private</Text>
-            <Text className="font-roboto mt-1 text-base text-gray-600">
+            <Text className="font-roboto mt-1 text-base text-black">
               Nobody knows you're using Unhinged. Your activity on Unhinged remains known only to you.
             </Text>
           </View>

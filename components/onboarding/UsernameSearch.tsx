@@ -1,5 +1,14 @@
 import { useState, useEffect } from 'react';
-import { View, Text, Pressable, Image, KeyboardAvoidingView, Platform, Keyboard, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  ScrollView,
+} from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Instagram } from '~/lib/types';
 import { fetchPublicProfile } from '~/lib/fetchPublicProfile';
@@ -83,11 +92,13 @@ export default function UsernameSearch({
   if (savedResult) {
     return (
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 24 }}>
-        <Text className="mb-8 text-center font-roboto-black text-3xl">What we found</Text>
+        <Text className="mb-8 text-center font-roboto-black text-4xl">What we found</Text>
 
         <InstagramCard account={savedResult} />
 
-        <Text className="mb-3 mt-6 font-roboto-medium text-lg text-black">Not following you back</Text>
+        <Text className="mb-3 mt-6 font-roboto-medium text-lg text-black">
+          Not following you back
+        </Text>
 
         <View className="gap-3">
           {FAKE_ACCOUNTS.map((account) => (
@@ -133,7 +144,7 @@ export default function UsernameSearch({
         <Animated.View style={svgAnimatedStyle}>
           <Unhinged width={140} height={140} />
         </Animated.View>
-        <Text className="font-roboto-extrablack mt-6 px-2 text-center text-4xl tracking-tighter">
+        <Text className="mt-6 px-2 text-center font-roboto-extrablack text-4xl tracking-tighter">
           What's your Instagram username?
         </Text>
         <View className="mt-8 w-full">

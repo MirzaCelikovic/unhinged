@@ -12,9 +12,7 @@ export default function StatsScreen({ onNext }: StatsScreenProps) {
       <Text className="text-center font-roboto-extrablack text-4xl tracking-tighter">
         Stats to back us up
       </Text>
-      <Text className="font-roboto mt-3 text-center text-base text-gray-600">
-        Based on 2025 data
-      </Text>
+      <Text className="font-roboto mt-3 text-center text-base text-black">Based on 2025 data</Text>
 
       <View className="flex-1 items-center justify-center">
         <View className="-mt-16 items-center justify-center">
