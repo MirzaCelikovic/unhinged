@@ -14,7 +14,7 @@ export default function NotificationConsent({ onComplete }: NotificationConsentP
 
   return (
     <View className="flex-1 px-4">
-      <Text className="text-center font-roboto-black text-3xl">
+      <Text className="text-center font-roboto-extrablack text-4xl tracking-tighter">
         Don't miss out on{'\n'}what's happening
       </Text>
       <Text className="font-roboto mt-3 text-center text-base text-gray-600">

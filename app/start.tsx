@@ -54,7 +54,7 @@ export default function Start() {
             </View>
 
             <View className="px-4 pb-8">
-              <Button label="Start" onPress={handleStart} />
+              <Button label="Get Started" onPress={handleStart} />
               <Text className="mt-4 px-2 text-center font-roboto text-sm text-gray-600">
                 By continuing, you agree with our{' '}
                 <Text className="underline" onPress={openTerms}>

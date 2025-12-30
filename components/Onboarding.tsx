@@ -3,6 +3,9 @@ import { View, Pressable } from 'react-native';
 import { CircleChevronLeft } from 'lucide-react-native';
 import ChoiceQuestion from '~/components/onboarding/ChoiceQuestion';
 import UsernameSearch from '~/components/onboarding/UsernameSearch';
+import TrackSearch from '~/components/onboarding/TrackSearch';
+import HelpScreen1 from '~/components/onboarding/HelpScreen1';
+import HelpScreen2 from '~/components/onboarding/HelpScreen2';
 import NotificationConsent from '~/components/onboarding/NotificationConsent';
 import Logo from '~/assets/logo_black.svg';
 import { Instagram } from '~/lib/types';
@@ -24,12 +27,22 @@ interface UsernameStep {
   type: 'username';
 }
 
+interface TrackStep {
+  id: string;
+  type: 'track';
+}
+
+interface HelpStep {
+  id: string;
+  type: 'help1' | 'help2';
+}
+
 interface NotificationsStep {
   id: string;
   type: 'notifications';
 }
 
-type Step = ChoiceStep | UsernameStep | NotificationsStep;
+type Step = ChoiceStep | UsernameStep | TrackStep | HelpStep | NotificationsStep;
 
 const STEPS: Step[] = [
   {
@@ -62,6 +75,18 @@ const STEPS: Step[] = [
     ],
   },
   {
+    id: 'track_username',
+    type: 'track',
+  },
+  {
+    id: 'help1',
+    type: 'help1',
+  },
+  {
+    id: 'help2',
+    type: 'help2',
+  },
+  {
     id: 'notifications',
     type: 'notifications',
   },
@@ -71,6 +96,7 @@ export default function Onboarding({ onBack, onComplete }: OnboardingProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [instagramResult, setInstagramResult] = useState<Instagram | null>(null);
+  const [trackResult, setTrackResult] = useState<Instagram | null>(null);
 
   const progress = ((currentStep + 1) / STEPS.length) * 100;
   const step = STEPS[currentStep];
@@ -118,7 +144,7 @@ export default function Onboarding({ onBack, onComplete }: OnboardingProps) {
         </View>
 
         {/* Progress bar */}
-        <View className="h-2 overflow-hidden rounded-full bg-gray-300">
+        <View className="h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
           <View className="h-full rounded-full bg-black" style={{ width: `${progress}%` }} />
         </View>
       </View>
@@ -139,6 +165,15 @@ export default function Onboarding({ onBack, onComplete }: OnboardingProps) {
             onResultFetched={setInstagramResult}
           />
         )}
+        {step.type === 'track' && (
+          <TrackSearch
+            onNext={handleUsernameNext}
+            savedResult={trackResult}
+            onResultFetched={setTrackResult}
+          />
+        )}
+        {step.type === 'help1' && <HelpScreen1 onNext={handleNext} />}
+        {step.type === 'help2' && <HelpScreen2 onNext={handleNext} />}
         {step.type === 'notifications' && (
           <NotificationConsent onComplete={onComplete} />
         )}

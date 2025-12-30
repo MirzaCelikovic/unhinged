@@ -11,35 +11,35 @@ import Unhinged from '~/assets/unhinged_2.svg';
 const FAKE_ACCOUNTS = [
   {
     id: '1',
+    username: 'emma_fitness',
+    image: require('~/assets/profile_2.jpg'),
+    time: 'Yesterday',
+  },
+  {
+    id: '2',
     username: 'sarah_designs',
     image: require('~/assets/profile_0.jpg'),
     time: '2 hours ago',
   },
   {
-    id: '2',
+    id: '3',
     username: 'mike.travels',
     image: require('~/assets/profile_1.jpg'),
     time: '5 hours ago',
   },
-  {
-    id: '3',
-    username: 'emma_fitness',
-    image: require('~/assets/profile_2.jpg'),
-    time: 'Yesterday',
-  },
 ];
 
-interface UsernameSearchProps {
+interface TrackSearchProps {
   onNext: (username: string | null) => void;
   savedResult: Instagram | null;
   onResultFetched: (result: Instagram) => void;
 }
 
-export default function UsernameSearch({
+export default function TrackSearch({
   onNext,
   savedResult,
   onResultFetched,
-}: UsernameSearchProps) {
+}: TrackSearchProps) {
   const [username, setUsername] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState('');
@@ -87,15 +87,16 @@ export default function UsernameSearch({
 
         <InstagramCard account={savedResult} />
 
-        <Text className="mb-3 mt-6 font-roboto-medium text-lg text-black">Not following you back</Text>
+        <Text className="mb-3 mt-6 font-roboto-medium text-lg text-black">Recent activity</Text>
 
         <View className="gap-3">
           {FAKE_ACCOUNTS.map((account) => (
             <View key={account.id} className="overflow-hidden rounded-2xl">
               <View className="flex-row items-center gap-3 bg-white p-4">
-                <Image source={account.image} className="h-12 w-12 rounded-full" blurRadius={8} />
+                <Image source={account.image} className="h-12 w-12 rounded-full" blurRadius={8} style={{ transform: [{ scaleX: -1 }] }} />
                 <View className="flex-1 justify-center">
-                  <View className="h-4 w-32 rounded bg-gray-300" />
+                  <View className="mb-1 h-4 w-32 rounded bg-gray-300" />
+                  <Text className="font-roboto text-sm text-gray-400">{account.time}</Text>
                 </View>
               </View>
             </View>
@@ -134,7 +135,7 @@ export default function UsernameSearch({
           <Unhinged width={140} height={140} />
         </Animated.View>
         <Text className="font-roboto-extrablack mt-6 px-2 text-center text-4xl tracking-tighter">
-          What's your Instagram username?
+          Who do you want to track?
         </Text>
         <View className="mt-8 w-full">
           <TextField
