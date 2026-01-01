@@ -3,27 +3,35 @@ import {
   Text,
   ScrollView,
   Pressable,
-  ActivityIndicator,
   StyleSheet,
   Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useAccountContext } from '~/contexts/AccountContext';
-import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext';
+import { useInstagram as useInstagramContext, AccountSyncStatus } from '~/contexts/InstagramContext';
 import { CircleChevronRight } from 'lucide-react-native';
 import Circles from '~/assets/circles.svg';
 import NotConnected from '~/components/NotConnected';
 import NotTracking from '~/components/NotTracking';
 import Button from '~/components/Button';
+import Spinner from '~/components/Spinner';
 import { Instagram } from '~/lib/types';
 import { useInstagramActivity } from '~/lib/useInstagramActivity';
 
 interface TrackedAccountItemProps {
   account: Instagram;
+  syncStatus: AccountSyncStatus | undefined;
 }
 
-function TrackedAccountItem({ account }: TrackedAccountItemProps) {
+function TrackedAccountItem({ account, syncStatus }: TrackedAccountItemProps) {
   const { data: activity } = useInstagramActivity(account.user_id);
+
+  // Check if this account is still syncing
+  const isSyncing = syncStatus && (
+    syncStatus.metadata === 'syncing' ||
+    syncStatus.following === 'syncing' ||
+    syncStatus.followers === 'syncing'
+  );
 
   return (
     <Pressable
@@ -46,8 +54,14 @@ function TrackedAccountItem({ account }: TrackedAccountItemProps) {
         <Text className="font-roboto-bold text-xl text-gray-900">@{account.username}</Text>
       </View>
       <View className="flex-row items-center gap-2">
-        {activity.hasNewActivity && <View className="bg-error h-3 w-3 rounded-full" />}
-        <CircleChevronRight size={24} color="black" />
+        {isSyncing ? (
+          <Spinner size={24} color="#6b7280" />
+        ) : (
+          <>
+            {activity.hasNewActivity && <View className="bg-error h-3 w-3 rounded-full" />}
+            <CircleChevronRight size={24} color="black" />
+          </>
+        )}
       </View>
     </Pressable>
   );
@@ -55,7 +69,7 @@ function TrackedAccountItem({ account }: TrackedAccountItemProps) {
 
 export default function Tracking() {
   const { trackedInstagrams, isLoading } = useAccountContext();
-  const { isLoggedIn, showLogin } = useInstagramContext();
+  const { isLoggedIn, showLogin, syncState } = useInstagramContext();
 
   if (isLoading) {
     return (
@@ -96,7 +110,11 @@ export default function Tracking() {
         <View>
           <View className="gap-3">
             {trackedInstagrams.map((instagram) => (
-              <TrackedAccountItem key={instagram.user_id} account={instagram} />
+              <TrackedAccountItem
+                key={instagram.user_id}
+                account={instagram}
+                syncStatus={syncState.trackedAccounts.find((acc) => acc.userId === instagram.user_id)}
+              />
             ))}
           </View>
         </View>

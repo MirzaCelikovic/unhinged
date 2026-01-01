@@ -1,30 +1,31 @@
-import { View, Text, StyleSheet, SafeAreaView, Pressable, ScrollView } from 'react-native';
+import { View, StyleSheet, SafeAreaView, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { useState, useEffect } from 'react';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  runOnJS,
-} from 'react-native-reanimated';
 import { X } from 'lucide-react-native';
 import Circles from '~/assets/circles.svg';
 import Logo from '~/assets/logo_black.svg';
 import StartTracking from '~/components/StartTracking';
-import InitialSync from '~/components/InitialSync';
-import StartedTracking from '~/components/StartedTracking';
 import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext';
-
-type TrackState = 'start' | 'syncing' | 'tracking';
+import { useAccountContext } from '~/contexts/AccountContext';
+import { useAddTrackedInstagram } from '~/lib/useInstagram';
 
 export default function TrackModal() {
-  const [state, setState] = useState<TrackState>('start');
-  const [userId, setUserId] = useState('');
-  const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const { fetchUserId } = useInstagramContext();
-  const contentOpacity = useSharedValue(1);
+  const [addedUserId, setAddedUserId] = useState<string | null>(null);
+  const { fetchUserId, syncTrackedAccount, syncState } = useInstagramContext();
+  const { account } = useAccountContext();
+  const addTrackedInstagram = useAddTrackedInstagram();
+
+  // Auto-close modal once metadata is fetched for the added account
+  useEffect(() => {
+    if (!addedUserId) return;
+
+    const trackedAccount = syncState.trackedAccounts.find((acc) => acc.userId === addedUserId);
+    if (trackedAccount?.metadata === 'complete') {
+      router.back();
+    }
+  }, [addedUserId, syncState.trackedAccounts]);
 
   const handleContinue = async (inputUsername: string) => {
     setError('');
@@ -33,6 +34,11 @@ export default function TrackModal() {
     const trimmedUsername = inputUsername.trim();
     if (!trimmedUsername) {
       setError('Invalid username');
+      return;
+    }
+
+    if (!account?.uuid) {
+      setError('Account not ready');
       return;
     }
 
@@ -51,45 +57,31 @@ export default function TrackModal() {
         return;
       }
 
-      // Valid account - fade out and move to syncing state
-      console.log('✅ Valid account, transitioning to syncing');
-      setUserId(result.userId);
-      setUsername(trimmedUsername);
-      contentOpacity.value = withTiming(0, { duration: 200 }, (finished) => {
-        if (finished) {
-          runOnJS(setState)('syncing');
-        }
+      // Register tracked account with backend first
+      console.log('📝 Registering tracked account with backend');
+      await addTrackedInstagram.mutateAsync({
+        accountId: account.uuid,
+        userId: result.userId,
+        username: trimmedUsername,
       });
+      console.log('✅ Tracked account registered');
+
+      // Store userId to watch for metadata completion
+      setAddedUserId(result.userId);
+
+      // Sync just this tracked account (will auto-close when metadata is done)
+      syncTrackedAccount(result.userId, trimmedUsername);
     } catch (err) {
-      console.log('❌ Error fetching user:', err);
-      setError('Account not found');
+      console.log('❌ Error:', err);
+      if (err instanceof Error && err.message.includes('not found')) {
+        setError('Account not found');
+      } else {
+        setError('Failed to add tracked account');
+      }
     } finally {
       setIsLoading(false);
     }
   };
-
-  const handleSyncComplete = async () => {
-    // Transition to tracking state - data will come from context
-    contentOpacity.value = withTiming(0, { duration: 200 }, (finished) => {
-      if (finished) {
-        runOnJS(setState)('tracking');
-      }
-    });
-  };
-
-  useEffect(() => {
-    if (state === 'syncing') {
-      contentOpacity.value = 0;
-      contentOpacity.value = withTiming(1, { duration: 200 });
-    } else if (state === 'tracking') {
-      contentOpacity.value = 0;
-      contentOpacity.value = withTiming(1, { duration: 200 });
-    }
-  }, [state]);
-
-  const contentAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: contentOpacity.value,
-  }));
 
   return (
     <View className="bg-background flex-1">
@@ -112,26 +104,9 @@ export default function TrackModal() {
       </SafeAreaView>
 
       {/* Content */}
-      {state === 'start' && (
-        <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
-          <StartTracking onContinue={handleContinue} isLoading={isLoading} error={error} />
-        </Animated.View>
-      )}
-
-      {state === 'syncing' && (
-        <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
-          <InitialSync userId={userId} username={username} onComplete={handleSyncComplete} />
-        </Animated.View>
-      )}
-
-      {state === 'tracking' && (
-        <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
-          <StartedTracking
-            userId={userId}
-            onContinue={() => router.back()}
-          />
-        </Animated.View>
-      )}
+      <View className="flex-1">
+        <StartTracking onContinue={handleContinue} isLoading={isLoading} error={error} />
+      </View>
     </View>
   );
 }

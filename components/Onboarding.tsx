@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Pressable } from 'react-native';
 import Animated, {
   FadeIn,
@@ -21,6 +21,8 @@ import ComparisonScreen from '~/components/onboarding/ComparisonScreen';
 import ConnectScreen from '~/components/onboarding/ConnectScreen';
 import Logo from '~/assets/logo_black.svg';
 import { Instagram } from '~/lib/types';
+import { useInstagram } from '~/contexts/InstagramContext';
+import { useAccountContext } from '~/contexts/AccountContext';
 
 interface OnboardingProps {
   onBack: () => void;
@@ -145,9 +147,19 @@ export default function Onboarding({ onBack, onComplete }: OnboardingProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [instagramResult, setInstagramResult] = useState<Instagram | null>(null);
   const [trackResult, setTrackResult] = useState<Instagram | null>(null);
+  const { showLogin, isLoggedIn, sync } = useInstagram();
+  const { account } = useAccountContext();
 
   const progressWidth = useSharedValue(((0 + 1) / STEPS.length) * 100);
   const step = STEPS[currentStep];
+
+  // When user successfully connects Instagram and account data is ready, start sync and complete onboarding
+  useEffect(() => {
+    if (isLoggedIn === true && step.type === 'connect' && account?.instagram_username) {
+      sync();
+      onComplete();
+    }
+  }, [isLoggedIn, step.type, account?.instagram_username, sync, onComplete]);
 
   const progressAnimatedStyle = useAnimatedStyle(() => ({
     width: `${progressWidth.value}%`,
@@ -240,7 +252,7 @@ export default function Onboarding({ onBack, onComplete }: OnboardingProps) {
           {step.type === 'review' && <ReviewScreen onNext={handleNext} />}
           {step.type === 'stats' && <StatsScreen onNext={handleNext} />}
           {step.type === 'comparison' && <ComparisonScreen onNext={handleNext} />}
-          {step.type === 'connect' && <ConnectScreen onConnect={() => {}} />}
+          {step.type === 'connect' && <ConnectScreen onConnect={showLogin} onSkip={onComplete} />}
         </Animated.View>
       </View>
     </View>

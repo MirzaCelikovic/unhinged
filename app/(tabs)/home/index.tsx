@@ -5,15 +5,12 @@ import {
   ActivityIndicator,
   ScrollView,
   StyleSheet,
-  SafeAreaView,
 } from 'react-native';
 import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext';
 import { useInstagram } from '~/lib/useInstagram';
 import { useEffect, useState } from 'react';
-import { ChevronRight, RefreshCcw } from 'lucide-react-native';
 import { useFollowerStats } from '~/lib/useFollowerStats';
 import { useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
 import Circles from '~/assets/circles.svg';
 import InstagramCard from '~/components/InstagramCard';
 import ActivityList from '~/components/ActivityList';
@@ -25,7 +22,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming, runOnJS } from 
 type HomeState = 'notConnected' | 'initialSync' | 'connected';
 
 export default function Index() {
-  const { isLoggedIn, isSyncing, showLogin, disconnect, sync, userId } = useInstagramContext();
+  const { isLoggedIn, syncState, showLogin, sync, userId } = useInstagramContext();
   const { account } = useAccountContext();
   const { data: instagram } = useInstagram(userId);
   const { data: stats } = useFollowerStats(userId);
@@ -42,26 +39,30 @@ export default function Index() {
 
     if (isLoggedIn === false) {
       setHomeState('notConnected');
+    } else if (syncState.isActive) {
+      // Sync in progress - show initial sync
+      setHomeState('initialSync');
     } else {
-      // Returning user - go straight to connected
+      // Returning user with no active sync - go straight to connected
       setHomeState('connected');
     }
-  }, [isLoggedIn, homeState]);
+  }, [isLoggedIn, homeState, syncState.isActive]);
 
   // Handle login state changes (for fresh logins after initial load)
   useEffect(() => {
-    if (isLoggedIn === true && homeState === 'notConnected') {
-      // Just logged in - transition to initial sync
+    if (isLoggedIn === true && homeState === 'notConnected' && account?.instagram_username) {
+      // Just logged in and account data ready - start sync and transition to initial sync
+      sync();
       contentOpacity.value = withTiming(0, { duration: 200 }, (finished) => {
         if (finished) {
           runOnJS(setHomeState)('initialSync');
         }
       });
-    } else if (isLoggedIn === false && homeState === 'connected') {
+    } else if (isLoggedIn === false && homeState !== 'notConnected') {
       // Logged out - go back to not connected
       setHomeState('notConnected');
     }
-  }, [isLoggedIn, homeState]);
+  }, [isLoggedIn, homeState, account?.instagram_username]);
 
   // Handle state transitions with fade in
   useEffect(() => {
@@ -82,11 +83,11 @@ export default function Index() {
 
   // Invalidate stats query when sync completes
   useEffect(() => {
-    if (!isSyncing && userId) {
+    if (!syncState.isActive && userId) {
       console.log('✅ Sync complete, invalidating followerStats query');
       queryClient.invalidateQueries({ queryKey: ['followerStats', userId] });
     }
-  }, [isSyncing, userId]);
+  }, [syncState.isActive, userId]);
 
   const handleInitialSyncComplete = () => {
     // Invalidate queries to fetch fresh data
@@ -145,14 +146,9 @@ export default function Index() {
         </Animated.View>
       )}
 
-      {homeState === 'initialSync' && userId && account?.instagram_username && (
+      {homeState === 'initialSync' && (
         <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
-          <InitialSync
-            userId={userId}
-            username={account.instagram_username}
-            onComplete={handleInitialSyncComplete}
-            isMainAccount={true}
-          />
+          <InitialSync onComplete={handleInitialSyncComplete} />
         </Animated.View>
       )}
 
@@ -165,9 +161,9 @@ export default function Index() {
             <Text className="font-roboto-medium text-sm uppercase tracking-wide text-black">
               {formatLastSyncTime(stats.lastSyncedAt)}
             </Text>
-            <Pressable className="py-2 active:opacity-70" onPress={sync} disabled={isSyncing}>
+            <Pressable className="py-2 active:opacity-70" onPress={sync} disabled={syncState.isActive}>
               <Text className="font-roboto-medium text-sm uppercase tracking-wide text-black">
-                {isSyncing ? 'Syncing...' : 'Refresh'}
+                {syncState.isActive ? 'Syncing...' : 'Refresh'}
               </Text>
             </Pressable>
           </View>

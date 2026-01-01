@@ -4,9 +4,10 @@ import IgGradient from '~/assets/ig_gradient.svg';
 
 interface ConnectScreenProps {
   onConnect: () => void;
+  onSkip: () => void;
 }
 
-export default function ConnectScreen({ onConnect }: ConnectScreenProps) {
+export default function ConnectScreen({ onConnect, onSkip }: ConnectScreenProps) {
   return (
     <View className="flex-1 px-4">
       <Text className="text-center font-roboto-extrablack text-4xl tracking-tighter">
@@ -57,6 +58,9 @@ export default function ConnectScreen({ onConnect }: ConnectScreenProps) {
             <IgGradient width="100%" height={56} preserveAspectRatio="none" />
             <Text className="absolute font-roboto-medium text-lg text-white">Connect Instagram</Text>
           </View>
+        </Pressable>
+        <Pressable className="mt-4 py-3" onPress={onSkip}>
+          <Text className="text-center font-roboto-medium text-base text-black">Skip</Text>
         </Pressable>
       </View>
     </View>

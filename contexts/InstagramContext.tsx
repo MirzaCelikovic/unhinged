@@ -24,17 +24,32 @@ interface UserIdResult {
   followedByViewer: boolean;
 }
 
+export type SyncStepStatus = 'pending' | 'syncing' | 'complete' | 'error';
+
+export interface AccountSyncStatus {
+  userId: string;
+  username: string;
+  metadata: SyncStepStatus;
+  following: SyncStepStatus;
+  followers: SyncStepStatus;
+}
+
+export interface SyncState {
+  isActive: boolean;
+  mainAccount: AccountSyncStatus | null;
+  trackedAccounts: AccountSyncStatus[];
+}
+
 interface InstagramContextType {
   isLoggedIn: boolean | null;
   userId: string | null;
   isLoadingUserId: boolean;
-  isSyncing: boolean;
+  syncState: SyncState;
   showLogin: () => void;
   disconnect: () => void;
   fetchUserId: (username: string) => Promise<UserIdResult>;
-  fetchAccountMetadata: (username: string) => Promise<void>;
-  syncUser: (userId: string) => Promise<void>;
   sync: () => void;
+  syncTrackedAccount: (userId: string, username: string) => void;
 }
 
 interface WebViewMessage {
@@ -95,7 +110,11 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [[isLoadingUserId, userId], setUserId] = useStorage('instagram_user_id');
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncState, setSyncState] = useState<SyncState>({
+    isActive: false,
+    mainAccount: null,
+    trackedAccounts: [],
+  });
   const [apiWebViewReady, setApiWebViewReady] = useState(false);
 
   // Refs
@@ -108,23 +127,9 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const userIdFetchPromisesRef = useRef<
     Map<string, { resolve: (result: UserIdResult) => void; reject: (error: Error) => void }>
   >(new Map());
-  const metadataFetchPromisesRef = useRef<
-    Map<string, { resolve: () => void; reject: (error: Error) => void }>
-  >(new Map());
-  const syncUserPromisesRef = useRef<
-    Map<
-      string,
-      {
-        resolve: () => void;
-        reject: (error: Error) => void;
-        followingComplete: boolean;
-        followersComplete: boolean;
-      }
-    >
-  >(new Map());
 
   // Fetch following list for a user (internal helper)
-  const fetchFollowing = (userIdToFetch: string, isMainUser: boolean = false) => {
+  const fetchFollowing = (userIdToFetch: string) => {
     if (!apiWebViewRef.current) {
       console.warn('⚠️ fetchFollowing: API WebView not ready');
       return;
@@ -135,14 +140,13 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
 
-    console.log('🔄 fetchFollowing:', userIdToFetch, 'apiWebViewReady:', apiWebViewReady);
+    console.log('🔄 fetchFollowing:', userIdToFetch);
     fetchingUsersRef.current.add(userIdToFetch);
-    setIsSyncing(true);
 
     apiWebViewRef.current.injectJavaScript(`(function(){
       console.log('📱 Injecting fetchFollowing for userId:', '${userIdToFetch}');
       if (window.instagramAPI?.fetchFollowing) {
-        window.instagramAPI.fetchFollowing('${userIdToFetch}', ${isMainUser});
+        window.instagramAPI.fetchFollowing('${userIdToFetch}');
       } else {
         console.error('❌ window.instagramAPI.fetchFollowing not available');
       }
@@ -150,7 +154,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   // Fetch followers list for a user (internal helper)
-  const fetchFollowers = (userIdToFetch: string, isMainUser: boolean = false) => {
+  const fetchFollowers = (userIdToFetch: string) => {
     if (!apiWebViewRef.current) {
       console.warn('⚠️ fetchFollowers: API WebView not ready');
       return;
@@ -161,16 +165,34 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
 
-    console.log('🔄 fetchFollowers:', userIdToFetch, 'apiWebViewReady:', apiWebViewReady);
+    console.log('🔄 fetchFollowers:', userIdToFetch);
     fetchingUsersRef.current.add(`followers_${userIdToFetch}`);
-    setIsSyncing(true);
 
     apiWebViewRef.current.injectJavaScript(`(function(){
       console.log('📱 Injecting fetchFollowers for userId:', '${userIdToFetch}');
       if (window.instagramAPI?.fetchFollowers) {
-        window.instagramAPI.fetchFollowers('${userIdToFetch}', ${isMainUser});
+        window.instagramAPI.fetchFollowers('${userIdToFetch}');
       } else {
         console.error('❌ window.instagramAPI.fetchFollowers not available');
+      }
+    })(); true;`);
+  };
+
+  // Fetch account metadata (internal helper)
+  const fetchMetadata = (username: string) => {
+    if (!apiWebViewRef.current) {
+      console.warn('⚠️ fetchMetadata: API WebView not ready');
+      return;
+    }
+
+    console.log('🔄 fetchMetadata:', username);
+
+    apiWebViewRef.current.injectJavaScript(`(function(){
+      console.log('📱 Injecting fetchAccountMetadata for username:', '${username}');
+      if (window.instagramAPI?.fetchAccountMetadata) {
+        window.instagramAPI.fetchAccountMetadata('${username}');
+      } else {
+        console.error('❌ window.instagramAPI.fetchAccountMetadata not available');
       }
     })(); true;`);
   };
@@ -245,32 +267,75 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     `);
   };
 
-  // Sync a specific user (returns promise that resolves when both following and followers are complete)
-  const syncUser = (userIdToSync: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      if (!isLoggedIn) {
-        reject(new Error('Not logged in'));
-        return;
+  // Helper to update a specific account's sync status
+  const updateAccountSyncStatus = (
+    targetUserId: string,
+    field: 'metadata' | 'following' | 'followers',
+    status: SyncStepStatus
+  ) => {
+    setSyncState((prev) => {
+      // Check if it's the main account
+      if (prev.mainAccount?.userId === targetUserId) {
+        const updatedMain = { ...prev.mainAccount, [field]: status };
+        const allComplete =
+          updatedMain.metadata === 'complete' &&
+          updatedMain.following === 'complete' &&
+          updatedMain.followers === 'complete';
+        const allTrackedComplete = prev.trackedAccounts.every(
+          (acc) =>
+            acc.metadata === 'complete' &&
+            acc.following === 'complete' &&
+            acc.followers === 'complete'
+        );
+        return {
+          ...prev,
+          mainAccount: updatedMain,
+          isActive: !(allComplete && allTrackedComplete),
+        };
       }
 
-      // Track this sync
-      syncUserPromisesRef.current.set(userIdToSync, {
-        resolve,
-        reject,
-        followingComplete: false,
-        followersComplete: false,
-      });
+      // Check tracked accounts
+      const trackedIndex = prev.trackedAccounts.findIndex((acc) => acc.userId === targetUserId);
+      if (trackedIndex !== -1) {
+        const updatedTracked = [...prev.trackedAccounts];
+        updatedTracked[trackedIndex] = { ...updatedTracked[trackedIndex], [field]: status };
+        const mainComplete =
+          prev.mainAccount &&
+          prev.mainAccount.metadata === 'complete' &&
+          prev.mainAccount.following === 'complete' &&
+          prev.mainAccount.followers === 'complete';
+        const allTrackedComplete = updatedTracked.every(
+          (acc) =>
+            acc.metadata === 'complete' &&
+            acc.following === 'complete' &&
+            acc.followers === 'complete'
+        );
+        return {
+          ...prev,
+          trackedAccounts: updatedTracked,
+          isActive: !(mainComplete && allTrackedComplete),
+        };
+      }
 
-      // Fetch both following and followers
-      fetchFollowing(userIdToSync, false);
-      fetchFollowers(userIdToSync, false);
+      return prev;
     });
   };
 
-  // Public API to sync all accounts (main user + tracked accounts)
+  // Sync all accounts (main user + tracked accounts)
   const sync = () => {
+    // Skip if already syncing
+    if (syncState.isActive) {
+      console.log('⏭️ Sync already in progress, skipping');
+      return;
+    }
+
     if (!isLoggedIn || !userId) {
       console.warn('⚠️ Cannot sync: not logged in', { isLoggedIn, userId });
+      return;
+    }
+
+    if (!account?.instagram_username) {
+      console.warn('⚠️ Cannot sync: no instagram username');
       return;
     }
 
@@ -281,31 +346,79 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       trackedInstagrams.length
     );
 
-    // Sync the main user (following + followers)
-    fetchFollowing(userId, false);
-    fetchFollowers(userId, false);
+    // Initialize sync state with all accounts
+    const mainAccountStatus: AccountSyncStatus = {
+      userId,
+      username: account.instagram_username,
+      metadata: 'syncing',
+      following: 'syncing',
+      followers: 'syncing',
+    };
 
-    // Fetch metadata for main user
-    if (account?.instagram_username) {
-      injectJS(`
-        if (window.instagramAPI?.fetchAccountMetadata) {
-          window.instagramAPI.fetchAccountMetadata('${account.instagram_username}');
-        }
-      `);
+    const trackedAccountStatuses: AccountSyncStatus[] = trackedInstagrams.map((tracked) => ({
+      userId: tracked.user_id,
+      username: tracked.username,
+      metadata: 'syncing',
+      following: 'syncing',
+      followers: 'syncing',
+    }));
+
+    setSyncState({
+      isActive: true,
+      mainAccount: mainAccountStatus,
+      trackedAccounts: trackedAccountStatuses,
+    });
+
+    // Start all fetches in parallel for main account
+    fetchMetadata(account.instagram_username);
+    fetchFollowing(userId);
+    fetchFollowers(userId);
+
+    // Start all fetches in parallel for tracked accounts
+    trackedInstagrams.forEach((tracked) => {
+      fetchMetadata(tracked.username);
+      fetchFollowing(tracked.user_id);
+      fetchFollowers(tracked.user_id);
+    });
+  };
+
+  // Sync a single tracked account (used when adding a new tracked account)
+  const syncTrackedAccount = (trackedUserId: string, trackedUsername: string) => {
+    if (!isLoggedIn || !userId) {
+      console.warn('⚠️ Cannot sync tracked account: not logged in');
+      return;
     }
 
-    // Sync all tracked accounts (following + followers)
-    trackedInstagrams.forEach((trackedInstagram) => {
-      fetchFollowing(trackedInstagram.user_id, false);
-      fetchFollowers(trackedInstagram.user_id, false);
+    console.log('🔄 Starting sync for tracked account:', trackedUsername);
 
-      // Fetch metadata for tracked account
-      injectJS(`
-        if (window.instagramAPI?.fetchAccountMetadata) {
-          window.instagramAPI.fetchAccountMetadata('${trackedInstagram.username}');
-        }
-      `);
+    // Create sync status for the new tracked account
+    const newTrackedStatus: AccountSyncStatus = {
+      userId: trackedUserId,
+      username: trackedUsername,
+      metadata: 'syncing',
+      following: 'syncing',
+      followers: 'syncing',
+    };
+
+    // Add to sync state (or update if already exists)
+    setSyncState((prev) => {
+      const existingIndex = prev.trackedAccounts.findIndex((acc) => acc.userId === trackedUserId);
+      const updatedTrackedAccounts =
+        existingIndex !== -1
+          ? prev.trackedAccounts.map((acc, i) => (i === existingIndex ? newTrackedStatus : acc))
+          : [...prev.trackedAccounts, newTrackedStatus];
+
+      return {
+        ...prev,
+        isActive: true,
+        trackedAccounts: updatedTrackedAccounts,
+      };
     });
+
+    // Start fetches for this tracked account
+    fetchMetadata(trackedUsername);
+    fetchFollowing(trackedUserId);
+    fetchFollowers(trackedUserId);
   };
 
   // Disconnect (logout)
@@ -332,43 +445,6 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       injectJS(`
         if (window.instagramAPI?.fetchUserId) {
           window.instagramAPI.fetchUserId('${username}');
-        }
-      `);
-    });
-  };
-
-  // Fetch account metadata (bio, media count, etc.) by navigating to profile
-  const fetchAccountMetadata = (username: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      if (!apiWebViewRef.current) {
-        console.log('❌ API WebView not ready for fetchAccountMetadata');
-        reject(new Error('API WebView not ready'));
-        return;
-      }
-
-      if (!apiWebViewReady) {
-        console.log('⏳ API WebView not ready yet, waiting...');
-        // Wait a bit for WebView to load
-        setTimeout(() => {
-          fetchAccountMetadata(username).then(resolve).catch(reject);
-        }, 500);
-        return;
-      }
-
-      console.log(
-        '📝 Storing promise for username:',
-        username,
-        'apiWebViewReady:',
-        apiWebViewReady
-      );
-      metadataFetchPromisesRef.current.set(username, { resolve, reject });
-
-      console.log('💉 Injecting fetchAccountMetadata for:', username);
-      injectJS(`
-        if (window.instagramAPI?.fetchAccountMetadata) {
-          window.instagramAPI.fetchAccountMetadata('${username}');
-        } else {
-          console.error('❌ window.instagramAPI.fetchAccountMetadata not available');
         }
       `);
     });
@@ -456,7 +532,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         case 'LOGOUT_SUCCESS':
           setUserId(null);
           setIsLoggedIn(false);
-          setIsSyncing(false);
+          setSyncState({ isActive: false, mainAccount: null, trackedAccounts: [] });
           fetchingUsersRef.current.clear();
 
           // Clear all local data
@@ -496,53 +572,24 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         case 'FOLLOWING_COMPLETE':
           fetchingUsersRef.current.delete(data.userId!);
           handleFollowingComplete(data.userId!, data.users!);
-
-          // Check if syncUser promise should be resolved
-          const syncPromiseFollowing = syncUserPromisesRef.current.get(data.userId!);
-          if (syncPromiseFollowing) {
-            syncPromiseFollowing.followingComplete = true;
-            if (syncPromiseFollowing.followingComplete && syncPromiseFollowing.followersComplete) {
-              syncPromiseFollowing.resolve();
-              syncUserPromisesRef.current.delete(data.userId!);
-            }
-          }
-
-          // Check if all fetches are complete
-          if (fetchingUsersRef.current.size === 0) {
-            setIsSyncing(false);
-          }
+          updateAccountSyncStatus(data.userId!, 'following', 'complete');
           break;
 
         case 'FOLLOWERS_COMPLETE':
           fetchingUsersRef.current.delete(`followers_${data.userId!}`);
           handleFollowersComplete(data.userId!, data.users!);
-
-          // Check if syncUser promise should be resolved
-          const syncPromiseFollowers = syncUserPromisesRef.current.get(data.userId!);
-          if (syncPromiseFollowers) {
-            syncPromiseFollowers.followersComplete = true;
-            if (syncPromiseFollowers.followingComplete && syncPromiseFollowers.followersComplete) {
-              syncPromiseFollowers.resolve();
-              syncUserPromisesRef.current.delete(data.userId!);
-            }
-          }
-
-          // Check if all fetches are complete
-          if (fetchingUsersRef.current.size === 0) {
-            setIsSyncing(false);
-          }
+          updateAccountSyncStatus(data.userId!, 'followers', 'complete');
           break;
 
         case 'FETCH_ERROR':
           if (data.userId) {
             fetchingUsersRef.current.delete(data.userId);
             fetchingUsersRef.current.delete(`followers_${data.userId}`);
+            // Mark both as error since we don't know which one failed
+            updateAccountSyncStatus(data.userId, 'following', 'error');
+            updateAccountSyncStatus(data.userId, 'followers', 'error');
           }
           console.log('❌ Error:', data.error);
-
-          if (fetchingUsersRef.current.size === 0) {
-            setIsSyncing(false);
-          }
           break;
 
         case 'LOGOUT_ERROR':
@@ -604,22 +651,15 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 );
                 console.log(`✅ Updated metadata for ${data.username}`);
 
-                // Invalidate instagram cache for this user
+                // Invalidate caches so UI gets updated profile pic
                 queryClient.invalidateQueries({ queryKey: ['instagram', data.userId] });
+                queryClient.invalidateQueries({ queryKey: ['trackedInstagrams'] });
 
-                // Resolve promise if one exists
-                const promise = metadataFetchPromisesRef.current.get(data.username);
-                if (promise) {
-                  promise.resolve();
-                  metadataFetchPromisesRef.current.delete(data.username);
-                }
+                // Update sync state
+                updateAccountSyncStatus(data.userId!, 'metadata', 'complete');
               } catch (error) {
                 console.error('Error updating account metadata:', error);
-                const promise = metadataFetchPromisesRef.current.get(data.username);
-                if (promise) {
-                  promise.reject(new Error('Failed to update metadata'));
-                  metadataFetchPromisesRef.current.delete(data.username);
-                }
+                updateAccountSyncStatus(data.userId!, 'metadata', 'error');
               }
             };
             updateMetadata();
@@ -660,7 +700,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const userIdToFetch = pendingFetchUserIdRef.current;
       pendingFetchUserIdRef.current = null;
       setTimeout(() => {
-        fetchFollowing(userIdToFetch, true);
+        fetchFollowing(userIdToFetch);
         justLoggedInRef.current = false;
       }, FETCH_FOLLOWING_DELAY_MS);
     }
@@ -674,13 +714,12 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     isLoggedIn,
     userId,
     isLoadingUserId,
-    isSyncing,
+    syncState,
     showLogin,
     disconnect: handleDisconnect,
     fetchUserId,
-    fetchAccountMetadata,
-    syncUser,
     sync,
+    syncTrackedAccount,
   };
 
   return (

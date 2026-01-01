@@ -5,6 +5,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useQueryClient } from '@tanstack/react-query';
 import { X } from 'lucide-react-native';
 import { useAccountContext } from '~/contexts/AccountContext';
+import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext';
 import { useInstagram, useRemoveTrackedInstagram } from '~/lib/useInstagram';
 import { useFollowerStats } from '~/lib/useFollowerStats';
 import { markInstagramActivityAsViewed } from '~/lib/useInstagramActivity';
@@ -12,14 +13,24 @@ import Circles from '~/assets/circles.svg';
 import Logo from '~/assets/logo_black.svg';
 import InstagramCard from '~/components/InstagramCard';
 import ActivityList from '~/components/ActivityList';
+import TrackedAccountSync from '~/components/TrackedAccountSync';
 import Button from '~/components/Button';
 
 export default function TrackingAccount() {
   const { userId, username } = useLocalSearchParams<{ userId: string; username: string }>();
   const { account } = useAccountContext();
+  const { syncState } = useInstagramContext();
   const removeTrackedInstagram = useRemoveTrackedInstagram();
   const db = useSQLiteContext();
   const queryClient = useQueryClient();
+
+  // Check if this account is still syncing
+  const syncStatus = syncState.trackedAccounts.find((acc) => acc.userId === userId);
+  const isSyncing = syncStatus && (
+    syncStatus.metadata === 'syncing' ||
+    syncStatus.following === 'syncing' ||
+    syncStatus.followers === 'syncing'
+  );
 
   // Get Instagram data for this account
   const { data: instagram } = useInstagram(userId || null);
@@ -81,17 +92,21 @@ export default function TrackingAccount() {
       </SafeAreaView>
 
       {/* Content */}
-      <ScrollView className="flex-1">
-        <View className="gap-4 p-4 pb-24">
-          {instagram && <InstagramCard account={instagram} />}
-          {stats && userId && <ActivityList stats={stats} userId={userId} />}
-          <Button
-            label="Stop Tracking"
-            onPress={handleStopTracking}
-            loading={removeTrackedInstagram.isPending}
-          />
-        </View>
-      </ScrollView>
+      {isSyncing && userId ? (
+        <TrackedAccountSync userId={userId} username={instagram?.username || ''} />
+      ) : (
+        <ScrollView className="flex-1">
+          <View className="gap-4 p-4 pb-24">
+            {instagram && <InstagramCard account={instagram} />}
+            {stats && userId && <ActivityList stats={stats} userId={userId} />}
+            <Button
+              label="Stop Tracking"
+              onPress={handleStopTracking}
+              loading={removeTrackedInstagram.isPending}
+            />
+          </View>
+        </ScrollView>
+      )}
     </View>
   );
 }

@@ -112,50 +112,42 @@ function getCombinedState(statuses: SyncStepStatus[]): SyncStepState {
   return 'waiting';
 }
 
-interface InitialSyncProps {
-  onComplete: () => void;
-  // TODO: Remove these deprecated props after refactoring track.tsx
-  userId?: string;
-  username?: string;
+interface TrackedAccountSyncProps {
+  userId: string;
+  username: string;
 }
 
-export default function InitialSync({ onComplete, userId: _userId, username: _username }: InitialSyncProps) {
+export default function TrackedAccountSync({ userId, username }: TrackedAccountSyncProps) {
   const { syncState } = useInstagram();
 
-  // Derive step states from syncState
-  const mainAccount = syncState.mainAccount;
+  // Find this specific tracked account in syncState
+  const trackedAccount = syncState.trackedAccounts.find((acc) => acc.userId === userId);
 
+  // Derive step states from tracked account status
   // Step 1: Metadata fetching
-  const step1State = mainAccount ? toStepState(mainAccount.metadata) : 'waiting';
+  const step1State = trackedAccount ? toStepState(trackedAccount.metadata) : 'waiting';
 
   // Step 2: Following + Followers syncing (combined)
-  const step2State = mainAccount
-    ? getCombinedState([mainAccount.following, mainAccount.followers])
+  const step2State = trackedAccount
+    ? getCombinedState([trackedAccount.following, trackedAccount.followers])
     : 'waiting';
 
   // Step 3: Analyzing (complete when everything is done)
   const step3State =
-    mainAccount &&
-    mainAccount.metadata === 'complete' &&
-    mainAccount.following === 'complete' &&
-    mainAccount.followers === 'complete'
+    trackedAccount &&
+    trackedAccount.metadata === 'complete' &&
+    trackedAccount.following === 'complete' &&
+    trackedAccount.followers === 'complete'
       ? 'completed'
       : step2State === 'completed'
         ? 'active'
         : 'waiting';
 
-  // Call onComplete when sync is done
-  useEffect(() => {
-    if (!syncState.isActive && mainAccount && step3State === 'completed') {
-      onComplete();
-    }
-  }, [syncState.isActive, mainAccount, step3State, onComplete]);
-
   return (
     <View className="flex-1 items-center justify-center p-4">
       <Unhinged width={120} height={120} />
       <Text className="font-roboto-extrablack mt-6 px-12 text-center text-4xl tracking-tighter">
-        Syncing...
+        Syncing @{username}
       </Text>
       <Text className="font-roboto-regular mt-6 px-12 text-center text-lg tracking-tighter">
         This might take a minute depending on number of followers.
