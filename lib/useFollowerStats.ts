@@ -12,7 +12,7 @@ export type AccountListType =
 export const ACCOUNT_LIST_LABELS: Record<AccountListType, { main: string; tracked: string }> = {
   addedFollowing: { main: 'You recently followed', tracked: 'They recently followed' },
   removedFollowing: { main: 'You recently unfollowed', tracked: 'They recently unfollowed' },
-  gainedFollowers: { main: 'Recently followed you', tracked: 'Gained followers' },
+  gainedFollowers: { main: 'Recently followed you', tracked: 'Recently followed by' },
   lostFollowers: { main: 'Recently unfollowed you', tracked: 'Recently unfollowed them' },
   notFollowedBack: { main: "You aren't following back", tracked: 'They are not following back' },
   notFollowingBack: { main: 'Not following you back', tracked: 'Not following them back' },

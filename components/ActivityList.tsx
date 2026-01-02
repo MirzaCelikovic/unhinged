@@ -15,8 +15,7 @@ export default function ActivityList({ stats, userId, isMainAccount = false }: A
 
   const items: { type: AccountListType; count: number }[] = [
     { type: 'addedFollowing', count: stats.addedFollowing },
-    { type: 'removedFollowing', count: stats.removedFollowing },
-    // { type: 'gainedFollowers', count: stats.gainedFollowers },
+    { type: 'gainedFollowers', count: stats.gainedFollowers },
     { type: 'lostFollowers', count: stats.lostFollowers },
     { type: 'notFollowedBack', count: stats.notFollowedBack },
     { type: 'notFollowingBack', count: stats.notFollowingBack },
