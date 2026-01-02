@@ -25,6 +25,7 @@ const migrations: { [version: number]: (db: SQLite.SQLiteDatabase) => Promise<vo
       CREATE TABLE IF NOT EXISTS sync_state (
         instagram_user_id TEXT PRIMARY KEY,
         has_completed_baseline INTEGER NOT NULL DEFAULT 0,
+        total_syncs INTEGER NOT NULL DEFAULT 0,
         last_synced_at TEXT,
         last_viewed_at TEXT,
         date_created TEXT NOT NULL,
@@ -60,6 +61,9 @@ const migrations: { [version: number]: (db: SQLite.SQLiteDatabase) => Promise<vo
         first_seen_at TEXT NOT NULL,
         last_seen_at TEXT NOT NULL,
         ended_at TEXT,
+        times_seen INTEGER NOT NULL DEFAULT 1,
+        total_syncs INTEGER NOT NULL DEFAULT 1,
+        consecutive_misses INTEGER NOT NULL DEFAULT 0,
         date_created TEXT NOT NULL,
         date_updated TEXT NOT NULL,
 

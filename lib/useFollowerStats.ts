@@ -71,12 +71,32 @@ const fetchFollowerStats = async (db: any, userId: string): Promise<FollowerStat
   );
   const removedFollowing = removedFollowingResult[0]?.count || 0;
 
-  // gainedFollowers: Accounts that started following this account (not baseline) in last 30 days
-  const gainedFollowersResult = await db.getAllAsync<{ count: number }>(
-    'SELECT COUNT(*) as count FROM followers WHERE tracked_account_id = ? AND is_baseline = 0 AND first_seen_at >= ?',
-    [userId, thirtyDaysAgo.toISOString()]
+  // gainedFollowers: Accounts that started following this account after stability was established
+  // We require at least 3 syncs before counting new followers to avoid false positives from API unreliability
+  // A follower is "genuinely new" if they first appeared after we had at least 3 syncs
+  const MIN_SYNCS_FOR_NEW_FOLLOWERS = 3;
+  const syncStateResult = await db.getFirstAsync<{ total_syncs: number }>(
+    'SELECT total_syncs FROM sync_state WHERE instagram_user_id = ?',
+    [userId]
   );
-  const gainedFollowers = gainedFollowersResult[0]?.count || 0;
+  const accountTotalSyncs = syncStateResult?.total_syncs || 0;
+
+  let gainedFollowers = 0;
+  if (accountTotalSyncs >= MIN_SYNCS_FOR_NEW_FOLLOWERS) {
+    // Count followers who first appeared after stability was established
+    // Their total_syncs will be low (they just joined) while account's total_syncs is high
+    // If account has done 10 syncs and follower has total_syncs=2, they appeared on sync 9
+    // We want followers who appeared after sync 3, i.e., follower.total_syncs <= accountTotalSyncs - 3
+    const gainedFollowersResult = await db.getAllAsync<{ count: number }>(
+      `SELECT COUNT(*) as count FROM followers
+       WHERE tracked_account_id = ?
+       AND is_baseline = 0
+       AND first_seen_at >= ?
+       AND total_syncs <= ? - ?`,
+      [userId, thirtyDaysAgo.toISOString(), accountTotalSyncs, MIN_SYNCS_FOR_NEW_FOLLOWERS]
+    );
+    gainedFollowers = gainedFollowersResult[0]?.count || 0;
+  }
 
   // lostFollowers: Accounts that stopped following this account in last 30 days
   const lostFollowersResult = await db.getAllAsync<{ count: number }>(
@@ -162,13 +182,27 @@ const fetchAccountList = async (
     }
 
     case 'gainedFollowers': {
-      // Accounts that started following this account (not baseline) in last 30 days
+      // Accounts that started following this account after stability was established
+      const MIN_SYNCS_FOR_NEW_FOLLOWERS = 3;
+      const syncStateResult = await db.getFirstAsync<{ total_syncs: number }>(
+        'SELECT total_syncs FROM sync_state WHERE instagram_user_id = ?',
+        [userId]
+      );
+      const accountTotalSyncs = syncStateResult?.total_syncs || 0;
+
+      if (accountTotalSyncs < MIN_SYNCS_FOR_NEW_FOLLOWERS) {
+        return [];
+      }
+
       const results = await db.getAllAsync<{ follower_user_id: string; username: string | null; profile_pic_url: string | null }>(
         `SELECT f.follower_user_id, i.username, i.profile_pic_url
          FROM followers f
          LEFT JOIN instagrams i ON f.follower_user_id = i.user_id
-         WHERE f.tracked_account_id = ? AND f.is_baseline = 0 AND f.first_seen_at >= ?`,
-        [userId, thirtyDaysAgo.toISOString()]
+         WHERE f.tracked_account_id = ?
+         AND f.is_baseline = 0
+         AND f.first_seen_at >= ?
+         AND f.total_syncs <= ? - ?`,
+        [userId, thirtyDaysAgo.toISOString(), accountTotalSyncs, MIN_SYNCS_FOR_NEW_FOLLOWERS]
       );
       return results.map(r => ({ id: r.follower_user_id, username: r.username || r.follower_user_id, profile_pic_url: r.profile_pic_url }));
     }

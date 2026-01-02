@@ -7,12 +7,12 @@ import { X } from 'lucide-react-native';
 import { useAccountContext } from '~/contexts/AccountContext';
 import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext';
 import { useInstagram, useRemoveTrackedInstagram } from '~/lib/useInstagram';
-import { useFollowerStats } from '~/lib/useFollowerStats';
 import { markInstagramActivityAsViewed } from '~/lib/useInstagramActivity';
 import Circles from '~/assets/circles.svg';
 import Logo from '~/assets/logo_black.svg';
 import InstagramCard from '~/components/InstagramCard';
-import ActivityList from '~/components/ActivityList';
+// import ActivityList from '~/components/ActivityList';
+import ActivityFeed from '~/components/ActivityFeed';
 import TrackedAccountSync from '~/components/TrackedAccountSync';
 import Button from '~/components/Button';
 
@@ -35,9 +35,6 @@ export default function TrackingAccount() {
   // Get Instagram data for this account
   const { data: instagram } = useInstagram(userId || null);
 
-  // Get follower stats for this account
-  const { data: stats } = useFollowerStats(userId || null);
-
   // Mark activity as viewed when opening this screen
   useEffect(() => {
     if (userId) {
@@ -50,7 +47,7 @@ export default function TrackingAccount() {
   const handleStopTracking = () => {
     if (!account?.uuid || !userId) return;
 
-    Alert.alert('Stop Tracking', `Stop tracking @${username}?`, [
+    Alert.alert('Stop Tracking', `Stop tracking @${instagram?.username || username}?`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Stop Tracking',
@@ -95,10 +92,19 @@ export default function TrackingAccount() {
       {isSyncing && userId ? (
         <TrackedAccountSync userId={userId} username={instagram?.username || ''} />
       ) : (
-        <ScrollView className="flex-1">
-          <View className="gap-4 p-4 pb-24">
+        <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }}>
+          <View className="gap-4 p-4">
             {instagram && <InstagramCard account={instagram} />}
-            {stats && userId && <ActivityList stats={stats} userId={userId} />}
+            {userId && (
+              <ActivityFeed
+                userId={userId}
+                trackedUsername={instagram?.username}
+                trackedProfilePicUrl={instagram?.profile_pic_url}
+              />
+            )}
+            {/* {stats && userId && <ActivityList stats={stats} userId={userId} />} */}
+          </View>
+          <View className="mt-auto p-4 pb-12">
             <Button
               label="Stop Tracking"
               onPress={handleStopTracking}
