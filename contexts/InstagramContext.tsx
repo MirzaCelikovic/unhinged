@@ -605,15 +605,15 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           }
 
           // Show notification sheet if permission is undetermined
-          const checkAndShowNotificationSheet = async () => {
-            const { status } = await Notifications.getPermissionsAsync();
-            console.log('🔔 Notification permission status after login:', status);
-            if (status === 'undetermined') {
-              console.log('🔔 Showing notifications sheet');
-              showNotificationsSheet();
-            }
-          };
-          checkAndShowNotificationSheet();
+          // const checkAndShowNotificationSheet = async () => {
+          //   const { status } = await Notifications.getPermissionsAsync();
+          //   console.log('🔔 Notification permission status after login:', status);
+          //   if (status === 'undetermined') {
+          //     console.log('🔔 Showing notifications sheet');
+          //     showNotificationsSheet();
+          //   }
+          // };
+          // checkAndShowNotificationSheet();
           break;
 
         case 'LOGOUT_SUCCESS':

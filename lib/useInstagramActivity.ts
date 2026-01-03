@@ -58,7 +58,7 @@ const fetchInstagramActivity = async (db: any, userId: string): Promise<Instagra
   );
   const lostFollowersCount = lostFollowersResult[0]?.count || 0;
 
-  const hasNewActivity = newFollowsCount > 0 || unfollowsCount > 0 || lostFollowersCount > 0;
+  const hasNewActivity = newFollowsCount > 0 || unfollowsCount > 0 || newFollowersCount > 0 || lostFollowersCount > 0;
 
   return {
     hasNewActivity,

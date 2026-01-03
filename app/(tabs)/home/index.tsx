@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   ScrollView,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext';
 import { useInstagram } from '~/lib/useInstagram';
@@ -17,7 +18,12 @@ import ActivityList from '~/components/ActivityList';
 import NotConnected from '~/components/NotConnected';
 import InitialSync from '~/components/InitialSync';
 import { useAccountContext } from '~/contexts/AccountContext';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, runOnJS } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
 
 type HomeState = 'notConnected' | 'initialSync' | 'connected';
 
@@ -102,7 +108,6 @@ export default function Index() {
     });
   };
 
-
   const formatLastSyncTime = (timestamp: string | null): string => {
     if (!timestamp) return 'Never synced';
 
@@ -122,10 +127,21 @@ export default function Index() {
     opacity: contentOpacity.value,
   }));
 
+  const handleRefresh = () => {
+    Alert.alert(
+      'Refresh',
+      'To avoid overwhelming Instagram with too many automated requests (which could make your account look like a bot), we recommend refreshing once a day or when we notify you of a follower count change.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Refresh', onPress: sync },
+      ]
+    );
+  };
+
   // Show spinner while checking login status
   if (isLoggedIn === null) {
     return (
-      <View className="bg-background flex-1 items-center justify-center">
+      <View className="flex-1 items-center justify-center bg-background">
         <View style={StyleSheet.absoluteFill} className="items-center justify-center">
           <Circles width={700} height={700} />
         </View>
@@ -135,7 +151,7 @@ export default function Index() {
   }
 
   return (
-    <View className="bg-background flex-1">
+    <View className="flex-1 bg-background">
       <View style={StyleSheet.absoluteFill} className="items-center justify-center">
         <Circles width={700} height={700} />
       </View>
@@ -155,29 +171,32 @@ export default function Index() {
       {homeState === 'connected' && (
         <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
           <ScrollView className="flex-1">
-        <View className="p-4 pt-32">
-          {/* Last sync time and refresh button */}
-          <View className="mb-1 flex-row items-center justify-between px-3 py-1">
-            <Text className="font-roboto-bold text-base text-gray-500">
-              {formatLastSyncTime(stats.lastSyncedAt)}
-            </Text>
-            <Pressable className="py-2 active:opacity-70" onPress={sync} disabled={syncState.isActive}>
-              <Text className="font-roboto-bold text-base text-gray-500">
-                {syncState.isActive ? 'Syncing...' : 'Refresh'}
-              </Text>
-            </Pressable>
-          </View>
+            <View className="p-4 pt-32">
+              {/* Last sync time and refresh button */}
+              <View className="mb-1 flex-row items-center justify-between px-3 py-1">
+                <Text className="font-roboto-bold text-base text-gray-500">
+                  {formatLastSyncTime(stats.lastSyncedAt)}
+                </Text>
+                <Pressable
+                  className="py-2 active:opacity-70"
+                  onPress={handleRefresh}
+                  disabled={syncState.isActive}>
+                  <Text className="font-roboto-bold text-base text-gray-500">
+                    {syncState.isActive ? 'Syncing...' : 'Refresh'}
+                  </Text>
+                </Pressable>
+              </View>
 
-          {/* Instagram Account Card */}
-          {instagram && (
-            <View className="mb-6">
-              <InstagramCard account={instagram} isMainAccount />
+              {/* Instagram Account Card */}
+              {instagram && (
+                <View className="mb-6">
+                  <InstagramCard account={instagram} isMainAccount />
+                </View>
+              )}
+
+              {/* Activity List */}
+              <ActivityList stats={stats} userId={userId!} isMainAccount />
             </View>
-          )}
-
-          {/* Activity List */}
-          <ActivityList stats={stats} userId={userId!} isMainAccount />
-        </View>
           </ScrollView>
         </Animated.View>
       )}
