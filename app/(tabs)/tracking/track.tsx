@@ -57,6 +57,27 @@ export default function TrackModal() {
         return;
       }
 
+      // Check if account is verified
+      if (result.isVerified) {
+        console.log('❌ Account is verified');
+        setError('Verified accounts are not supported due to Instagram restrictions');
+        return;
+      }
+
+      // Check if account has too many followers or following
+      const MAX_FOLLOWERS = 3000;
+      const MAX_FOLLOWING = 1000;
+      if (result.followersCount > MAX_FOLLOWERS) {
+        console.log('❌ Account has too many followers:', result.followersCount);
+        setError('This account has too many followers. To avoid overwhelming Instagram with automated requests (which could make your account look like a bot), tracking is limited to personal accounts.');
+        return;
+      }
+      if (result.followingCount > MAX_FOLLOWING) {
+        console.log('❌ Account has too many following:', result.followingCount);
+        setError('This account follows too many people. To avoid overwhelming Instagram with automated requests (which could make your account look like a bot), tracking is limited to personal accounts.');
+        return;
+      }
+
       // Register tracked account with backend first
       console.log('📝 Registering tracked account with backend');
       await addTrackedInstagram.mutateAsync({

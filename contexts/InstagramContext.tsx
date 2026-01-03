@@ -22,6 +22,9 @@ interface UserIdResult {
   userId: string;
   isPrivate: boolean;
   followedByViewer: boolean;
+  isVerified: boolean;
+  followersCount: number;
+  followingCount: number;
 }
 
 export type SyncStepStatus = 'pending' | 'syncing' | 'complete' | 'error';
@@ -62,7 +65,8 @@ interface WebViewMessage {
     | 'FETCH_ERROR'
     | 'LOGOUT_ERROR'
     | 'USER_ID_FETCHED'
-    | 'ACCOUNT_METADATA_FETCHED';
+    | 'ACCOUNT_METADATA_FETCHED'
+    | 'DEBUG_LOG';
   userId?: string;
   username?: string;
   success?: boolean;
@@ -75,7 +79,9 @@ interface WebViewMessage {
   followersCount?: number | null;
   followingCount?: number | null;
   isPrivate?: boolean;
+  isVerified?: boolean;
   followedByViewer?: boolean;
+  message?: string;
 }
 
 interface User {
@@ -604,6 +610,9 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 userId: data.userId,
                 isPrivate: data.isPrivate || false,
                 followedByViewer: data.followedByViewer || false,
+                isVerified: data.isVerified || false,
+                followersCount: data.followersCount || 0,
+                followingCount: data.followingCount || 0,
               });
               userIdFetchPromisesRef.current.delete(data.username);
             }
@@ -664,6 +673,10 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             };
             updateMetadata();
           }
+          break;
+
+        case 'DEBUG_LOG':
+          console.log('[WebView]', data.message);
           break;
       }
     } catch (error) {
@@ -780,6 +793,11 @@ const instagramAPI = `
   // Helper: Send message to React Native
   function sendMessage(type, data) {
     window.ReactNativeWebView?.postMessage(JSON.stringify({ type, ...data }));
+  }
+
+  // Helper: Send debug log to React Native
+  function debugLog(...args) {
+    sendMessage('DEBUG_LOG', { message: args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ') });
   }
 
   // Create Instagram API namespace
@@ -956,9 +974,14 @@ const instagramAPI = `
         let maxId = null;
         let pageNum = 0;
 
+        debugLog('📥 [Followers] Starting fetch for userId:', userId);
+
         while (hasMore) {
+          pageNum++;
           let url = 'https://www.instagram.com/api/v1/friendships/' + userId + '/followers/?count=50&search_surface=follow_list_page';
           if (maxId) url += '&max_id=' + maxId;
+
+          debugLog('📥 [Followers] Page ' + pageNum + ' - Fetching with maxId:', maxId || 'none');
 
           const response = await fetch(url, {
             credentials: 'include',
@@ -968,11 +991,16 @@ const instagramAPI = `
             }
           });
 
+          debugLog('📥 [Followers] Page ' + pageNum + ' - Response status:', response.status);
+
           if (!response.ok) {
             throw new Error('Failed to fetch followers: ' + response.status);
           }
 
           const data = await response.json();
+
+          const usersInPage = data.users ? data.users.length : 0;
+          debugLog('📥 [Followers] Page ' + pageNum + ' - Users in page:', usersInPage, '| has_more:', data.has_more, '| next_max_id:', data.next_max_id || 'none');
 
           if (data.users && data.users.length > 0) {
             allUsers = allUsers.concat(
@@ -986,9 +1014,17 @@ const instagramAPI = `
             );
           }
 
+          debugLog('📥 [Followers] Page ' + pageNum + ' - Total users so far:', allUsers.length);
+
           hasMore = data.has_more || false;
           maxId = data.next_max_id || null;
+
+          if (!hasMore) {
+            debugLog('📥 [Followers] No more pages. Final count:', allUsers.length);
+          }
         }
+
+        debugLog('📥 [Followers] Complete! Total fetched:', allUsers.length, 'for userId:', userId);
 
         sendMessage('FOLLOWERS_COMPLETE', {
           users: allUsers,
@@ -997,6 +1033,7 @@ const instagramAPI = `
           isMainUser: isMainUser || false
         });
       } catch (error) {
+        debugLog('📥 [Followers] Error:', error.message);
         sendMessage('FETCH_ERROR', {
           error: error.message,
           userId: userId
@@ -1027,7 +1064,10 @@ const instagramAPI = `
             username: username,
             userId: user.id,
             isPrivate: user.is_private || false,
-            followedByViewer: user.followed_by_viewer || false
+            followedByViewer: user.followed_by_viewer || false,
+            isVerified: user.is_verified || false,
+            followersCount: user.edge_followed_by ? user.edge_followed_by.count : 0,
+            followingCount: user.edge_follow ? user.edge_follow.count : 0
           });
         } else {
           throw new Error('User ID not found in response');

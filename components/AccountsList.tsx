@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, SafeAreaView, Pressable, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, Pressable, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { X } from 'lucide-react-native';
 import Circles from '~/assets/circles.svg';
 import Logo from '~/assets/logo_black.svg';
 import { useAccountList, AccountListType, getAccountListLabel } from '~/lib/useFollowerStats';
+import AccountCard from './AccountCard';
 
 interface AccountsListProps {
   userId: string;
@@ -52,19 +53,11 @@ export default function AccountsList({ userId, type, isMainAccount }: AccountsLi
           <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
             <View className="gap-3 pb-8">
               {accounts.map((account) => (
-                <View
+                <AccountCard
                   key={account.id}
-                  className="flex-row items-center gap-3 rounded-2xl bg-white p-4">
-                  {account.profile_pic_url ? (
-                    <Image
-                      source={{ uri: account.profile_pic_url }}
-                      className="h-12 w-12 rounded-full"
-                    />
-                  ) : (
-                    <View className="h-12 w-12 rounded-full bg-gray-300" />
-                  )}
-                  <Text className="flex-1 text-base font-medium">{account.username}</Text>
-                </View>
+                  username={account.username}
+                  profilePicUrl={account.profile_pic_url}
+                />
               ))}
             </View>
           </ScrollView>

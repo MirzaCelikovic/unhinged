@@ -1,6 +1,7 @@
-import { View, Text, Image, ImageSourcePropType } from 'react-native';
+import { View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useQuery } from '@tanstack/react-query';
+import AccountCard from './AccountCard';
 
 interface FeedEvent {
   id: string;
@@ -16,50 +17,50 @@ const DUMMY_EVENTS: Array<{
   id: string;
   type: FeedEvent['type'];
   username: string;
-  image: ImageSourcePropType;
+  profilePicUrl: string;
   timestamp: string;
 }> = [
   {
     id: 'dummy_1',
     type: 'new_follower',
     username: 'sarah_designs',
-    image: require('~/assets/profile_0.jpg'),
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+    profilePicUrl: 'https://via.assets.so/album.png?id=1&q=95&w=360&h=360&fit=fill',
+    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'dummy_2',
     type: 'started_following',
     username: 'mike.travels',
-    image: require('~/assets/profile_1.jpg'),
-    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5 hours ago
+    profilePicUrl: 'https://via.assets.so/album.png?id=2&q=95&w=360&h=360&fit=fill',
+    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'dummy_3',
     type: 'lost_follower',
     username: 'emma_fitness',
-    image: require('~/assets/profile_2.jpg'),
-    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+    profilePicUrl: 'https://via.assets.so/album.png?id=3&q=95&w=360&h=360&fit=fill',
+    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'dummy_4',
     type: 'stopped_following',
     username: 'alex.photo',
-    image: require('~/assets/profile_0.jpg'),
-    timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
+    profilePicUrl: 'https://via.assets.so/album.png?id=4&q=95&w=360&h=360&fit=fill',
+    timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'dummy_5',
     type: 'new_follower',
     username: 'travel_adventures',
-    image: require('~/assets/profile_1.jpg'),
-    timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
+    profilePicUrl: 'https://via.assets.so/album.png?id=5&q=95&w=360&h=360&fit=fill',
+    timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'dummy_6',
     type: 'started_following',
     username: 'foodie_daily',
-    image: require('~/assets/profile_2.jpg'),
-    timestamp: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days ago
+    profilePicUrl: 'https://via.assets.so/album.png?id=6&q=95&w=360&h=360&fit=fill',
+    timestamp: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
   },
 ];
 
@@ -245,75 +246,41 @@ export default function ActivityFeed({
   const showDummyEvents = false;
 
   return (
-    <View className="rounded-3xl bg-white">
+    <View className="gap-3">
       {/* Dummy events for preview */}
       {showDummyEvents &&
         DUMMY_EVENTS.map((event) => (
-          <View key={event.id}>
-            <View className="flex-row items-center gap-3 p-4">
-              <Image source={event.image} className="h-10 w-10 rounded-full" />
-              <View className="flex-1">
-                <Text className="font-roboto-medium text-base text-gray-900">
-                  @{event.username}
-                </Text>
-                <Text className="font-roboto-regular text-sm text-gray-500">
-                  {getEventLabel(event.type)}
-                </Text>
-              </View>
-              <Text className="font-roboto-regular text-sm text-gray-400">
-                {formatRelativeTime(event.timestamp)}
-              </Text>
-            </View>
-            <View className="mx-4 h-[1px] bg-gray-100" />
-          </View>
+          <AccountCard
+            key={event.id}
+            username={event.username}
+            profilePicUrl={event.profilePicUrl}
+            label={getEventLabel(event.type)}
+            timestamp={formatRelativeTime(event.timestamp)}
+          />
         ))}
 
       {/* Real events */}
       {!showDummyEvents &&
         events.map((event) => (
-          <View key={event.id}>
-            <View className="flex-row items-center gap-3 p-4">
-              {event.profilePicUrl ? (
-                <Image source={{ uri: event.profilePicUrl }} className="h-10 w-10 rounded-full" />
-              ) : (
-                <View className="h-10 w-10 rounded-full bg-gray-200" />
-              )}
-              <View className="flex-1">
-                <Text className="font-roboto-medium text-base text-gray-900">
-                  @{event.username}
-                </Text>
-                <Text className="font-roboto-regular text-sm text-gray-500">
-                  {getEventLabel(event.type)}
-                </Text>
-              </View>
-              <Text className="font-roboto-regular text-sm text-gray-400">
-                {formatRelativeTime(event.timestamp)}
-              </Text>
-            </View>
-            <View className="mx-4 h-[1px] bg-gray-100" />
-          </View>
+          <AccountCard
+            key={event.id}
+            username={event.username}
+            profilePicUrl={event.profilePicUrl}
+            label={getEventLabel(event.type)}
+            timestamp={formatRelativeTime(event.timestamp)}
+          />
         ))}
 
       {/* "You started tracking" item - always shown at bottom */}
       {(trackingStartDate || showDummyEvents) && (
-        <View className="flex-row items-center gap-3 p-4">
-          {trackedProfilePicUrl ? (
-            <Image source={{ uri: trackedProfilePicUrl }} className="h-10 w-10 rounded-full" />
-          ) : (
-            <View className="h-10 w-10 rounded-full bg-gray-200" />
+        <AccountCard
+          username={trackedUsername || 'username'}
+          profilePicUrl={trackedProfilePicUrl}
+          label="you started tracking"
+          timestamp={formatRelativeTime(
+            trackingStartDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
           )}
-          <View className="flex-1">
-            <Text className="font-roboto-medium text-base text-gray-900">
-              @{trackedUsername || 'username'}
-            </Text>
-            <Text className="font-roboto-regular text-sm text-gray-500">you started tracking</Text>
-          </View>
-          <Text className="font-roboto-regular text-sm text-gray-400">
-            {formatRelativeTime(
-              trackingStartDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-            )}
-          </Text>
-        </View>
+        />
       )}
     </View>
   );

@@ -21,23 +21,34 @@ export default function ActivityList({ stats, userId, isMainAccount = false }: A
     { type: 'notFollowingBack', count: stats.notFollowingBack },
   ];
 
+  const formatCount = (count: number): string => {
+    if (count >= 1_000_000) {
+      return `${Math.round(count / 1_000_000)}M`;
+    }
+    if (count >= 10_000) {
+      return `${Math.round(count / 1_000)}K`;
+    }
+    if (count >= 1_000) {
+      return `${(count / 1_000).toFixed(1).replace(/\.0$/, '')}K`;
+    }
+    return count.toString();
+  };
+
   return (
-    <View className="w-full rounded-3xl border-2 border-gray-400 bg-white px-2 py-2">
-      {items.map((item, index) => (
-        <View key={item.type}>
-          <Pressable
-            className="flex-row items-center justify-between p-4 py-6 active:bg-gray-50"
-            onPress={() => router.push(`/(tabs)/${tab}/list?userId=${userId}&type=${item.type}&isMainAccount=${isMainAccount}`)}>
-            <Text className="text-lg font-semibold text-gray-900">
-              {getAccountListLabel(item.type, isMainAccount)}
-            </Text>
-            <View className="flex-row items-center gap-2">
-              <Text className="px-4 text-lg font-semibold text-gray-500">{item.count}</Text>
-              <CircleChevronRight size={24} color="black" />
-            </View>
-          </Pressable>
-          {index < items.length - 1 && <View className="mx-4 h-[1px] bg-gray-100" />}
-        </View>
+    <View className="gap-3">
+      {items.map((item) => (
+        <Pressable
+          key={item.type}
+          className="flex-row items-center gap-3 rounded-2xl bg-white p-4 active:opacity-80"
+          onPress={() => router.push(`/(tabs)/${tab}/list?userId=${userId}&type=${item.type}&isMainAccount=${isMainAccount}`)}>
+          <View className="h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+            <Text className="font-roboto-bold text-sm text-gray-600">{formatCount(item.count)}</Text>
+          </View>
+          <Text className="flex-1 font-roboto-medium text-base text-gray-900">
+            {getAccountListLabel(item.type, isMainAccount)}
+          </Text>
+          <CircleChevronRight size={20} color="#9ca3af" />
+        </Pressable>
       ))}
     </View>
   );

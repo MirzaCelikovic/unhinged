@@ -1,13 +1,23 @@
 import { View, Text, Image } from 'react-native';
 import { Instagram } from '~/lib/types';
 
+const formatCount = (count: number): string => {
+  if (count >= 1_000_000) {
+    return `${Math.round(count / 1_000_000)}M`;
+  }
+  if (count >= 10_000) {
+    return `${Math.round(count / 1_000)}K`;
+  }
+  return count.toLocaleString();
+};
+
 interface InstagramCardProps {
   account: Instagram;
 }
 
 export default function InstagramCard({ account }: InstagramCardProps) {
   return (
-    <View className="w-full rounded-3xl border-2 border-gray-400 bg-white p-4">
+    <View className="w-full rounded-3xl bg-white p-4">
       {/* Top row: Profile pic and stats */}
       <View className="flex-row items-center">
         {/* Profile Picture */}
@@ -25,7 +35,7 @@ export default function InstagramCard({ account }: InstagramCardProps) {
           {/* Posts */}
           {account.media_count !== null && account.media_count !== undefined && (
             <View className="items-center">
-              <Text className="font-roboto-bold text-2xl">{account.media_count}</Text>
+              <Text className="font-roboto-bold text-2xl">{formatCount(account.media_count)}</Text>
               <Text className="font-roboto-regular text-sm text-gray-500">posts</Text>
             </View>
           )}
@@ -33,7 +43,7 @@ export default function InstagramCard({ account }: InstagramCardProps) {
           {/* Followers */}
           {account.followers_count !== null && account.followers_count !== undefined && (
             <View className="items-center">
-              <Text className="font-roboto-bold text-2xl">{account.followers_count}</Text>
+              <Text className="font-roboto-bold text-2xl">{formatCount(account.followers_count)}</Text>
               <Text className="font-roboto-regular text-sm text-gray-500">followers</Text>
             </View>
           )}
@@ -41,7 +51,7 @@ export default function InstagramCard({ account }: InstagramCardProps) {
           {/* Following */}
           {account.following_count !== null && account.following_count !== undefined && (
             <View className="items-center">
-              <Text className="font-roboto-bold text-2xl">{account.following_count}</Text>
+              <Text className="font-roboto-bold text-2xl">{formatCount(account.following_count)}</Text>
               <Text className="font-roboto-regular text-sm text-gray-500">following</Text>
             </View>
           )}

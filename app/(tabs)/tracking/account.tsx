@@ -1,17 +1,18 @@
-import { View, Alert, ScrollView, StyleSheet, SafeAreaView, Pressable } from 'react-native';
+import { View, Text, Alert, ScrollView, StyleSheet, SafeAreaView, Pressable } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useQueryClient } from '@tanstack/react-query';
 import { X } from 'lucide-react-native';
 import { useAccountContext } from '~/contexts/AccountContext';
 import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext';
 import { useInstagram, useRemoveTrackedInstagram } from '~/lib/useInstagram';
+import { useFollowerStats } from '~/lib/useFollowerStats';
 import { markInstagramActivityAsViewed } from '~/lib/useInstagramActivity';
 import Circles from '~/assets/circles.svg';
 import Logo from '~/assets/logo_black.svg';
 import InstagramCard from '~/components/InstagramCard';
-// import ActivityList from '~/components/ActivityList';
+import ActivityList from '~/components/ActivityList';
 import ActivityFeed from '~/components/ActivityFeed';
 import TrackedAccountSync from '~/components/TrackedAccountSync';
 import Button from '~/components/Button';
@@ -34,6 +35,10 @@ export default function TrackingAccount() {
 
   // Get Instagram data for this account
   const { data: instagram } = useInstagram(userId || null);
+  const { data: stats } = useFollowerStats(userId || null);
+
+  // Segmented nav state
+  const [activeTab, setActiveTab] = useState<'feed' | 'stats'>('feed');
 
   // Mark activity as viewed when opening this screen
   useEffect(() => {
@@ -95,14 +100,38 @@ export default function TrackingAccount() {
         <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }}>
           <View className="gap-4 p-4">
             {instagram && <InstagramCard account={instagram} />}
-            {userId && (
+
+            {/* Segmented Nav */}
+            <View className="flex-row gap-2">
+              <Pressable
+                className={`rounded-full px-4 py-2 ${activeTab === 'feed' ? 'bg-white' : ''}`}
+                onPress={() => setActiveTab('feed')}>
+                <Text
+                  className={`font-roboto-medium text-sm ${activeTab === 'feed' ? 'text-gray-900' : 'text-gray-500'}`}>
+                  Activity
+                </Text>
+              </Pressable>
+              <Pressable
+                className={`rounded-full px-4 py-2 ${activeTab === 'stats' ? 'bg-white' : ''}`}
+                onPress={() => setActiveTab('stats')}>
+                <Text
+                  className={`font-roboto-medium text-sm ${activeTab === 'stats' ? 'text-gray-900' : 'text-gray-500'}`}>
+                  Stats
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* Tab Content */}
+            {activeTab === 'feed' && userId && (
               <ActivityFeed
                 userId={userId}
                 trackedUsername={instagram?.username}
                 trackedProfilePicUrl={instagram?.profile_pic_url}
               />
             )}
-            {/* {stats && userId && <ActivityList stats={stats} userId={userId} />} */}
+            {activeTab === 'stats' && stats && userId && (
+              <ActivityList stats={stats} userId={userId} />
+            )}
           </View>
           <View className="mt-auto p-4 pb-12">
             <Button
