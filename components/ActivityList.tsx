@@ -35,19 +35,25 @@ export default function ActivityList({ stats, userId, isMainAccount = false }: A
   };
 
   return (
-    <View className="gap-3">
-      {items.map((item) => (
+    <View className="overflow-hidden rounded-2xl bg-white">
+      {items.map((item, index) => (
         <Pressable
           key={item.type}
-          className="flex-row items-center gap-3 rounded-2xl bg-white p-4 active:opacity-80"
-          onPress={() => router.push(`/(tabs)/${tab}/list?userId=${userId}&type=${item.type}&isMainAccount=${isMainAccount}`)}>
-          <View className="h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-            <Text className="font-roboto-bold text-sm text-gray-600">{formatCount(item.count)}</Text>
-          </View>
-          <Text className="flex-1 font-roboto-medium text-base text-gray-900">
+          className={`flex-row items-center justify-between p-6 active:opacity-80 ${index < items.length - 1 ? 'border-b border-gray-100' : ''}`}
+          onPress={() =>
+            router.push(
+              `/(tabs)/${tab}/list?userId=${userId}&type=${item.type}&isMainAccount=${isMainAccount}`
+            )
+          }>
+          <Text className="font-roboto-medium text-base text-gray-900">
             {getAccountListLabel(item.type, isMainAccount)}
           </Text>
-          <CircleChevronRight size={20} color="#9ca3af" />
+          <View className="flex-row items-center gap-2">
+            <Text className="pr-4 font-roboto-bold text-lg text-gray-600">
+              {formatCount(item.count)}
+            </Text>
+            <CircleChevronRight size={24} color="#9ca3af" />
+          </View>
         </Pressable>
       ))}
     </View>

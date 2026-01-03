@@ -146,18 +146,24 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
 
-    console.log('🔄 fetchFollowing:', userIdToFetch);
+    console.log('🔄 fetchFollowing:', userIdToFetch, '(method:', FOLLOWING_API_METHOD, ')');
     fetchingUsersRef.current.add(userIdToFetch);
 
+    const apiMethod = FOLLOWING_API_METHOD === 'graphql' ? 'fetchFollowingGraphQL' : 'fetchFollowing';
+
     apiWebViewRef.current.injectJavaScript(`(function(){
-      console.log('📱 Injecting fetchFollowing for userId:', '${userIdToFetch}');
-      if (window.instagramAPI?.fetchFollowing) {
-        window.instagramAPI.fetchFollowing('${userIdToFetch}');
+      console.log('📱 Injecting ${apiMethod} for userId:', '${userIdToFetch}');
+      if (window.instagramAPI?.${apiMethod}) {
+        window.instagramAPI.${apiMethod}('${userIdToFetch}');
       } else {
-        console.error('❌ window.instagramAPI.fetchFollowing not available');
+        console.error('❌ window.instagramAPI.${apiMethod} not available');
       }
     })(); true;`);
   };
+
+  // Toggle for benchmarking: 'rest' or 'graphql'
+  const FOLLOWING_API_METHOD: 'rest' | 'graphql' = 'graphql';
+  const FOLLOWERS_API_METHOD: 'rest' | 'graphql' = 'graphql';
 
   // Fetch followers list for a user (internal helper)
   const fetchFollowers = (userIdToFetch: string) => {
@@ -171,15 +177,17 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
 
-    console.log('🔄 fetchFollowers:', userIdToFetch);
+    console.log('🔄 fetchFollowers:', userIdToFetch, '(method:', FOLLOWERS_API_METHOD, ')');
     fetchingUsersRef.current.add(`followers_${userIdToFetch}`);
 
+    const apiMethod = FOLLOWERS_API_METHOD === 'graphql' ? 'fetchFollowersGraphQL' : 'fetchFollowers';
+
     apiWebViewRef.current.injectJavaScript(`(function(){
-      console.log('📱 Injecting fetchFollowers for userId:', '${userIdToFetch}');
-      if (window.instagramAPI?.fetchFollowers) {
-        window.instagramAPI.fetchFollowers('${userIdToFetch}');
+      console.log('📱 Injecting ${apiMethod} for userId:', '${userIdToFetch}');
+      if (window.instagramAPI?.${apiMethod}) {
+        window.instagramAPI.${apiMethod}('${userIdToFetch}');
       } else {
-        console.error('❌ window.instagramAPI.fetchFollowers not available');
+        console.error('❌ window.instagramAPI.${apiMethod} not available');
       }
     })(); true;`);
   };
@@ -910,7 +918,7 @@ const instagramAPI = `
       }
     },
 
-    // Fetch following list
+    // Fetch following list (REST API)
     fetchFollowing: async function(userId, isMainUser) {
       try {
         let allUsers = [];
@@ -962,6 +970,113 @@ const instagramAPI = `
         sendMessage('FETCH_ERROR', {
           error: error.message,
           userId: userId
+        });
+      }
+    },
+
+    // Fetch following list using GraphQL API
+    fetchFollowingGraphQL: async function(userId, isMainUser) {
+      try {
+        let allUsers = [];
+        let hasNextPage = true;
+        let endCursor = null;
+        let pageNum = 0;
+        const QUERY_HASH = '58712303d941c6855d4e888c5f0cd22f';
+
+        debugLog('📥 [Following-GraphQL] Starting fetch for userId:', userId);
+
+        while (hasNextPage) {
+          pageNum++;
+
+          const variables = {
+            id: userId,
+            include_reel: true,
+            fetch_mutual: false,
+            first: 50
+          };
+
+          if (endCursor) {
+            variables.after = endCursor;
+          }
+
+          const params = new URLSearchParams({
+            query_hash: QUERY_HASH,
+            variables: JSON.stringify(variables)
+          });
+
+          const url = 'https://www.instagram.com/graphql/query/?' + params.toString();
+
+          debugLog('📥 [Following-GraphQL] Page ' + pageNum + ' - Fetching with cursor:', endCursor || 'none');
+
+          const response = await fetch(url, {
+            credentials: 'include',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          });
+
+          debugLog('📥 [Following-GraphQL] Page ' + pageNum + ' - Response status:', response.status);
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch following (GraphQL): ' + response.status);
+          }
+
+          const data = await response.json();
+
+          if (data.status !== 'ok' || !data.data || !data.data.user) {
+            throw new Error('Invalid GraphQL response or user not found');
+          }
+
+          const edgeFollow = data.data.user.edge_follow;
+          const edges = edgeFollow.edges || [];
+          const pageInfo = edgeFollow.page_info || {};
+          const totalCount = edgeFollow.count;
+
+          debugLog('📥 [Following-GraphQL] Page ' + pageNum + ' - Users in page:', edges.length, '| has_next_page:', pageInfo.has_next_page, '| total_count:', totalCount);
+
+          if (edges.length > 0) {
+            allUsers = allUsers.concat(
+              edges.map(function(edge) {
+                const node = edge.node;
+                return {
+                  id: node.id,
+                  username: node.username,
+                  profile_pic_url: node.profile_pic_url || null
+                };
+              })
+            );
+          }
+
+          debugLog('📥 [Following-GraphQL] Page ' + pageNum + ' - Total users so far:', allUsers.length);
+
+          hasNextPage = pageInfo.has_next_page || false;
+          endCursor = pageInfo.end_cursor || null;
+
+          if (!hasNextPage) {
+            debugLog('📥 [Following-GraphQL] No more pages. Final count:', allUsers.length, '| Expected:', totalCount);
+          }
+
+          // Rate limiting - wait 1 second between requests
+          if (hasNextPage) {
+            await new Promise(function(resolve) { setTimeout(resolve, 1000); });
+          }
+        }
+
+        debugLog('📥 [Following-GraphQL] Complete! Total fetched:', allUsers.length, 'for userId:', userId);
+
+        sendMessage('FOLLOWING_COMPLETE', {
+          users: allUsers,
+          totalCount: allUsers.length,
+          userId: userId,
+          isMainUser: isMainUser || false,
+          method: 'graphql'
+        });
+      } catch (error) {
+        debugLog('📥 [Following-GraphQL] Error:', error.message);
+        sendMessage('FETCH_ERROR', {
+          error: error.message,
+          userId: userId,
+          method: 'graphql'
         });
       }
     },
@@ -1037,6 +1152,113 @@ const instagramAPI = `
         sendMessage('FETCH_ERROR', {
           error: error.message,
           userId: userId
+        });
+      }
+    },
+
+    // Fetch followers list using GraphQL API (alternative implementation for benchmarking)
+    fetchFollowersGraphQL: async function(userId, isMainUser) {
+      try {
+        let allUsers = [];
+        let hasNextPage = true;
+        let endCursor = null;
+        let pageNum = 0;
+        const QUERY_HASH = '37479f2b8209594dde7facb0d904896a';
+
+        debugLog('📥 [Followers-GraphQL] Starting fetch for userId:', userId);
+
+        while (hasNextPage) {
+          pageNum++;
+
+          const variables = {
+            id: userId,
+            include_reel: true,
+            fetch_mutual: false,
+            first: 50
+          };
+
+          if (endCursor) {
+            variables.after = endCursor;
+          }
+
+          const params = new URLSearchParams({
+            query_hash: QUERY_HASH,
+            variables: JSON.stringify(variables)
+          });
+
+          const url = 'https://www.instagram.com/graphql/query/?' + params.toString();
+
+          debugLog('📥 [Followers-GraphQL] Page ' + pageNum + ' - Fetching with cursor:', endCursor || 'none');
+
+          const response = await fetch(url, {
+            credentials: 'include',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          });
+
+          debugLog('📥 [Followers-GraphQL] Page ' + pageNum + ' - Response status:', response.status);
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch followers (GraphQL): ' + response.status);
+          }
+
+          const data = await response.json();
+
+          if (data.status !== 'ok' || !data.data || !data.data.user) {
+            throw new Error('Invalid GraphQL response or user not found');
+          }
+
+          const edgeFollowedBy = data.data.user.edge_followed_by;
+          const edges = edgeFollowedBy.edges || [];
+          const pageInfo = edgeFollowedBy.page_info || {};
+          const totalCount = edgeFollowedBy.count;
+
+          debugLog('📥 [Followers-GraphQL] Page ' + pageNum + ' - Users in page:', edges.length, '| has_next_page:', pageInfo.has_next_page, '| total_count:', totalCount);
+
+          if (edges.length > 0) {
+            allUsers = allUsers.concat(
+              edges.map(function(edge) {
+                const node = edge.node;
+                return {
+                  id: node.id,
+                  username: node.username,
+                  profile_pic_url: node.profile_pic_url || null
+                };
+              })
+            );
+          }
+
+          debugLog('📥 [Followers-GraphQL] Page ' + pageNum + ' - Total users so far:', allUsers.length);
+
+          hasNextPage = pageInfo.has_next_page || false;
+          endCursor = pageInfo.end_cursor || null;
+
+          if (!hasNextPage) {
+            debugLog('📥 [Followers-GraphQL] No more pages. Final count:', allUsers.length, '| Expected:', totalCount);
+          }
+
+          // Rate limiting - wait 1 second between requests
+          if (hasNextPage) {
+            await new Promise(function(resolve) { setTimeout(resolve, 1000); });
+          }
+        }
+
+        debugLog('📥 [Followers-GraphQL] Complete! Total fetched:', allUsers.length, 'for userId:', userId);
+
+        sendMessage('FOLLOWERS_COMPLETE', {
+          users: allUsers,
+          totalCount: allUsers.length,
+          userId: userId,
+          isMainUser: isMainUser || false,
+          method: 'graphql'
+        });
+      } catch (error) {
+        debugLog('📥 [Followers-GraphQL] Error:', error.message);
+        sendMessage('FETCH_ERROR', {
+          error: error.message,
+          userId: userId,
+          method: 'graphql'
         });
       }
     },

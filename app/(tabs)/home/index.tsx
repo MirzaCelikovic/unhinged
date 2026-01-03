@@ -156,13 +156,13 @@ export default function Index() {
         <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
           <ScrollView className="flex-1">
         <View className="p-4 pt-32">
-          {/* Header with last sync time and refresh button */}
-          <View className="flex-row items-center justify-between px-3 py-1">
-            <Text className="font-roboto-medium text-sm uppercase tracking-wide text-black">
+          {/* Last sync time and refresh button */}
+          <View className="mb-1 flex-row items-center justify-between px-3 py-1">
+            <Text className="font-roboto-bold text-base text-gray-500">
               {formatLastSyncTime(stats.lastSyncedAt)}
             </Text>
             <Pressable className="py-2 active:opacity-70" onPress={sync} disabled={syncState.isActive}>
-              <Text className="font-roboto-medium text-sm uppercase tracking-wide text-black">
+              <Text className="font-roboto-bold text-base text-gray-500">
                 {syncState.isActive ? 'Syncing...' : 'Refresh'}
               </Text>
             </Pressable>
