@@ -1,4 +1,5 @@
-import { View, Text, Image } from 'react-native';
+import { View, Text, Image, Pressable } from 'react-native';
+import { router, usePathname } from 'expo-router';
 import { Instagram } from '~/lib/types';
 
 const formatCount = (count: number): string => {
@@ -13,9 +14,20 @@ const formatCount = (count: number): string => {
 
 interface InstagramCardProps {
   account: Instagram;
+  isMainAccount?: boolean;
 }
 
-export default function InstagramCard({ account }: InstagramCardProps) {
+export default function InstagramCard({ account, isMainAccount = false }: InstagramCardProps) {
+  const pathname = usePathname();
+  const tab = pathname.includes('/tracking') ? 'tracking' : 'home';
+
+  const handleFollowersTap = () => {
+    router.push(`/(tabs)/${tab}/list?userId=${account.user_id}&type=allFollowers&isMainAccount=${isMainAccount}`);
+  };
+
+  const handleFollowingTap = () => {
+    router.push(`/(tabs)/${tab}/list?userId=${account.user_id}&type=allFollowing&isMainAccount=${isMainAccount}`);
+  };
   return (
     <View className="w-full rounded-3xl bg-white p-4">
       {/* Top row: Profile pic and stats */}
@@ -42,18 +54,18 @@ export default function InstagramCard({ account }: InstagramCardProps) {
 
           {/* Followers */}
           {account.followers_count !== null && account.followers_count !== undefined && (
-            <View className="items-center">
+            <Pressable className="items-center active:opacity-70" onPress={handleFollowersTap}>
               <Text className="font-roboto-bold text-2xl">{formatCount(account.followers_count)}</Text>
               <Text className="font-roboto-regular text-sm text-gray-500">followers</Text>
-            </View>
+            </Pressable>
           )}
 
           {/* Following */}
           {account.following_count !== null && account.following_count !== undefined && (
-            <View className="items-center">
+            <Pressable className="items-center active:opacity-70" onPress={handleFollowingTap}>
               <Text className="font-roboto-bold text-2xl">{formatCount(account.following_count)}</Text>
               <Text className="font-roboto-regular text-sm text-gray-500">following</Text>
-            </View>
+            </Pressable>
           )}
         </View>
       </View>

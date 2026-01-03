@@ -7,7 +7,9 @@ export type AccountListType =
   | 'gainedFollowers'
   | 'lostFollowers'
   | 'notFollowingBack'
-  | 'notFollowedBack';
+  | 'notFollowedBack'
+  | 'allFollowers'
+  | 'allFollowing';
 
 export const ACCOUNT_LIST_LABELS: Record<AccountListType, { main: string; tracked: string }> = {
   addedFollowing: { main: 'You recently followed', tracked: 'They recently followed' },
@@ -16,6 +18,8 @@ export const ACCOUNT_LIST_LABELS: Record<AccountListType, { main: string; tracke
   lostFollowers: { main: 'Recently unfollowed you', tracked: 'Recently unfollowed them' },
   notFollowedBack: { main: "You aren't following back", tracked: 'They are not following back' },
   notFollowingBack: { main: 'Not following you back', tracked: 'Not following them back' },
+  allFollowers: { main: 'Followers', tracked: 'Followers' },
+  allFollowing: { main: 'Following', tracked: 'Following' },
 };
 
 export const getAccountListLabel = (type: AccountListType, isMainAccount: boolean): string => {
@@ -230,6 +234,30 @@ const fetchAccountList = async (
       return followers
         .filter(f => !followingIds.has(f.follower_user_id))
         .map(f => ({ id: f.follower_user_id, username: f.username || f.follower_user_id, profile_pic_url: f.profile_pic_url }));
+    }
+
+    case 'allFollowers': {
+      // All active followers
+      const results = await db.getAllAsync<{ follower_user_id: string; username: string | null; profile_pic_url: string | null }>(
+        `SELECT f.follower_user_id, i.username, i.profile_pic_url
+         FROM followers f
+         LEFT JOIN instagrams i ON f.follower_user_id = i.user_id
+         WHERE f.tracked_account_id = ? AND f.ended_at IS NULL`,
+        [userId]
+      );
+      return results.map(r => ({ id: r.follower_user_id, username: r.username || r.follower_user_id, profile_pic_url: r.profile_pic_url }));
+    }
+
+    case 'allFollowing': {
+      // All active followings
+      const results = await db.getAllAsync<{ followed_user_id: string; username: string | null; profile_pic_url: string | null }>(
+        `SELECT f.followed_user_id, i.username, i.profile_pic_url
+         FROM followings f
+         LEFT JOIN instagrams i ON f.followed_user_id = i.user_id
+         WHERE f.tracked_account_id = ? AND f.ended_at IS NULL`,
+        [userId]
+      );
+      return results.map(r => ({ id: r.followed_user_id, username: r.username || r.followed_user_id, profile_pic_url: r.profile_pic_url }));
     }
 
     default:

@@ -7,7 +7,7 @@ import { useStorage } from '~/lib/useStorage';
 import { useConnectInstagram, useDisconnectInstagram } from '~/lib/useAccount';
 import { useAccountContext } from './AccountContext';
 import { useSheets } from './SheetContext';
-import { syncFollowingList, syncFollowersList } from '~/lib/syncing';
+import { syncFollowingList, syncFollowersList, addFollowing, removeFollowing } from '~/lib/syncing';
 import { clearAllData } from '~/lib/database';
 import * as Notifications from 'expo-notifications';
 
@@ -43,6 +43,20 @@ export interface SyncState {
   trackedAccounts: AccountSyncStatus[];
 }
 
+interface FollowResult {
+  success: boolean;
+  isFollowing?: boolean;
+  isOutgoingRequest?: boolean;
+  isPrivate?: boolean;
+  error?: string;
+}
+
+interface FollowUserParams {
+  targetUserId: string;
+  targetUsername: string;
+  targetProfilePicUrl?: string | null;
+}
+
 interface InstagramContextType {
   isLoggedIn: boolean | null;
   userId: string | null;
@@ -53,6 +67,8 @@ interface InstagramContextType {
   fetchUserId: (username: string) => Promise<UserIdResult>;
   sync: () => void;
   syncTrackedAccount: (userId: string, username: string) => void;
+  followUser: (params: FollowUserParams) => Promise<FollowResult>;
+  unfollowUser: (targetUserId: string) => Promise<FollowResult>;
 }
 
 interface WebViewMessage {
@@ -66,7 +82,9 @@ interface WebViewMessage {
     | 'LOGOUT_ERROR'
     | 'USER_ID_FETCHED'
     | 'ACCOUNT_METADATA_FETCHED'
-    | 'DEBUG_LOG';
+    | 'DEBUG_LOG'
+    | 'FOLLOW_USER_RESULT'
+    | 'UNFOLLOW_USER_RESULT';
   userId?: string;
   username?: string;
   success?: boolean;
@@ -82,6 +100,9 @@ interface WebViewMessage {
   isVerified?: boolean;
   followedByViewer?: boolean;
   message?: string;
+  targetUserId?: string;
+  isFollowing?: boolean;
+  isOutgoingRequest?: boolean;
 }
 
 interface User {
@@ -132,6 +153,17 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const pendingLoginCheckRef = useRef<string | null>(null);
   const userIdFetchPromisesRef = useRef<
     Map<string, { resolve: (result: UserIdResult) => void; reject: (error: Error) => void }>
+  >(new Map());
+  const followPromisesRef = useRef<
+    Map<string, {
+      resolve: (result: FollowResult) => void;
+      reject: (error: Error) => void;
+      username: string;
+      profilePicUrl?: string | null;
+    }>
+  >(new Map());
+  const unfollowPromisesRef = useRef<
+    Map<string, { resolve: (result: FollowResult) => void; reject: (error: Error) => void }>
   >(new Map());
 
   // Fetch following list for a user (internal helper)
@@ -464,6 +496,47 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     });
   };
 
+  // Follow a user
+  const followUser = ({ targetUserId, targetUsername, targetProfilePicUrl }: FollowUserParams): Promise<FollowResult> => {
+    return new Promise((resolve, reject) => {
+      if (!apiWebViewRef.current) {
+        reject(new Error('API WebView not ready'));
+        return;
+      }
+
+      followPromisesRef.current.set(targetUserId, {
+        resolve,
+        reject,
+        username: targetUsername,
+        profilePicUrl: targetProfilePicUrl,
+      });
+
+      injectJS(`
+        if (window.instagramAPI?.followUser) {
+          window.instagramAPI.followUser('${targetUserId}');
+        }
+      `);
+    });
+  };
+
+  // Unfollow a user
+  const unfollowUser = (targetUserId: string): Promise<FollowResult> => {
+    return new Promise((resolve, reject) => {
+      if (!apiWebViewRef.current) {
+        reject(new Error('API WebView not ready'));
+        return;
+      }
+
+      unfollowPromisesRef.current.set(targetUserId, { resolve, reject });
+
+      injectJS(`
+        if (window.instagramAPI?.unfollowUser) {
+          window.instagramAPI.unfollowUser('${targetUserId}');
+        }
+      `);
+    });
+  };
+
   // Handle following list completion
   const handleFollowingComplete = async (userId: string, users: User[]) => {
     // Deduplicate users
@@ -686,6 +759,68 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         case 'DEBUG_LOG':
           console.log('[WebView]', data.message);
           break;
+
+        case 'FOLLOW_USER_RESULT':
+          if (data.targetUserId) {
+            const promiseData = followPromisesRef.current.get(data.targetUserId);
+            if (promiseData) {
+              if (data.success && data.isFollowing && userId) {
+                // Update local database - only if actually following (not just a request to private account)
+                const updateDb = async () => {
+                  try {
+                    await addFollowing(
+                      db,
+                      userId,
+                      data.targetUserId!,
+                      promiseData.username,
+                      promiseData.profilePicUrl
+                    );
+                    // Invalidate relevant queries
+                    queryClient.invalidateQueries({ queryKey: ['followerStats', userId] });
+                    queryClient.invalidateQueries({ queryKey: ['accountList', userId] });
+                  } catch (error) {
+                    console.error('Failed to update database after follow:', error);
+                  }
+                };
+                updateDb();
+              }
+              promiseData.resolve({
+                success: data.success || false,
+                isFollowing: data.isFollowing,
+                isOutgoingRequest: data.isOutgoingRequest,
+                isPrivate: data.isPrivate,
+              });
+              followPromisesRef.current.delete(data.targetUserId);
+            }
+          }
+          break;
+
+        case 'UNFOLLOW_USER_RESULT':
+          if (data.targetUserId) {
+            const promise = unfollowPromisesRef.current.get(data.targetUserId);
+            if (promise) {
+              if (data.success && userId) {
+                // Update local database
+                const updateDb = async () => {
+                  try {
+                    await removeFollowing(db, userId, data.targetUserId!);
+                    // Invalidate relevant queries
+                    queryClient.invalidateQueries({ queryKey: ['followerStats', userId] });
+                    queryClient.invalidateQueries({ queryKey: ['accountList', userId] });
+                  } catch (error) {
+                    console.error('Failed to update database after unfollow:', error);
+                  }
+                };
+                updateDb();
+              }
+              promise.resolve({
+                success: data.success || false,
+                isFollowing: data.isFollowing,
+              });
+              unfollowPromisesRef.current.delete(data.targetUserId);
+            }
+          }
+          break;
       }
     } catch (error) {
       console.error('Error parsing message:', error);
@@ -741,6 +876,8 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     fetchUserId,
     sync,
     syncTrackedAccount,
+    followUser,
+    unfollowUser,
   };
 
   return (
@@ -1343,6 +1480,104 @@ const instagramAPI = `
         }
       } catch (error) {
         console.error('❌ Failed to fetch account metadata:', error.message);
+      }
+    },
+
+    // Follow a user
+    followUser: async function(targetUserId) {
+      try {
+        debugLog('👤 [Follow] Starting follow for userId:', targetUserId);
+
+        // Get CSRF token from cookies
+        const csrfToken = getCookie('csrftoken');
+        if (!csrfToken) {
+          throw new Error('CSRF token not found');
+        }
+
+        const response = await fetch('https://www.instagram.com/api/v1/friendships/create/' + targetUserId + '/', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-IG-App-ID': '${INSTAGRAM_APP_ID}',
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }
+        });
+
+        debugLog('👤 [Follow] Response status:', response.status);
+
+        if (!response.ok) {
+          throw new Error('Failed to follow user: ' + response.status);
+        }
+
+        const data = await response.json();
+        debugLog('👤 [Follow] Response data:', JSON.stringify(data));
+
+        // Response contains friendship_status with following: true if successful
+        const isFollowing = data.friendship_status?.following || data.friendship_status?.outgoing_request || false;
+        const isPrivate = data.friendship_status?.is_private || false;
+
+        sendMessage('FOLLOW_USER_RESULT', {
+          targetUserId: targetUserId,
+          success: true,
+          isFollowing: isFollowing,
+          isOutgoingRequest: data.friendship_status?.outgoing_request || false,
+          isPrivate: isPrivate
+        });
+      } catch (error) {
+        debugLog('👤 [Follow] Error:', error.message);
+        sendMessage('FOLLOW_USER_RESULT', {
+          targetUserId: targetUserId,
+          success: false,
+          error: error.message
+        });
+      }
+    },
+
+    // Unfollow a user
+    unfollowUser: async function(targetUserId) {
+      try {
+        debugLog('👤 [Unfollow] Starting unfollow for userId:', targetUserId);
+
+        // Get CSRF token from cookies
+        const csrfToken = getCookie('csrftoken');
+        if (!csrfToken) {
+          throw new Error('CSRF token not found');
+        }
+
+        const response = await fetch('https://www.instagram.com/api/v1/friendships/destroy/' + targetUserId + '/', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-IG-App-ID': '${INSTAGRAM_APP_ID}',
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }
+        });
+
+        debugLog('👤 [Unfollow] Response status:', response.status);
+
+        if (!response.ok) {
+          throw new Error('Failed to unfollow user: ' + response.status);
+        }
+
+        const data = await response.json();
+        debugLog('👤 [Unfollow] Response data:', JSON.stringify(data));
+
+        sendMessage('UNFOLLOW_USER_RESULT', {
+          targetUserId: targetUserId,
+          success: true,
+          isFollowing: data.friendship_status?.following || false
+        });
+      } catch (error) {
+        debugLog('👤 [Unfollow] Error:', error.message);
+        sendMessage('UNFOLLOW_USER_RESULT', {
+          targetUserId: targetUserId,
+          success: false,
+          error: error.message
+        });
       }
     }
   };

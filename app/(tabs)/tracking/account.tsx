@@ -116,7 +116,7 @@ export default function TrackingAccount() {
                 onPress={() => setActiveTab('stats')}>
                 <Text
                   className={`font-roboto-medium text-sm ${activeTab === 'stats' ? 'text-gray-900' : 'text-gray-500'}`}>
-                  Stats
+                  Insights
                 </Text>
               </Pressable>
             </View>

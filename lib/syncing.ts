@@ -277,3 +277,61 @@ export const getFollowingActivity = async (
   // Convert to array and sort by date descending
   return Array.from(activityByDate.values()).sort((a, b) => b.date.localeCompare(a.date));
 };
+
+/**
+ * Add a single following record when the main user follows someone
+ * This updates the local database without requiring a full sync
+ */
+export const addFollowing = async (
+  db: SQLite.SQLiteDatabase,
+  mainUserId: string,
+  targetUserId: string,
+  targetUsername: string,
+  targetProfilePicUrl?: string | null
+): Promise<void> => {
+  const now = getCurrentUTCTimestamp();
+
+  // First, ensure the target user exists in instagrams table
+  await db.runAsync(
+    `INSERT INTO instagrams (user_id, username, biography, profile_pic_url, media_count, followers_count, following_count, date_created, date_updated)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(user_id) DO UPDATE SET
+       username = ?,
+       profile_pic_url = COALESCE(?, profile_pic_url),
+       date_updated = ?`,
+    [targetUserId, targetUsername, null, targetProfilePicUrl || null, null, null, null, now, now, targetUsername, targetProfilePicUrl, now]
+  );
+
+  // Add or reactivate the following relationship
+  await db.runAsync(
+    `INSERT INTO followings (tracked_account_id, followed_user_id, is_baseline, first_seen_at, last_seen_at, date_created, date_updated)
+     VALUES (?, ?, 0, ?, ?, ?, ?)
+     ON CONFLICT(tracked_account_id, followed_user_id) DO UPDATE SET
+       last_seen_at = ?,
+       ended_at = NULL,
+       date_updated = ?`,
+    [mainUserId, targetUserId, now, now, now, now, now, now]
+  );
+
+  console.log(`Added following: ${mainUserId} -> ${targetUserId} (@${targetUsername})`);
+};
+
+/**
+ * Remove a following record when the main user unfollows someone
+ * This updates the local database without requiring a full sync
+ */
+export const removeFollowing = async (
+  db: SQLite.SQLiteDatabase,
+  mainUserId: string,
+  targetUserId: string
+): Promise<void> => {
+  const now = getCurrentUTCTimestamp();
+
+  // Mark the following as ended
+  await db.runAsync(
+    'UPDATE followings SET ended_at = ?, date_updated = ? WHERE tracked_account_id = ? AND followed_user_id = ? AND ended_at IS NULL',
+    [now, now, mainUserId, targetUserId]
+  );
+
+  console.log(`Removed following: ${mainUserId} -> ${targetUserId}`);
+};

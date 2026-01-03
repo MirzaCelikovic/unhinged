@@ -171,7 +171,7 @@ export default function Index() {
           {/* Instagram Account Card */}
           {instagram && (
             <View className="mb-6">
-              <InstagramCard account={instagram} />
+              <InstagramCard account={instagram} isMainAccount />
             </View>
           )}
 

@@ -1,7 +1,11 @@
-import { View } from 'react-native';
+import { View, Linking } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useQuery } from '@tanstack/react-query';
 import AccountCard from './AccountCard';
+
+const openInstagramProfile = (username: string) => {
+  Linking.openURL(`https://instagram.com/${username}`);
+};
 
 interface FeedEvent {
   id: string;
@@ -245,34 +249,28 @@ export default function ActivityFeed({
   // Show dummy events for preview - set to true to enable
   const showDummyEvents = false;
 
-  return (
-    <View className="gap-3">
-      {/* Dummy events for preview */}
-      {showDummyEvents &&
-        DUMMY_EVENTS.map((event) => (
-          <AccountCard
-            key={event.id}
-            username={event.username}
-            profilePicUrl={event.profilePicUrl}
-            label={getEventLabel(event.type)}
-            timestamp={formatRelativeTime(event.timestamp)}
-          />
-        ))}
+  const displayEvents = showDummyEvents ? DUMMY_EVENTS : events;
+  const hasTrackingStart = trackingStartDate || showDummyEvents;
+  const totalItems = displayEvents.length + (hasTrackingStart ? 1 : 0);
 
-      {/* Real events */}
-      {!showDummyEvents &&
-        events.map((event) => (
-          <AccountCard
-            key={event.id}
-            username={event.username}
-            profilePicUrl={event.profilePicUrl}
-            label={getEventLabel(event.type)}
-            timestamp={formatRelativeTime(event.timestamp)}
-          />
-        ))}
+  return (
+    <View className="overflow-hidden rounded-2xl bg-white">
+      {/* Events */}
+      {displayEvents.map((event, index) => (
+        <AccountCard
+          key={event.id}
+          username={event.username}
+          profilePicUrl={event.profilePicUrl}
+          label={getEventLabel(event.type)}
+          timestamp={formatRelativeTime(event.timestamp)}
+          isRow
+          isLastRow={!hasTrackingStart && index === displayEvents.length - 1}
+          onPress={() => openInstagramProfile(event.username)}
+        />
+      ))}
 
       {/* "You started tracking" item - always shown at bottom */}
-      {(trackingStartDate || showDummyEvents) && (
+      {hasTrackingStart && (
         <AccountCard
           username={trackedUsername || 'username'}
           profilePicUrl={trackedProfilePicUrl}
@@ -280,6 +278,9 @@ export default function ActivityFeed({
           timestamp={formatRelativeTime(
             trackingStartDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
           )}
+          isRow
+          isLastRow
+          onPress={() => openInstagramProfile(trackedUsername || 'username')}
         />
       )}
     </View>
