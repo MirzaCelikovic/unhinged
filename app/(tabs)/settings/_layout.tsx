@@ -29,6 +29,13 @@ export default function SettingsLayout() {
           ),
         }}
       />
+      <Stack.Screen
+        name="notifications"
+        options={{
+          presentation: 'modal',
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

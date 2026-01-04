@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Tabs, Redirect } from 'expo-router';
-import { House, HatGlasses, Settings } from 'lucide-react-native';
+import { Instagram, HatGlasses, Settings } from 'lucide-react-native';
 import { useOnboarding } from '~/lib/useOnboarding';
 import { useRevenueCat } from '~/contexts/RevenueCatContext';
 import { useAccountContext } from '~/contexts/AccountContext';
@@ -55,7 +55,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color }) => <House color={color} size={28} />,
+          tabBarIcon: ({ color }) => <Instagram color={color} size={28} />,
           headerShown: false,
         }}
       />

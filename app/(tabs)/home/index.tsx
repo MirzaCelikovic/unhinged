@@ -173,15 +173,15 @@ export default function Index() {
           <ScrollView className="flex-1">
             <View className="p-4 pt-32">
               {/* Last sync time and refresh button */}
-              <View className="mb-1 flex-row items-center justify-between px-3 py-1">
-                <Text className="font-roboto-bold text-base text-gray-500">
+              <View className="flex-row items-center justify-between px-3 py-1">
+                <Text className="font-roboto-bold text-base text-black">
                   {formatLastSyncTime(stats.lastSyncedAt)}
                 </Text>
                 <Pressable
                   className="py-2 active:opacity-70"
                   onPress={handleRefresh}
                   disabled={syncState.isActive}>
-                  <Text className="font-roboto-bold text-base text-gray-500">
+                  <Text className="font-roboto-bold text-base text-black">
                     {syncState.isActive ? 'Syncing...' : 'Refresh'}
                   </Text>
                 </Pressable>
