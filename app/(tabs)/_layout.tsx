@@ -1,9 +1,19 @@
+import { useEffect } from 'react';
 import { Tabs, Redirect } from 'expo-router';
 import { House, HatGlasses, Settings } from 'lucide-react-native';
 import { useOnboarding } from '~/lib/useOnboarding';
+import { useRevenueCat } from '~/contexts/RevenueCatContext';
 
 export default function TabLayout() {
   const { isLoading, isOnboarded } = useOnboarding();
+  const { isInitialized, isSubscribed, presentPaywallIfNeeded } = useRevenueCat();
+
+  // Show paywall on mount if user doesn't have a subscription
+  useEffect(() => {
+    if (isInitialized && !isSubscribed) {
+      presentPaywallIfNeeded();
+    }
+  }, [isInitialized, isSubscribed]);
 
   if (isLoading) {
     return null;
