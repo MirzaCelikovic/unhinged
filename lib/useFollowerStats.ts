@@ -1,6 +1,9 @@
 import { useSQLiteContext } from 'expo-sqlite';
 import { useQuery } from '@tanstack/react-query';
 
+// Number of days to consider as "recent" for activity
+const RECENT_DAYS = 30;
+
 export type AccountListType =
   | 'addedFollowing'
   | 'removedFollowing'
@@ -58,37 +61,37 @@ const fetchFollowerStats = async (db: any, userId: string): Promise<FollowerStat
   );
   const followingIds = new Set(followings.map(f => f.followed_user_id));
 
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const recentCutoff = new Date();
+  recentCutoff.setDate(recentCutoff.getDate() - RECENT_DAYS);
 
-  // addedFollowing: Accounts this account started following (not baseline) in last 30 days
+  // addedFollowing: Accounts this account started following (not baseline) recently
   const addedFollowingResult = await db.getAllAsync<{ count: number }>(
     'SELECT COUNT(*) as count FROM followings WHERE tracked_account_id = ? AND is_baseline = 0 AND first_seen_at >= ?',
-    [userId, thirtyDaysAgo.toISOString()]
+    [userId, recentCutoff.toISOString()]
   );
   const addedFollowing = addedFollowingResult[0]?.count || 0;
 
-  // removedFollowing: Accounts this account stopped following in last 30 days
+  // removedFollowing: Accounts this account stopped following recently
   const removedFollowingResult = await db.getAllAsync<{ count: number }>(
     'SELECT COUNT(*) as count FROM followings WHERE tracked_account_id = ? AND ended_at IS NOT NULL AND ended_at >= ?',
-    [userId, thirtyDaysAgo.toISOString()]
+    [userId, recentCutoff.toISOString()]
   );
   const removedFollowing = removedFollowingResult[0]?.count || 0;
 
-  // gainedFollowers: Accounts that started following this account (not baseline) in last 30 days
+  // gainedFollowers: Accounts that started following this account (not baseline) recently
   const gainedFollowersResult = await db.getAllAsync<{ count: number }>(
     `SELECT COUNT(*) as count FROM followers
      WHERE tracked_account_id = ?
      AND is_baseline = 0
      AND first_seen_at >= ?`,
-    [userId, thirtyDaysAgo.toISOString()]
+    [userId, recentCutoff.toISOString()]
   );
   const gainedFollowers = gainedFollowersResult[0]?.count || 0;
 
-  // lostFollowers: Accounts that stopped following this account in last 30 days
+  // lostFollowers: Accounts that stopped following this account recently
   const lostFollowersResult = await db.getAllAsync<{ count: number }>(
     'SELECT COUNT(*) as count FROM followers WHERE tracked_account_id = ? AND ended_at IS NOT NULL AND ended_at >= ?',
-    [userId, thirtyDaysAgo.toISOString()]
+    [userId, recentCutoff.toISOString()]
   );
   const lostFollowers = lostFollowersResult[0]?.count || 0;
 
@@ -140,36 +143,36 @@ const fetchAccountList = async (
   userId: string,
   type: AccountListType
 ): Promise<AccountListItem[]> => {
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const recentCutoff = new Date();
+  recentCutoff.setDate(recentCutoff.getDate() - RECENT_DAYS);
 
   switch (type) {
     case 'addedFollowing': {
-      // Accounts this account started following (not baseline) in last 30 days
+      // Accounts this account started following (not baseline) recently
       const results = await db.getAllAsync<{ followed_user_id: string; username: string | null; profile_pic_url: string | null }>(
         `SELECT f.followed_user_id, i.username, i.profile_pic_url
          FROM followings f
          LEFT JOIN instagrams i ON f.followed_user_id = i.user_id
          WHERE f.tracked_account_id = ? AND f.is_baseline = 0 AND f.first_seen_at >= ?`,
-        [userId, thirtyDaysAgo.toISOString()]
+        [userId, recentCutoff.toISOString()]
       );
       return results.map(r => ({ id: r.followed_user_id, username: r.username || r.followed_user_id, profile_pic_url: r.profile_pic_url }));
     }
 
     case 'removedFollowing': {
-      // Accounts this account stopped following in last 30 days
+      // Accounts this account stopped following recently
       const results = await db.getAllAsync<{ followed_user_id: string; username: string | null; profile_pic_url: string | null }>(
         `SELECT f.followed_user_id, i.username, i.profile_pic_url
          FROM followings f
          LEFT JOIN instagrams i ON f.followed_user_id = i.user_id
          WHERE f.tracked_account_id = ? AND f.ended_at IS NOT NULL AND f.ended_at >= ?`,
-        [userId, thirtyDaysAgo.toISOString()]
+        [userId, recentCutoff.toISOString()]
       );
       return results.map(r => ({ id: r.followed_user_id, username: r.username || r.followed_user_id, profile_pic_url: r.profile_pic_url }));
     }
 
     case 'gainedFollowers': {
-      // Accounts that started following this account (not baseline) in last 30 days
+      // Accounts that started following this account (not baseline) recently
       const results = await db.getAllAsync<{ follower_user_id: string; username: string | null; profile_pic_url: string | null }>(
         `SELECT f.follower_user_id, i.username, i.profile_pic_url
          FROM followers f
@@ -177,19 +180,19 @@ const fetchAccountList = async (
          WHERE f.tracked_account_id = ?
          AND f.is_baseline = 0
          AND f.first_seen_at >= ?`,
-        [userId, thirtyDaysAgo.toISOString()]
+        [userId, recentCutoff.toISOString()]
       );
       return results.map(r => ({ id: r.follower_user_id, username: r.username || r.follower_user_id, profile_pic_url: r.profile_pic_url }));
     }
 
     case 'lostFollowers': {
-      // Accounts that stopped following this account in last 30 days
+      // Accounts that stopped following this account recently
       const results = await db.getAllAsync<{ follower_user_id: string; username: string | null; profile_pic_url: string | null }>(
         `SELECT f.follower_user_id, i.username, i.profile_pic_url
          FROM followers f
          LEFT JOIN instagrams i ON f.follower_user_id = i.user_id
          WHERE f.tracked_account_id = ? AND f.ended_at IS NOT NULL AND f.ended_at >= ?`,
-        [userId, thirtyDaysAgo.toISOString()]
+        [userId, recentCutoff.toISOString()]
       );
       return results.map(r => ({ id: r.follower_user_id, username: r.username || r.follower_user_id, profile_pic_url: r.profile_pic_url }));
     }
