@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { Platform } from 'react-native';
 import Purchases, { CustomerInfo, PurchasesOffering, LOG_LEVEL } from 'react-native-purchases';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 
