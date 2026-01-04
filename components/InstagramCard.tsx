@@ -28,7 +28,9 @@ export default function InstagramCard({ account, isMainAccount = false }: Instag
       presentPaywall();
       return;
     }
-    router.push(`/(tabs)/${tab}/list?userId=${account.user_id}&type=allFollowers&isMainAccount=${isMainAccount}`);
+    router.push(
+      `/(tabs)/${tab}/list?userId=${account.user_id}&type=allFollowers&isMainAccount=${isMainAccount}`
+    );
   };
 
   const handleFollowingTap = () => {
@@ -36,7 +38,9 @@ export default function InstagramCard({ account, isMainAccount = false }: Instag
       presentPaywall();
       return;
     }
-    router.push(`/(tabs)/${tab}/list?userId=${account.user_id}&type=allFollowing&isMainAccount=${isMainAccount}`);
+    router.push(
+      `/(tabs)/${tab}/list?userId=${account.user_id}&type=allFollowing&isMainAccount=${isMainAccount}`
+    );
   };
   return (
     <View className="w-full rounded-3xl bg-white p-4">
@@ -65,7 +69,9 @@ export default function InstagramCard({ account, isMainAccount = false }: Instag
           {/* Followers */}
           {account.followers_count !== null && account.followers_count !== undefined && (
             <Pressable className="items-center active:opacity-70" onPress={handleFollowersTap}>
-              <Text className="font-roboto-bold text-2xl">{formatCount(account.followers_count)}</Text>
+              <Text className="font-roboto-bold text-2xl">
+                {formatCount(account.followers_count)}
+              </Text>
               <Text className="font-roboto-regular text-sm text-gray-500">followers</Text>
             </Pressable>
           )}
@@ -73,7 +79,9 @@ export default function InstagramCard({ account, isMainAccount = false }: Instag
           {/* Following */}
           {account.following_count !== null && account.following_count !== undefined && (
             <Pressable className="items-center active:opacity-70" onPress={handleFollowingTap}>
-              <Text className="font-roboto-bold text-2xl">{formatCount(account.following_count)}</Text>
+              <Text className="font-roboto-bold text-2xl">
+                {formatCount(account.following_count)}
+              </Text>
               <Text className="font-roboto-regular text-sm text-gray-500">following</Text>
             </Pressable>
           )}
@@ -85,7 +93,7 @@ export default function InstagramCard({ account, isMainAccount = false }: Instag
 
       {/* Biography */}
       <Text className="font-roboto-regular mt-1 text-base text-gray-500" numberOfLines={3}>
-        {account.biography || 'Lorem ipsum dolor sit amet'}
+        {account.biography}
       </Text>
     </View>
   );
