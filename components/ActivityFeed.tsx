@@ -2,6 +2,7 @@ import { View, Linking } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useQuery } from '@tanstack/react-query';
 import AccountCard from './AccountCard';
+import { useRevenueCat } from '~/contexts/RevenueCatContext';
 
 const openInstagramProfile = (username: string) => {
   Linking.openURL(`https://instagram.com/${username}`);
@@ -226,6 +227,7 @@ export default function ActivityFeed({
   trackedProfilePicUrl,
 }: ActivityFeedProps) {
   const db = useSQLiteContext();
+  const { isSubscribed, presentPaywall } = useRevenueCat();
 
   const { data: events = [] } = useQuery({
     queryKey: ['activityFeed', userId],
@@ -249,9 +251,23 @@ export default function ActivityFeed({
   // Show dummy events for preview - set to true to enable
   const showDummyEvents = false;
 
-  const displayEvents = showDummyEvents ? DUMMY_EVENTS : events;
+  // Show 3 dummy items for non-subscribed users
+  const dummyEventsForPaywall = DUMMY_EVENTS.slice(0, 3);
+  const displayEvents = showDummyEvents
+    ? DUMMY_EVENTS
+    : !isSubscribed
+      ? dummyEventsForPaywall
+      : events;
   const hasTrackingStart = trackingStartDate || showDummyEvents;
   const totalItems = displayEvents.length + (hasTrackingStart ? 1 : 0);
+
+  const handleEventPress = (username: string) => {
+    if (!isSubscribed) {
+      presentPaywall();
+      return;
+    }
+    openInstagramProfile(username);
+  };
 
   return (
     <View className="overflow-hidden rounded-2xl bg-white">
@@ -265,7 +281,8 @@ export default function ActivityFeed({
           timestamp={formatRelativeTime(event.timestamp)}
           isRow
           isLastRow={!hasTrackingStart && index === displayEvents.length - 1}
-          onPress={() => openInstagramProfile(event.username)}
+          onPress={() => handleEventPress(event.username)}
+          blurred={!isSubscribed}
         />
       ))}
 

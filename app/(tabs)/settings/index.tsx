@@ -1,6 +1,7 @@
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useEffect, useState } from 'react';
 import * as Notifications from 'expo-notifications';
+import * as Application from 'expo-application';
 import { router } from 'expo-router';
 import { useInstagram } from '~/contexts/InstagramContext';
 import { useOnboarding } from '~/lib/useOnboarding';
@@ -64,6 +65,13 @@ export default function Settings() {
                 <Text className="font-roboto-medium text-lg text-white">Disconnect Instagram</Text>
               </View>
             </Pressable>
+          </View>
+
+          {/* Version */}
+          <View className="mt-8 items-center pb-32">
+            <Text className="font-roboto-medium text-base text-gray-500">
+              v{Application.nativeApplicationVersion} ({Application.nativeBuildVersion})
+            </Text>
           </View>
         </View>
       </ScrollView>

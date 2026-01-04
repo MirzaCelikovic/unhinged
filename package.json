@@ -19,6 +19,7 @@
     "customerio-reactnative": "^5.1.1",
     "expo": "^54.0.0",
     "expo-application": "~7.0.7",
+    "expo-blur": "~15.0.8",
     "expo-constants": "~18.0.10",
     "expo-linking": "~8.0.8",
     "expo-notifications": "~0.32.13",

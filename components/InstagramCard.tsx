@@ -1,6 +1,7 @@
 import { View, Text, Image, Pressable } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import { Instagram } from '~/lib/types';
+import { useRevenueCat } from '~/contexts/RevenueCatContext';
 
 const formatCount = (count: number): string => {
   if (count >= 1_000_000) {
@@ -20,12 +21,21 @@ interface InstagramCardProps {
 export default function InstagramCard({ account, isMainAccount = false }: InstagramCardProps) {
   const pathname = usePathname();
   const tab = pathname.includes('/tracking') ? 'tracking' : 'home';
+  const { isSubscribed, presentPaywall } = useRevenueCat();
 
   const handleFollowersTap = () => {
+    if (!isSubscribed) {
+      presentPaywall();
+      return;
+    }
     router.push(`/(tabs)/${tab}/list?userId=${account.user_id}&type=allFollowers&isMainAccount=${isMainAccount}`);
   };
 
   const handleFollowingTap = () => {
+    if (!isSubscribed) {
+      presentPaywall();
+      return;
+    }
     router.push(`/(tabs)/${tab}/list?userId=${account.user_id}&type=allFollowing&isMainAccount=${isMainAccount}`);
   };
   return (

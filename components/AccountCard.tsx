@@ -1,4 +1,5 @@
 import { View, Text, Image, Pressable, ActivityIndicator } from 'react-native';
+import { BlurView } from 'expo-blur';
 
 interface AccountCardProps {
   username: string;
@@ -12,6 +13,7 @@ interface AccountCardProps {
   actionLoading?: boolean;
   onAction?: () => void;
   onPress?: () => void;
+  blurred?: boolean;
 }
 
 export default function AccountCard({
@@ -26,6 +28,7 @@ export default function AccountCard({
   actionLoading = false,
   onAction,
   onPress,
+  blurred = false,
 }: AccountCardProps) {
   const containerClass = isRow
     ? `p-4 ${!isLastRow ? 'border-b border-gray-100' : ''}`
@@ -40,18 +43,46 @@ export default function AccountCard({
     : 'font-roboto-medium text-sm text-gray-700';
 
   const content = (
-    <View className="flex-row items-center gap-3">
-      {profilePicUrl ? (
-        <Image source={{ uri: profilePicUrl }} className="h-12 w-12 rounded-full" />
-      ) : (
-        <View className="h-12 w-12 rounded-full bg-gray-200" />
-      )}
-      <View className="flex-1">
+    <View className="relative flex-row items-center gap-3">
+      {/* Profile picture */}
+      <View className="relative overflow-hidden rounded-full">
+        {profilePicUrl ? (
+          <Image source={{ uri: profilePicUrl }} className="h-12 w-12 rounded-full" />
+        ) : (
+          <View className="h-12 w-12 rounded-full bg-gray-200" />
+        )}
+        {blurred && (
+          <BlurView
+            intensity={20}
+            tint="light"
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          />
+        )}
+      </View>
+
+      {/* Username and label */}
+      <View className="relative flex-1">
         <Text className="font-roboto-medium text-base text-gray-900">@{username}</Text>
         {label && (
           <Text className="font-roboto-regular text-sm text-gray-500">{label}</Text>
         )}
+        {blurred && (
+          <BlurView
+            intensity={12}
+            tint="light"
+            style={{
+              position: 'absolute',
+              top: -4,
+              left: -8,
+              right: -4,
+              bottom: -4,
+              borderRadius: 8,
+              overflow: 'hidden',
+            }}
+          />
+        )}
       </View>
+
       {timestamp && (
         <Text className="font-roboto-regular text-sm text-gray-400">{timestamp}</Text>
       )}
