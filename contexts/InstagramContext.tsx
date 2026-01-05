@@ -6,7 +6,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useStorage } from '~/lib/useStorage';
 import { useConnectInstagram, useDisconnectInstagram } from '~/lib/useAccount';
 import { useAccountContext } from './AccountContext';
-import { useSheets } from './SheetContext';
 import { syncFollowingList, syncFollowersList, addFollowing, removeFollowing } from '~/lib/syncing';
 import { clearAllData } from '~/lib/database';
 import * as Notifications from 'expo-notifications';
@@ -131,7 +130,6 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const { account, trackedInstagrams } = useAccountContext();
   const connectInstagram = useConnectInstagram();
   const disconnectInstagram = useDisconnectInstagram();
-  const { showNotificationsSheet } = useSheets();
 
   // State
   const [showLoginModal, setShowLoginModal] = useState(false);

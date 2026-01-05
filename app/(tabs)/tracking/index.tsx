@@ -5,18 +5,31 @@ import {
   Pressable,
   StyleSheet,
   Image,
+  Alert,
+  Linking,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
+import { useCallback, useEffect, useRef } from 'react';
 import { router } from 'expo-router';
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
+import { CustomerIO } from 'customerio-reactnative';
 import { useAccountContext } from '~/contexts/AccountContext';
 import { useInstagram as useInstagramContext, AccountSyncStatus } from '~/contexts/InstagramContext';
 import { CircleChevronRight } from 'lucide-react-native';
 import Circles from '~/assets/circles.svg';
 import NotConnected from '~/components/NotConnected';
 import NotTracking from '~/components/NotTracking';
+import NotificationsSheet from '~/components/NotificationsSheet';
 import Button from '~/components/Button';
 import Spinner from '~/components/Spinner';
 import { Instagram } from '~/lib/types';
 import { useInstagramActivity } from '~/lib/useInstagramActivity';
+
+const NOTIFICATIONS_LATER_KEY = 'notifications_sheet_dismissed_at';
+const NOTIFICATIONS_LATER_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 interface TrackedAccountItemProps {
   account: Instagram;
@@ -70,6 +83,74 @@ function TrackedAccountItem({ account, syncStatus }: TrackedAccountItemProps) {
 export default function Tracking() {
   const { trackedInstagrams, isLoading } = useAccountContext();
   const { isLoggedIn, showLogin, syncState } = useInstagramContext();
+  const notificationsSheetRef = useRef<BottomSheetModal>(null);
+  const hasShownNotificationsSheet = useRef(false);
+
+  // Show notifications sheet if conditions are met (after 3s delay, once per mount)
+  useEffect(() => {
+    if (hasShownNotificationsSheet.current) return;
+    if (trackedInstagrams.length < 1) return;
+
+    const checkAndShowSheet = async () => {
+      // Check notification permission status
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status === 'granted') return;
+
+      // Check if dismissed within the last 24 hours
+      const dismissedAt = await AsyncStorage.getItem(NOTIFICATIONS_LATER_KEY);
+      if (dismissedAt) {
+        const elapsed = Date.now() - parseInt(dismissedAt, 10);
+        if (elapsed < NOTIFICATIONS_LATER_DURATION_MS) return;
+      }
+
+      // Show the sheet
+      notificationsSheetRef.current?.present();
+    };
+
+    const timer = setTimeout(() => {
+      hasShownNotificationsSheet.current = true;
+      checkAndShowSheet();
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [trackedInstagrams.length]);
+
+  const handleEnableNotifications = useCallback(async () => {
+    const { status } = await Notifications.requestPermissionsAsync();
+    console.log('Notification permission status:', status);
+
+    if (status === 'granted') {
+      // Register device push token with Customer.io
+      try {
+        const { data: deviceToken } = await Notifications.getDevicePushTokenAsync();
+        if (Platform.OS === 'ios' && deviceToken) {
+          console.log('🔧 Registering iOS push token with Customer.io:', deviceToken);
+          CustomerIO.registerDeviceToken(deviceToken);
+        }
+      } catch (error) {
+        console.log('⚠️ Could not get push token:', error);
+      }
+      notificationsSheetRef.current?.dismiss();
+    } else if (status === 'denied') {
+      // Permission was denied, show alert to open settings
+      Alert.alert(
+        'Notifications Disabled',
+        'To receive notifications, please enable them in your device settings.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Open Settings',
+            onPress: () => Linking.openSettings(),
+          },
+        ]
+      );
+    }
+  }, []);
+
+  const handleMaybeLater = useCallback(async () => {
+    // Store timestamp for 24h delay
+    await AsyncStorage.setItem(NOTIFICATIONS_LATER_KEY, Date.now().toString());
+    notificationsSheetRef.current?.dismiss();
+  }, []);
 
   if (isLoading) {
     return (
@@ -129,6 +210,11 @@ export default function Tracking() {
           </View>
         </View>
       </View>
+      <NotificationsSheet
+        ref={notificationsSheetRef}
+        onEnableNotifications={handleEnableNotifications}
+        onMaybeLater={handleMaybeLater}
+      />
     </View>
   );
 }

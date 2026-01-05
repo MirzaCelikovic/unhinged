@@ -3,7 +3,6 @@ import { Stack } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { AccountProvider } from '~/contexts/AccountContext';
 import { InstagramProvider } from '~/contexts/InstagramContext';
-import { SheetProvider } from '~/contexts/SheetContext';
 import { RevenueCatProvider } from '~/contexts/RevenueCatContext';
 import { initializeDatabase } from '~/lib/database';
 import { CustomerIO, CioRegion } from 'customerio-reactnative';
@@ -58,15 +57,13 @@ export default function RootLayout() {
           <RevenueCatProvider>
             <AccountProvider>
               <BottomSheetModalProvider>
-                <SheetProvider>
-                  <InstagramProvider>
-                    <Stack screenOptions={{ headerShown: false, animation: 'none' }}>
-                      <Stack.Screen name="(tabs)" />
-                      <Stack.Screen name="start" />
-                      <Stack.Screen name="tracking" options={{ presentation: 'modal' }} />
-                    </Stack>
-                  </InstagramProvider>
-                </SheetProvider>
+                <InstagramProvider>
+                  <Stack screenOptions={{ headerShown: false, animation: 'none' }}>
+                    <Stack.Screen name="(tabs)" />
+                    <Stack.Screen name="start" />
+                    <Stack.Screen name="tracking" options={{ presentation: 'modal' }} />
+                  </Stack>
+                </InstagramProvider>
               </BottomSheetModalProvider>
             </AccountProvider>
           </RevenueCatProvider>

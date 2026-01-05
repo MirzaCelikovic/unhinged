@@ -1,24 +1,25 @@
-import React, { forwardRef, useMemo } from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import React, { forwardRef, memo, useCallback, useMemo } from 'react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import {
+  BottomSheetModal,
+  BottomSheetView,
+  BottomSheetBackdrop,
+  BottomSheetBackdropProps,
+} from '@gorhom/bottom-sheet';
+import { CircleCheck } from 'lucide-react-native';
+import Circles from '~/assets/circles.svg';
 
 interface NotificationsSheetProps {
   onEnableNotifications: () => void;
-  onDismiss: () => void;
+  onMaybeLater: () => void;
 }
 
-const NotificationsSheet = forwardRef<BottomSheetModal, NotificationsSheetProps>(
-  ({ onEnableNotifications, onDismiss }, ref) => {
+const NotificationsSheetComponent = forwardRef<BottomSheetModal, NotificationsSheetProps>(
+  ({ onEnableNotifications, onMaybeLater }, ref) => {
     const snapPoints = useMemo(() => ['50%'], []);
-
-    const renderBackdrop = useMemo(
-      () => (props: any) => (
-        <BottomSheetBackdrop
-          {...props}
-          disappearsOnIndex={-1}
-          appearsOnIndex={0}
-          opacity={0.5}
-        />
+    const renderBackdrop = useCallback(
+      (props: BottomSheetBackdropProps) => (
+        <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
       ),
       []
     );
@@ -26,42 +27,69 @@ const NotificationsSheet = forwardRef<BottomSheetModal, NotificationsSheetProps>
     return (
       <BottomSheetModal
         ref={ref}
+        index={0}
         snapPoints={snapPoints}
-        onDismiss={onDismiss}
+        enableDynamicSizing={false}
         enablePanDownToClose
         backdropComponent={renderBackdrop}
-      >
-        <BottomSheetView className="flex-1 p-6">
-          <Text className="text-2xl font-bold text-gray-900 mb-3">
-            Stay Updated
-          </Text>
-          <Text className="text-base text-gray-700 mb-6">
-            Enable notifications to get instant updates about your Instagram followers and account activity.
-          </Text>
-
-          <Pressable
-            className="bg-blue-500 py-4 rounded-lg active:bg-blue-600 mb-3"
-            onPress={onEnableNotifications}
-          >
-            <Text className="text-center font-semibold text-white text-base">
-              Enable Notifications
+        backgroundStyle={{ backgroundColor: '#FFE51F' }}
+        handleIndicatorStyle={{ backgroundColor: '#000000' }}>
+        <BottomSheetView className="flex-1">
+          <View
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+            className="items-center justify-start">
+            <Circles width={700} height={700} />
+          </View>
+          <View className="flex-1 p-6">
+            <Text className="mb-3 font-roboto-extrablack text-3xl text-black">
+              Don't miss a thing 👀
             </Text>
-          </Pressable>
+            <View className="mb-6 gap-3 py-4">
+              <View className="flex-row items-center gap-3">
+                <CircleCheck size={22} color="#000000" />
+                <Text className="flex-1 font-roboto-medium text-lg text-black">
+                  Know instantly when your crush follows someone new
+                </Text>
+              </View>
+              <View className="flex-row items-center gap-3">
+                <CircleCheck size={22} color="#000000" />
+                <Text className="flex-1 font-roboto-medium text-lg text-black">
+                  See when that ex gets a new follower
+                </Text>
+              </View>
+              <View className="flex-row items-center gap-3">
+                <CircleCheck size={22} color="#000000" />
+                <Text className="flex-1 font-roboto-medium text-lg text-black">
+                  Catch unfollows the moment they happen
+                </Text>
+              </View>
+              <View className="flex-row items-center gap-3">
+                <CircleCheck size={22} color="#000000" />
+                <Text className="flex-1 font-roboto-medium text-lg text-black">
+                  Never miss suspicious activity again
+                </Text>
+              </View>
+            </View>
 
-          <Pressable
-            className="py-3 active:opacity-70"
-            onPress={onDismiss}
-          >
-            <Text className="text-center font-medium text-gray-500 text-base">
-              Maybe Later
-            </Text>
-          </Pressable>
+            <Pressable
+              className="mb-3 rounded-3xl bg-black py-4 active:opacity-80"
+              onPress={onEnableNotifications}>
+              <Text className="text-center font-roboto-medium text-base text-white">
+                Enable notifications
+              </Text>
+            </Pressable>
+
+            <Pressable className="py-3 active:opacity-70" onPress={onMaybeLater}>
+              <Text className="text-center font-roboto-medium text-base text-gray-500">
+                Maybe later
+              </Text>
+            </Pressable>
+          </View>
         </BottomSheetView>
       </BottomSheetModal>
     );
   }
 );
 
-NotificationsSheet.displayName = 'NotificationsSheet';
-
-export default NotificationsSheet;
+export default memo(NotificationsSheetComponent);
