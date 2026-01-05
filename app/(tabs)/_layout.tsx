@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Tabs, Redirect } from 'expo-router';
+import { Platform } from 'react-native';
 import { Instagram, HatGlasses, Settings } from 'lucide-react-native';
 import { useOnboarding } from '~/lib/useOnboarding';
 import { useRevenueCat } from '~/contexts/RevenueCatContext';
@@ -22,7 +23,7 @@ export default function TabLayout() {
 
   // Show paywall on mount if user doesn't have a subscription (after onboarding)
   useEffect(() => {
-    if (isOnboarded && isInitialized && !isSubscribed) {
+    if (Platform.OS === 'ios' && isOnboarded && isInitialized && !isSubscribed) {
       presentPaywallIfNeeded();
     }
   }, [isOnboarded, isInitialized, isSubscribed]);
