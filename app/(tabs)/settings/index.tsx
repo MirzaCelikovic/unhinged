@@ -1,14 +1,30 @@
 import { View, Text, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
+import { useState } from 'react';
 import * as Application from 'expo-application';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { CircleChevronRight } from 'lucide-react-native';
 import { useInstagram } from '~/contexts/InstagramContext';
+import { useRevenueCat } from '~/contexts/RevenueCatContext';
+import { useAccountContext } from '~/contexts/AccountContext';
 import { useOnboarding } from '~/lib/useOnboarding';
 import Circles from '~/assets/circles.svg';
 
 export default function Settings() {
   const { disconnect, isLoggedIn } = useInstagram();
+  const { isSubscribed, presentPaywall } = useRevenueCat();
+  const { account } = useAccountContext();
   const { resetOnboarding } = useOnboarding();
+  const [showCopied, setShowCopied] = useState(false);
+
+  const handleCopyUserId = async () => {
+    if (!account?.uuid) return;
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    await Clipboard.setStringAsync(account.uuid);
+    setShowCopied(true);
+    setTimeout(() => setShowCopied(false), 2000);
+  };
 
   const handleDisconnect = () => {
     Alert.alert(
@@ -50,6 +66,14 @@ export default function Settings() {
           <View className="mt-4">
             <Text className="mb-3 font-roboto-bold text-lg text-black">Settings</Text>
             <View className="overflow-hidden rounded-2xl bg-white">
+              {!isSubscribed && (
+                <Pressable
+                  className="flex-row items-center justify-between border-b border-gray-100 p-4 active:opacity-80"
+                  onPress={presentPaywall}>
+                  <Text className="font-roboto-medium text-base text-gray-900">Subscribe Now</Text>
+                  <CircleChevronRight size={24} color="#9ca3af" />
+                </Pressable>
+              )}
               <Pressable
                 className="flex-row items-center justify-between p-4 active:opacity-80"
                 onPress={() => router.push('/(tabs)/settings/notifications')}>
@@ -99,11 +123,16 @@ export default function Settings() {
           </View>
 
           {/* Version */}
-          <View className="mt-8 items-center pb-32">
+          <Pressable
+            className="mt-8 items-center pb-32"
+            onLongPress={handleCopyUserId}
+            delayLongPress={500}>
             <Text className="font-roboto-medium text-base text-gray-500">
-              v{Application.nativeApplicationVersion} ({Application.nativeBuildVersion})
+              {showCopied
+                ? 'Copied your user ID!'
+                : `v${Application.nativeApplicationVersion} (${Application.nativeBuildVersion})`}
             </Text>
-          </View>
+          </Pressable>
         </View>
       </ScrollView>
     </View>
