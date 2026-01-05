@@ -11,6 +11,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import Unhinged from '~/assets/unhinged.svg';
 import { useInstagram, SyncStepStatus } from '~/contexts/InstagramContext';
+import RandomProfilePhotos from '~/components/RandomProfilePhotos';
+
 
 type SyncStepState = 'waiting' | 'active' | 'completed' | 'error';
 
@@ -119,7 +121,11 @@ interface InitialSyncProps {
   username?: string;
 }
 
-export default function InitialSync({ onComplete, userId: _userId, username: _username }: InitialSyncProps) {
+export default function InitialSync({
+  onComplete,
+  userId: _userId,
+  username: _username,
+}: InitialSyncProps) {
   const { syncState } = useInstagram();
 
   // Derive step states from syncState
@@ -153,19 +159,23 @@ export default function InitialSync({ onComplete, userId: _userId, username: _us
 
   return (
     <View className="flex-1 items-center justify-center p-4">
-      <Unhinged width={120} height={120} />
-      <Text className="font-roboto-extrablack mt-6 px-12 text-center text-4xl tracking-tighter">
+      <Unhinged width={110} height={110} />
+      <Text className="mt-4 px-12 font-roboto-extrablack text-4xl tracking-tighter">
         Syncing...
       </Text>
-      <Text className="font-roboto-regular mt-6 px-12 text-center text-lg tracking-tighter">
+      <Text className="font-roboto-regular mt-4 px-12 text-center text-lg tracking-tighter">
         This might take a minute depending on number of followers.
       </Text>
 
-      <View className="mt-8 w-full gap-4">
+      <View className="mt-6 w-full gap-4">
         <SyncStep label="Fetching profile" state={step1State} />
         <SyncStep label="Syncing with Instagram" state={step2State} />
         <SyncStep label="Analyzing followers" state={step3State} />
       </View>
+
+      {(mainAccount?.userId || _userId) && (
+        <RandomProfilePhotos userId={mainAccount?.userId || _userId!} />
+      )}
     </View>
   );
 }
