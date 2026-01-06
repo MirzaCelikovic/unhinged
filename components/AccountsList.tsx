@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Pressable, ScrollView, Alert, Linking } from 'react-native';
+import { useState, useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, Pressable, Alert, Linking } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
 import { X, Search } from 'lucide-react-native';
 import Circles from '~/assets/circles.svg';
@@ -130,47 +131,52 @@ export default function AccountsList({ userId, type, isMainAccount }: AccountsLi
             <Text className="text-gray-500">No accounts found</Text>
           </View>
         ) : (
-          <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-            <View className="gap-3 pb-8">
-              {filteredAccounts.map((account) => {
-                const isCompleted = completedActions.has(account.id);
-                const isLoading = loadingAccountId === account.id;
+          <FlashList
+            data={filteredAccounts}
+            renderItem={({ item: account }) => {
+              const isCompleted = completedActions.has(account.id);
+              const isItemLoading = loadingAccountId === account.id;
 
-                // Determine action props
-                let actionProps = {};
-                if (actionType === 'follow' && !isCompleted) {
-                  actionProps = {
-                    actionLabel: 'Follow',
-                    actionVariant: 'primary' as const,
-                    actionLoading: isLoading,
-                    onAction: () => handleFollow(account.id, account.username, account.profile_pic_url),
-                  };
-                } else if (actionType === 'unfollow' && !isCompleted) {
-                  actionProps = {
-                    actionLabel: 'Unfollow',
-                    actionVariant: 'secondary' as const,
-                    actionLoading: isLoading,
-                    onAction: () => handleUnfollow(account.id, account.username),
-                  };
-                } else if (isCompleted) {
-                  actionProps = {
-                    actionLabel: actionType === 'follow' ? 'Following' : 'Unfollowed',
-                    actionVariant: 'secondary' as const,
-                  };
-                }
+              // Determine action props
+              let actionProps = {};
+              if (actionType === 'follow' && !isCompleted) {
+                actionProps = {
+                  actionLabel: 'Follow',
+                  actionVariant: 'primary' as const,
+                  actionLoading: isItemLoading,
+                  onAction: () => handleFollow(account.id, account.username, account.profile_pic_url),
+                };
+              } else if (actionType === 'unfollow' && !isCompleted) {
+                actionProps = {
+                  actionLabel: 'Unfollow',
+                  actionVariant: 'secondary' as const,
+                  actionLoading: isItemLoading,
+                  onAction: () => handleUnfollow(account.id, account.username),
+                };
+              } else if (isCompleted) {
+                actionProps = {
+                  actionLabel: actionType === 'follow' ? 'Following' : 'Unfollowed',
+                  actionVariant: 'secondary' as const,
+                };
+              }
 
-                return (
+              return (
+                <View className="mb-3">
                   <AccountCard
-                    key={account.id}
                     username={account.username}
                     profilePicUrl={account.profile_pic_url}
                     onPress={() => openInstagramProfile(account.username)}
                     {...actionProps}
                   />
-                );
-              })}
-            </View>
-          </ScrollView>
+                </View>
+              );
+            }}
+            keyExtractor={(account) => account.id}
+            estimatedItemSize={80}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 32 }}
+            extraData={{ loadingAccountId, completedActions }}
+          />
         )}
       </View>
     </View>
