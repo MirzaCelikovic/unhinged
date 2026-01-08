@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
 import { Tabs, Redirect } from 'expo-router';
-import { Instagram, HatGlasses, Settings } from 'lucide-react-native';
 import { useOnboarding } from '~/lib/useOnboarding';
 import { useRevenueCat } from '~/contexts/RevenueCatContext';
 import { useAccountContext } from '~/contexts/AccountContext';
 import Purchases from 'react-native-purchases';
+import TabHomeIcon from '~/assets/tab_home_icon.svg';
+import TabTrackingIcon from '~/assets/tab_tracking_icon.svg';
+import TabSettingsIcon from '~/assets/tab_settings_icon.svg';
 
 export default function TabLayout() {
   const { isLoading, isOnboarded } = useOnboarding();
@@ -44,7 +46,7 @@ export default function TabLayout() {
           position: 'absolute',
         },
         tabBarActiveTintColor: '#000000',
-        tabBarInactiveTintColor: '#6b7280',
+        tabBarInactiveTintColor: '#717147ff',
         tabBarShowLabel: false,
         tabBarIconStyle: {
           marginTop: 8,
@@ -55,7 +57,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color }) => <Instagram color={color} size={28} />,
+          tabBarIcon: ({ color }) => <TabHomeIcon color={color} width={28} height={28} />,
           headerShown: false,
         }}
       />
@@ -64,7 +66,7 @@ export default function TabLayout() {
         options={{
           title: 'Tracking',
           tabBarLabel: 'Tracking',
-          tabBarIcon: ({ color }) => <HatGlasses color={color} size={28} />,
+          tabBarIcon: ({ color }) => <TabTrackingIcon color={color} width={28} height={28} />,
           headerShown: false,
         }}
       />
@@ -73,7 +75,7 @@ export default function TabLayout() {
         options={{
           title: 'Settings',
           tabBarLabel: 'Settings',
-          tabBarIcon: ({ color }) => <Settings color={color} size={28} />,
+          tabBarIcon: ({ color }) => <TabSettingsIcon color={color} width={28} height={28} />,
           headerShown: false,
         }}
       />
