@@ -16,11 +16,11 @@ export default function Start() {
   const { completeOnboarding } = useOnboarding();
 
   const openTerms = () => {
-    Linking.openURL('https://example.com/terms');
+    Linking.openURL('https://unhinged.so/terms-of-service/');
   };
 
   const openPrivacy = () => {
-    Linking.openURL('https://example.com/privacy');
+    Linking.openURL('https://unhinged.so/privacy-policy/');
   };
 
   const handleStart = () => {
@@ -55,7 +55,7 @@ export default function Start() {
 
             <View className="px-4 pb-8">
               <Button label="Get Started" onPress={handleStart} />
-              <Text className="mt-4 px-2 text-center font-roboto text-sm text-gray-600">
+              <Text className="font-roboto mt-4 px-2 text-center text-sm text-gray-600">
                 By continuing, you agree with our{' '}
                 <Text className="underline" onPress={openTerms}>
                   Terms of Service
