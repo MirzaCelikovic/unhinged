@@ -21,13 +21,13 @@ export default function NotificationConsent({ onComplete }: NotificationConsentP
         Get notified when someone unfollows you and more
       </Text>
 
-      <View className="flex-1 items-center justify-center">
+      <Pressable className="flex-1 items-center justify-center" onPress={handleEnableNotifications}>
         <Image
           source={require('~/assets/notifications.png')}
           className="w-72"
           resizeMode="contain"
         />
-      </View>
+      </Pressable>
 
       <View className="pb-8">
         <Button label="Stay up to date" onPress={handleEnableNotifications} />
