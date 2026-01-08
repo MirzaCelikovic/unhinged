@@ -135,6 +135,7 @@ export const useFollowerStats = (userId: string | null) => {
 export interface AccountListItem {
   id: string;
   username: string;
+  full_name: string | null;
   profile_pic_url: string | null;
 }
 
@@ -149,32 +150,32 @@ const fetchAccountList = async (
   switch (type) {
     case 'addedFollowing': {
       // Accounts this account started following (not baseline) recently
-      const results = await db.getAllAsync<{ followed_user_id: string; username: string | null; profile_pic_url: string | null }>(
-        `SELECT f.followed_user_id, i.username, i.profile_pic_url
+      const results = await db.getAllAsync<{ followed_user_id: string; username: string | null; full_name: string | null; profile_pic_url: string | null }>(
+        `SELECT f.followed_user_id, i.username, i.full_name, i.profile_pic_url
          FROM followings f
          LEFT JOIN instagrams i ON f.followed_user_id = i.user_id
          WHERE f.tracked_account_id = ? AND f.is_baseline = 0 AND f.first_seen_at >= ?`,
         [userId, recentCutoff.toISOString()]
       );
-      return results.map(r => ({ id: r.followed_user_id, username: r.username || r.followed_user_id, profile_pic_url: r.profile_pic_url }));
+      return results.map(r => ({ id: r.followed_user_id, username: r.username || r.followed_user_id, full_name: r.full_name, profile_pic_url: r.profile_pic_url }));
     }
 
     case 'removedFollowing': {
       // Accounts this account stopped following recently
-      const results = await db.getAllAsync<{ followed_user_id: string; username: string | null; profile_pic_url: string | null }>(
-        `SELECT f.followed_user_id, i.username, i.profile_pic_url
+      const results = await db.getAllAsync<{ followed_user_id: string; username: string | null; full_name: string | null; profile_pic_url: string | null }>(
+        `SELECT f.followed_user_id, i.username, i.full_name, i.profile_pic_url
          FROM followings f
          LEFT JOIN instagrams i ON f.followed_user_id = i.user_id
          WHERE f.tracked_account_id = ? AND f.ended_at IS NOT NULL AND f.ended_at >= ?`,
         [userId, recentCutoff.toISOString()]
       );
-      return results.map(r => ({ id: r.followed_user_id, username: r.username || r.followed_user_id, profile_pic_url: r.profile_pic_url }));
+      return results.map(r => ({ id: r.followed_user_id, username: r.username || r.followed_user_id, full_name: r.full_name, profile_pic_url: r.profile_pic_url }));
     }
 
     case 'gainedFollowers': {
       // Accounts that started following this account (not baseline) recently
-      const results = await db.getAllAsync<{ follower_user_id: string; username: string | null; profile_pic_url: string | null }>(
-        `SELECT f.follower_user_id, i.username, i.profile_pic_url
+      const results = await db.getAllAsync<{ follower_user_id: string; username: string | null; full_name: string | null; profile_pic_url: string | null }>(
+        `SELECT f.follower_user_id, i.username, i.full_name, i.profile_pic_url
          FROM followers f
          LEFT JOIN instagrams i ON f.follower_user_id = i.user_id
          WHERE f.tracked_account_id = ?
@@ -182,19 +183,19 @@ const fetchAccountList = async (
          AND f.first_seen_at >= ?`,
         [userId, recentCutoff.toISOString()]
       );
-      return results.map(r => ({ id: r.follower_user_id, username: r.username || r.follower_user_id, profile_pic_url: r.profile_pic_url }));
+      return results.map(r => ({ id: r.follower_user_id, username: r.username || r.follower_user_id, full_name: r.full_name, profile_pic_url: r.profile_pic_url }));
     }
 
     case 'lostFollowers': {
       // Accounts that stopped following this account recently
-      const results = await db.getAllAsync<{ follower_user_id: string; username: string | null; profile_pic_url: string | null }>(
-        `SELECT f.follower_user_id, i.username, i.profile_pic_url
+      const results = await db.getAllAsync<{ follower_user_id: string; username: string | null; full_name: string | null; profile_pic_url: string | null }>(
+        `SELECT f.follower_user_id, i.username, i.full_name, i.profile_pic_url
          FROM followers f
          LEFT JOIN instagrams i ON f.follower_user_id = i.user_id
          WHERE f.tracked_account_id = ? AND f.ended_at IS NOT NULL AND f.ended_at >= ?`,
         [userId, recentCutoff.toISOString()]
       );
-      return results.map(r => ({ id: r.follower_user_id, username: r.username || r.follower_user_id, profile_pic_url: r.profile_pic_url }));
+      return results.map(r => ({ id: r.follower_user_id, username: r.username || r.follower_user_id, full_name: r.full_name, profile_pic_url: r.profile_pic_url }));
     }
 
     case 'notFollowingBack': {
@@ -205,8 +206,8 @@ const fetchAccountList = async (
       );
       const followerIds = new Set(followers.map(f => f.follower_user_id));
 
-      const followings = await db.getAllAsync<{ followed_user_id: string; username: string | null; profile_pic_url: string | null }>(
-        `SELECT f.followed_user_id, i.username, i.profile_pic_url
+      const followings = await db.getAllAsync<{ followed_user_id: string; username: string | null; full_name: string | null; profile_pic_url: string | null }>(
+        `SELECT f.followed_user_id, i.username, i.full_name, i.profile_pic_url
          FROM followings f
          LEFT JOIN instagrams i ON f.followed_user_id = i.user_id
          WHERE f.tracked_account_id = ? AND f.ended_at IS NULL`,
@@ -215,7 +216,7 @@ const fetchAccountList = async (
 
       return followings
         .filter(f => !followerIds.has(f.followed_user_id))
-        .map(f => ({ id: f.followed_user_id, username: f.username || f.followed_user_id, profile_pic_url: f.profile_pic_url }));
+        .map(f => ({ id: f.followed_user_id, username: f.username || f.followed_user_id, full_name: f.full_name, profile_pic_url: f.profile_pic_url }));
     }
 
     case 'notFollowedBack': {
@@ -226,8 +227,8 @@ const fetchAccountList = async (
       );
       const followingIds = new Set(followings.map(f => f.followed_user_id));
 
-      const followers = await db.getAllAsync<{ follower_user_id: string; username: string | null; profile_pic_url: string | null }>(
-        `SELECT f.follower_user_id, i.username, i.profile_pic_url
+      const followers = await db.getAllAsync<{ follower_user_id: string; username: string | null; full_name: string | null; profile_pic_url: string | null }>(
+        `SELECT f.follower_user_id, i.username, i.full_name, i.profile_pic_url
          FROM followers f
          LEFT JOIN instagrams i ON f.follower_user_id = i.user_id
          WHERE f.tracked_account_id = ? AND f.ended_at IS NULL`,
@@ -236,31 +237,31 @@ const fetchAccountList = async (
 
       return followers
         .filter(f => !followingIds.has(f.follower_user_id))
-        .map(f => ({ id: f.follower_user_id, username: f.username || f.follower_user_id, profile_pic_url: f.profile_pic_url }));
+        .map(f => ({ id: f.follower_user_id, username: f.username || f.follower_user_id, full_name: f.full_name, profile_pic_url: f.profile_pic_url }));
     }
 
     case 'allFollowers': {
       // All active followers
-      const results = await db.getAllAsync<{ follower_user_id: string; username: string | null; profile_pic_url: string | null }>(
-        `SELECT f.follower_user_id, i.username, i.profile_pic_url
+      const results = await db.getAllAsync<{ follower_user_id: string; username: string | null; full_name: string | null; profile_pic_url: string | null }>(
+        `SELECT f.follower_user_id, i.username, i.full_name, i.profile_pic_url
          FROM followers f
          LEFT JOIN instagrams i ON f.follower_user_id = i.user_id
          WHERE f.tracked_account_id = ? AND f.ended_at IS NULL`,
         [userId]
       );
-      return results.map(r => ({ id: r.follower_user_id, username: r.username || r.follower_user_id, profile_pic_url: r.profile_pic_url }));
+      return results.map(r => ({ id: r.follower_user_id, username: r.username || r.follower_user_id, full_name: r.full_name, profile_pic_url: r.profile_pic_url }));
     }
 
     case 'allFollowing': {
       // All active followings
-      const results = await db.getAllAsync<{ followed_user_id: string; username: string | null; profile_pic_url: string | null }>(
-        `SELECT f.followed_user_id, i.username, i.profile_pic_url
+      const results = await db.getAllAsync<{ followed_user_id: string; username: string | null; full_name: string | null; profile_pic_url: string | null }>(
+        `SELECT f.followed_user_id, i.username, i.full_name, i.profile_pic_url
          FROM followings f
          LEFT JOIN instagrams i ON f.followed_user_id = i.user_id
          WHERE f.tracked_account_id = ? AND f.ended_at IS NULL`,
         [userId]
       );
-      return results.map(r => ({ id: r.followed_user_id, username: r.username || r.followed_user_id, profile_pic_url: r.profile_pic_url }));
+      return results.map(r => ({ id: r.followed_user_id, username: r.username || r.followed_user_id, full_name: r.full_name, profile_pic_url: r.profile_pic_url }));
     }
 
     default:

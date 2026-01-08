@@ -32,6 +32,7 @@ export async function fetchPublicProfile(username: string): Promise<Instagram> {
   return {
     user_id: user.id,
     username: user.username,
+    full_name: user.full_name || null,
     biography: user.biography || null,
     profile_pic_url: user.profile_pic_url_hd || user.profile_pic_url || null,
     media_count: user.edge_owner_to_timeline_media?.count ?? null,

@@ -10,6 +10,7 @@ const migrations: { [version: number]: (db: SQLite.SQLiteDatabase) => Promise<vo
       CREATE TABLE IF NOT EXISTS instagrams (
         user_id TEXT PRIMARY KEY,
         username TEXT NOT NULL,
+        full_name TEXT,
         biography TEXT,
         profile_pic_url TEXT,
         media_count INTEGER,

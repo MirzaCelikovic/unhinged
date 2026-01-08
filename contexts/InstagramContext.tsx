@@ -107,6 +107,8 @@ interface WebViewMessage {
 interface User {
   id: string;
   username: string;
+  full_name?: string | null;
+  profile_pic_url?: string | null;
 }
 
 // Context
@@ -1085,6 +1087,7 @@ const instagramAPI = `
                 return {
                   id: user.id || user.pk,
                   username: user.username,
+                  full_name: user.full_name || null,
                   profile_pic_url: user.profile_pic_url || null
                 };
               })
@@ -1176,6 +1179,7 @@ const instagramAPI = `
                 return {
                   id: node.id,
                   username: node.username,
+                  full_name: node.full_name || null,
                   profile_pic_url: node.profile_pic_url || null
                 };
               })
@@ -1258,6 +1262,7 @@ const instagramAPI = `
                 return {
                   id: user.id || user.pk,
                   username: user.username,
+                  full_name: user.full_name || null,
                   profile_pic_url: user.profile_pic_url || null
                 };
               })
@@ -1358,6 +1363,7 @@ const instagramAPI = `
                 return {
                   id: node.id,
                   username: node.username,
+                  full_name: node.full_name || null,
                   profile_pic_url: node.profile_pic_url || null
                 };
               })

@@ -4,6 +4,7 @@ import { getCurrentUTCTimestamp } from './database';
 interface User {
   id: string;
   username: string;
+  full_name?: string | null;
   profile_pic_url?: string | null;
 }
 
@@ -28,13 +29,14 @@ export const syncFollowingList = async (
   // Upsert all users into instagrams table first
   for (const user of currentUsers) {
     await db.runAsync(
-      `INSERT INTO instagrams (user_id, username, biography, profile_pic_url, media_count, followers_count, following_count, date_created, date_updated)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO instagrams (user_id, username, full_name, biography, profile_pic_url, media_count, followers_count, following_count, date_created, date_updated)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(user_id) DO UPDATE SET
          username = ?,
+         full_name = COALESCE(?, full_name),
          profile_pic_url = ?,
          date_updated = ?`,
-      [user.id, user.username, null, user.profile_pic_url || null, null, null, null, now, now, user.username, user.profile_pic_url || null, now]
+      [user.id, user.username, user.full_name || null, null, user.profile_pic_url || null, null, null, null, now, now, user.username, user.full_name || null, user.profile_pic_url || null, now]
     );
   }
 
@@ -121,13 +123,14 @@ export const syncFollowersList = async (
   // Upsert all users into instagrams table first
   for (const user of currentUsers) {
     await db.runAsync(
-      `INSERT INTO instagrams (user_id, username, biography, profile_pic_url, media_count, followers_count, following_count, date_created, date_updated)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO instagrams (user_id, username, full_name, biography, profile_pic_url, media_count, followers_count, following_count, date_created, date_updated)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(user_id) DO UPDATE SET
          username = ?,
+         full_name = COALESCE(?, full_name),
          profile_pic_url = ?,
          date_updated = ?`,
-      [user.id, user.username, null, user.profile_pic_url || null, null, null, null, now, now, user.username, user.profile_pic_url || null, now]
+      [user.id, user.username, user.full_name || null, null, user.profile_pic_url || null, null, null, null, now, now, user.username, user.full_name || null, user.profile_pic_url || null, now]
     );
   }
 
@@ -293,13 +296,13 @@ export const addFollowing = async (
 
   // First, ensure the target user exists in instagrams table
   await db.runAsync(
-    `INSERT INTO instagrams (user_id, username, biography, profile_pic_url, media_count, followers_count, following_count, date_created, date_updated)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO instagrams (user_id, username, full_name, biography, profile_pic_url, media_count, followers_count, following_count, date_created, date_updated)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(user_id) DO UPDATE SET
        username = ?,
        profile_pic_url = COALESCE(?, profile_pic_url),
        date_updated = ?`,
-    [targetUserId, targetUsername, null, targetProfilePicUrl || null, null, null, null, now, now, targetUsername, targetProfilePicUrl, now]
+    [targetUserId, targetUsername, null, null, targetProfilePicUrl || null, null, null, null, now, now, targetUsername, targetProfilePicUrl, now]
   );
 
   // Add or reactivate the following relationship

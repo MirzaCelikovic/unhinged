@@ -24,7 +24,7 @@ export default function InstagramCard({ account, isMainAccount = false }: Instag
   const { isSubscribed, presentPaywall } = useRevenueCat();
 
   const handleFollowersTap = () => {
-    if (!isSubscribed) {
+    if (!isMainAccount && !isSubscribed) {
       presentPaywall();
       return;
     }
@@ -34,7 +34,7 @@ export default function InstagramCard({ account, isMainAccount = false }: Instag
   };
 
   const handleFollowingTap = () => {
-    if (!isSubscribed) {
+    if (!isMainAccount && !isSubscribed) {
       presentPaywall();
       return;
     }
@@ -91,10 +91,12 @@ export default function InstagramCard({ account, isMainAccount = false }: Instag
       {/* Username */}
       <Text className="mt-3 font-roboto-bold text-base">@{account.username}</Text>
 
-      {/* Biography */}
-      <Text className="font-roboto-regular mt-1 text-base text-gray-500" numberOfLines={3}>
-        {account.biography}
-      </Text>
+      {/* Biography or Full Name */}
+      {(account.biography || account.full_name) && (
+        <Text className="mt-1 font-roboto-regular text-base text-gray-500" numberOfLines={3}>
+          {account.biography || account.full_name}
+        </Text>
+      )}
     </View>
   );
 }

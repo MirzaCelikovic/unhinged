@@ -16,6 +16,7 @@ export interface Account {
 export interface Instagram {
   user_id: string;
   username: string;
+  full_name?: string | null;
   profile_pic_url?: string | null;
   biography?: string | null;
   media_count?: number | null;

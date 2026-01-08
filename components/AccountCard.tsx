@@ -3,6 +3,7 @@ import { BlurView } from 'expo-blur';
 
 interface AccountCardProps {
   username: string;
+  fullName?: string | null;
   profilePicUrl?: string | null;
   label?: string;
   timestamp?: string;
@@ -18,6 +19,7 @@ interface AccountCardProps {
 
 export default function AccountCard({
   username,
+  fullName,
   profilePicUrl,
   label,
   timestamp,
@@ -60,11 +62,14 @@ export default function AccountCard({
         )}
       </View>
 
-      {/* Username and label */}
+      {/* Username, full name, and label */}
       <View className="relative flex-1">
         <Text className="font-roboto-medium text-base text-gray-900">@{username}</Text>
+        {fullName && (
+          <Text className="font-roboto-regular text-sm text-gray-500" numberOfLines={1}>{fullName}</Text>
+        )}
         {label && (
-          <Text className="font-roboto-regular text-sm text-gray-500">{label}</Text>
+          <Text className="font-roboto-regular text-sm text-gray-400">{label}</Text>
         )}
         {blurred && (
           <BlurView

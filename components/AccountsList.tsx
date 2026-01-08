@@ -82,7 +82,11 @@ export default function AccountsList({ userId, type, isMainAccount }: AccountsLi
     const sorted = [...accounts].sort((a, b) => a.username.localeCompare(b.username));
     if (!searchQuery.trim()) return sorted;
     const query = searchQuery.toLowerCase();
-    return sorted.filter((account) => account.username.toLowerCase().includes(query));
+    return sorted.filter(
+      (account) =>
+        account.username.toLowerCase().includes(query) ||
+        account.full_name?.toLowerCase().includes(query)
+    );
   }, [accounts, searchQuery]);
 
   return (
@@ -163,6 +167,7 @@ export default function AccountsList({ userId, type, isMainAccount }: AccountsLi
                   <AccountCard
                     key={account.id}
                     username={account.username}
+                    fullName={account.full_name}
                     profilePicUrl={account.profile_pic_url}
                     onPress={() => openInstagramProfile(account.username)}
                     {...actionProps}
