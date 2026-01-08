@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
 import { useState } from 'react';
 import * as Application from 'expo-application';
 import * as Clipboard from 'expo-clipboard';
@@ -75,9 +75,15 @@ export default function Settings() {
                 </Pressable>
               )}
               <Pressable
-                className="flex-row items-center justify-between p-4 active:opacity-80"
+                className="flex-row items-center justify-between border-b border-gray-100 p-4 active:opacity-80"
                 onPress={() => router.push('/(tabs)/settings/notifications')}>
                 <Text className="font-roboto-medium text-base text-gray-900">Notifications</Text>
+                <CircleChevronRight size={24} color="#9ca3af" />
+              </Pressable>
+              <Pressable
+                className="flex-row items-center justify-between p-4 active:opacity-80"
+                onPress={() => Linking.openURL('https://unhinged.so/support/')}>
+                <Text className="font-roboto-medium text-base text-gray-900">Support</Text>
                 <CircleChevronRight size={24} color="#9ca3af" />
               </Pressable>
             </View>
