@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { AccountProvider } from '~/contexts/AccountContext';
+import { AnalyticsProvider } from '~/contexts/AnalyticsContext';
 import { InstagramProvider } from '~/contexts/InstagramContext';
 import { RevenueCatProvider } from '~/contexts/RevenueCatContext';
 import { initializeDatabase } from '~/lib/database';
@@ -39,7 +40,7 @@ export default function RootLayout() {
   useEffect(() => {
     // Initialize Customer.io SDK
     const cdpApiKey = process.env.EXPO_PUBLIC_CUSTOMER_IO_CDP_API_KEY!;
-    console.log('🔧 Initializing Customer.io with CDP API Key:', cdpApiKey);
+    console.log('Initializing Customer.io with CDP API Key:', cdpApiKey);
     CustomerIO.initialize({
       cdpApiKey,
       region: CioRegion.EU,
@@ -54,19 +55,21 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SQLiteProvider databaseName="unhinged.db" onInit={initializeDatabase}>
         <QueryClientProvider client={qc}>
-          <RevenueCatProvider>
-            <AccountProvider>
-              <BottomSheetModalProvider>
-                <InstagramProvider>
-                  <Stack screenOptions={{ headerShown: false, animation: 'none' }}>
-                    <Stack.Screen name="(tabs)" />
-                    <Stack.Screen name="start" />
-                    <Stack.Screen name="tracking" options={{ presentation: 'modal' }} />
-                  </Stack>
-                </InstagramProvider>
-              </BottomSheetModalProvider>
-            </AccountProvider>
-          </RevenueCatProvider>
+          <AnalyticsProvider>
+            <RevenueCatProvider>
+              <AccountProvider>
+                <BottomSheetModalProvider>
+                  <InstagramProvider>
+                    <Stack screenOptions={{ headerShown: false, animation: 'none' }}>
+                      <Stack.Screen name="(tabs)" />
+                      <Stack.Screen name="start" />
+                      <Stack.Screen name="tracking" options={{ presentation: 'modal' }} />
+                    </Stack>
+                  </InstagramProvider>
+                </BottomSheetModalProvider>
+              </AccountProvider>
+            </RevenueCatProvider>
+          </AnalyticsProvider>
         </QueryClientProvider>
       </SQLiteProvider>
     </GestureHandlerRootView>

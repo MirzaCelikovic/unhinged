@@ -24,6 +24,7 @@ import Animated, {
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
+import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
 type HomeState = 'notConnected' | 'initialSync' | 'connected';
 
@@ -33,9 +34,15 @@ export default function Index() {
   const { data: instagram } = useInstagram(userId);
   const { data: stats } = useFollowerStats(userId);
   const queryClient = useQueryClient();
+  const { track } = useAnalytics();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [homeState, setHomeState] = useState<HomeState | null>(null);
   const contentOpacity = useSharedValue(1);
+
+  // Track screen view
+  useEffect(() => {
+    track(Events.HOME_SCREEN_VIEWED);
+  }, []);
 
   // Set initial home state when login status is determined
   useEffect(() => {

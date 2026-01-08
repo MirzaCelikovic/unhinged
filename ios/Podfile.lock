@@ -1,4 +1,32 @@
 PODS:
+  - amplitude-plugin-session-replay-react-native (0.4.5):
+    - AmplitudeSessionReplay (>= 0.4.0)
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
+  - amplitude-react-native (1.5.32):
+    - React-Core
+  - AmplitudeCore (1.3.1)
+  - AmplitudeSessionReplay (0.9.1):
+    - AmplitudeCore (< 2.0.0, >= 1.1.0)
   - "AnalyticsSwiftCIO (1.7.3+cio.1)":
     - JSONSafeEncoding (= 2.0.0)
     - Sovran (= 1.1.2)
@@ -2203,6 +2231,8 @@ PODS:
   - Yoga (0.0.0)
 
 DEPENDENCIES:
+  - "amplitude-plugin-session-replay-react-native (from `../node_modules/@amplitude/plugin-session-replay-react-native`)"
+  - "amplitude-react-native (from `../node_modules/@amplitude/analytics-react-native`)"
   - customerio-reactnative (from `../node_modules/customerio-reactnative`)
   - customerio-reactnative-richpush/apn (from `../node_modules/customerio-reactnative`)
   - customerio-reactnative/apn (from `../node_modules/customerio-reactnative`)
@@ -2304,6 +2334,8 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - AmplitudeCore
+    - AmplitudeSessionReplay
     - AnalyticsSwiftCIO
     - CustomerIO
     - CustomerIOCommon
@@ -2320,6 +2352,10 @@ SPEC REPOS:
     - Sovran
 
 EXTERNAL SOURCES:
+  amplitude-plugin-session-replay-react-native:
+    :path: "../node_modules/@amplitude/plugin-session-replay-react-native"
+  amplitude-react-native:
+    :path: "../node_modules/@amplitude/analytics-react-native"
   customerio-reactnative:
     :path: "../node_modules/customerio-reactnative"
   customerio-reactnative-richpush:
@@ -2515,6 +2551,10 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
+  amplitude-plugin-session-replay-react-native: 05e31e08dfe348f5b3677e13eb5eb9010ae66c21
+  amplitude-react-native: e9e3ef2f83b4102f20a239a5539559c272da50ca
+  AmplitudeCore: c47c0a661bec076a197bc75a5a7b4c413da288a5
+  AmplitudeSessionReplay: 1c10b0aef1aa838dca27908307cabaa1b111ce05
   AnalyticsSwiftCIO: cbded90bbfe53072cb1fa1bc091d249e99ef7c56
   CustomerIO: a39c21c31fd93e19b7348bbac60a1916951d5c1f
   customerio-reactnative: b536a77418bb4e7bf023183e04fcf41b2434a0cf

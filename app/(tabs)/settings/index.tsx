@@ -1,5 +1,5 @@
 import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as Application from 'expo-application';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
@@ -9,6 +9,7 @@ import { useInstagram } from '~/contexts/InstagramContext';
 import { useRevenueCat } from '~/contexts/RevenueCatContext';
 import { useAccountContext } from '~/contexts/AccountContext';
 import { useOnboarding } from '~/lib/useOnboarding';
+import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 import Circles from '~/assets/circles.svg';
 
 export default function Settings() {
@@ -16,7 +17,13 @@ export default function Settings() {
   const { isSubscribed, presentPaywall } = useRevenueCat();
   const { account } = useAccountContext();
   const { resetOnboarding } = useOnboarding();
+  const { track } = useAnalytics();
   const [showCopied, setShowCopied] = useState(false);
+
+  // Track screen view
+  useEffect(() => {
+    track(Events.SETTINGS_SCREEN_VIEWED);
+  }, []);
 
   const handleCopyUserId = async () => {
     if (!account?.uuid) return;
@@ -69,7 +76,7 @@ export default function Settings() {
               {!isSubscribed && (
                 <Pressable
                   className="flex-row items-center justify-between border-b border-gray-100 p-4 active:opacity-80"
-                  onPress={presentPaywall}>
+                  onPress={() => presentPaywall('settings_subscribe')}>
                   <Text className="font-roboto-medium text-base text-gray-900">Subscribe Now</Text>
                   <CircleChevronRight size={24} color="#9ca3af" />
                 </Pressable>

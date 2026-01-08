@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import Purchases, { CustomerInfo, PurchasesOffering, LOG_LEVEL } from 'react-native-purchases';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
+import { analytics, Events } from '~/contexts/AnalyticsContext';
 
 // RevenueCat API Key from environment
 const REVENUECAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY!;
@@ -29,8 +30,8 @@ interface RevenueCatContextType {
   expirationDate: Date | null;
 
   // Actions
-  presentPaywall: () => Promise<boolean>;
-  presentPaywallIfNeeded: () => Promise<boolean>;
+  presentPaywall: (source?: string) => Promise<boolean>;
+  presentPaywallIfNeeded: (source?: string) => Promise<boolean>;
   restorePurchases: () => Promise<boolean>;
   refreshCustomerInfo: () => Promise<void>;
   presentCustomerCenter: () => Promise<void>;
@@ -135,8 +136,9 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
   }, []);
 
   // Present paywall
-  const presentPaywall = useCallback(async (): Promise<boolean> => {
+  const presentPaywall = useCallback(async (source?: string): Promise<boolean> => {
     try {
+      analytics.track(Events.PAYWALL_VIEWED, { source });
       const result = await RevenueCatUI.presentPaywall();
 
       switch (result) {
@@ -145,11 +147,17 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
           // Refresh customer info after purchase/restore
           const info = await Purchases.getCustomerInfo();
           setCustomerInfo(info);
+          const entitlement = info.entitlements.active[ENTITLEMENT_ID];
+          analytics.track(Events.PURCHASE, {
+            source,
+            product: entitlement?.productIdentifier,
+          });
           return true;
         case PAYWALL_RESULT.NOT_PRESENTED:
         case PAYWALL_RESULT.ERROR:
         case PAYWALL_RESULT.CANCELLED:
         default:
+          analytics.track(Events.PAYWALL_CLOSED);
           return false;
       }
     } catch (e) {
@@ -159,8 +167,9 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
   }, []);
 
   // Present paywall only if user doesn't have entitlement
-  const presentPaywallIfNeeded = useCallback(async (): Promise<boolean> => {
+  const presentPaywallIfNeeded = useCallback(async (source?: string): Promise<boolean> => {
     try {
+      analytics.track(Events.PAYWALL_VIEWED, { source });
       const result = await RevenueCatUI.presentPaywallIfNeeded({
         requiredEntitlementIdentifier: ENTITLEMENT_ID,
       });
@@ -170,6 +179,11 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
         case PAYWALL_RESULT.RESTORED:
           const info = await Purchases.getCustomerInfo();
           setCustomerInfo(info);
+          const entitlement = info.entitlements.active[ENTITLEMENT_ID];
+          analytics.track(Events.PURCHASE, {
+            source,
+            product: entitlement?.productIdentifier,
+          });
           return true;
         case PAYWALL_RESULT.NOT_PRESENTED:
           // User already has entitlement
@@ -177,6 +191,7 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
         case PAYWALL_RESULT.ERROR:
         case PAYWALL_RESULT.CANCELLED:
         default:
+          analytics.track(Events.PAYWALL_CLOSED);
           return false;
       }
     } catch (e) {

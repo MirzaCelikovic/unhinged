@@ -25,7 +25,7 @@ export default function InstagramCard({ account, isMainAccount = false }: Instag
 
   const handleFollowersTap = () => {
     if (!isMainAccount && !isSubscribed) {
-      presentPaywall();
+      presentPaywall('instagram_card_followers');
       return;
     }
     router.push(
@@ -35,7 +35,7 @@ export default function InstagramCard({ account, isMainAccount = false }: Instag
 
   const handleFollowingTap = () => {
     if (!isMainAccount && !isSubscribed) {
-      presentPaywall();
+      presentPaywall('instagram_card_following');
       return;
     }
     router.push(

@@ -30,6 +30,7 @@ import Button from '~/components/Button';
 import Spinner from '~/components/Spinner';
 import { Instagram } from '~/lib/types';
 import { useInstagramActivity } from '~/lib/useInstagramActivity';
+import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
 const NOTIFICATIONS_LATER_KEY = 'notifications_sheet_dismissed_at';
 const NOTIFICATIONS_LATER_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -87,8 +88,14 @@ function TrackedAccountItem({ account, syncStatus }: TrackedAccountItemProps) {
 export default function Tracking() {
   const { trackedInstagrams, isLoading } = useAccountContext();
   const { isLoggedIn, showLogin, syncState } = useInstagramContext();
+  const { track } = useAnalytics();
   const notificationsSheetRef = useRef<BottomSheetModal>(null);
   const hasShownNotificationsSheet = useRef(false);
+
+  // Track screen view
+  useEffect(() => {
+    track(Events.TRACKING_SCREEN_VIEWED, { tracked_accounts: trackedInstagrams.length });
+  }, []);
 
   // Show notifications sheet if conditions are met (after 3s delay, once per mount)
   useEffect(() => {

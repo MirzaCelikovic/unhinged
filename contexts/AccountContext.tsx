@@ -7,6 +7,7 @@ import { useSecureStorage } from '~/lib/useSecureStorage';
 import { Account, Instagram } from '~/lib/types';
 import { CustomerIO } from 'customerio-reactnative';
 import * as Notifications from 'expo-notifications';
+import { analytics } from '~/contexts/AnalyticsContext';
 import { useApi } from '~/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -99,10 +100,13 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     const identifyCustomerIO = async () => {
       if (account?.uuid) {
-        console.log('🔧 Identifying user with Customer.io:', account.uuid);
+        console.log('Identifying user with Customer.io:', account.uuid);
         CustomerIO.identify({
           userId: account.uuid,
         });
+
+        // Identify user with analytics providers
+        analytics.identify(account.uuid);
 
         // Register device push token only if permission is already granted
         try {

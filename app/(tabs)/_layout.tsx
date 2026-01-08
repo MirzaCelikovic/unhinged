@@ -25,7 +25,7 @@ export default function TabLayout() {
   // Show paywall on mount if user doesn't have a subscription (after onboarding)
   useEffect(() => {
     if (isOnboarded && isInitialized && !isSubscribed) {
-      presentPaywallIfNeeded();
+      presentPaywallIfNeeded('app_launch');
     }
   }, [isOnboarded, isInitialized, isSubscribed]);
 
