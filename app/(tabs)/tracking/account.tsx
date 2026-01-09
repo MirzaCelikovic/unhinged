@@ -8,7 +8,7 @@ import { useAccountContext } from '~/contexts/AccountContext';
 import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext';
 import { useInstagram, useRemoveTrackedInstagram } from '~/lib/useInstagram';
 import { useFollowerStats } from '~/lib/useFollowerStats';
-import { markInstagramActivityAsViewed } from '~/lib/useInstagramActivity';
+import { useInstagramActivity, markInstagramActivityAsViewed } from '~/lib/useInstagramActivity';
 import Circles from '~/assets/circles.svg';
 import Logo from '~/assets/logo_black.svg';
 import InstagramCard from '~/components/InstagramCard';
@@ -36,6 +36,7 @@ export default function TrackingAccount() {
   // Get Instagram data for this account
   const { data: instagram } = useInstagram(userId || null);
   const { data: stats } = useFollowerStats(userId || null);
+  const { data: activityCounts } = useInstagramActivity(userId || null);
 
   // Segmented nav state
   const [activeTab, setActiveTab] = useState<'feed' | 'stats'>('feed');
@@ -130,7 +131,7 @@ export default function TrackingAccount() {
               />
             )}
             {activeTab === 'stats' && stats && userId && (
-              <ActivityList stats={stats} userId={userId} />
+              <ActivityList stats={stats} userId={userId} activityCounts={activityCounts} />
             )}
           </View>
           <View className="mt-auto p-4 pb-12">

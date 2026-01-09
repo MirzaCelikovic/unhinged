@@ -28,6 +28,10 @@ const migrations: { [version: number]: (db: SQLite.SQLiteDatabase) => Promise<vo
         has_completed_baseline INTEGER NOT NULL DEFAULT 0,
         last_synced_at TEXT,
         last_viewed_at TEXT,
+        last_viewed_gained_followers_at TEXT,
+        last_viewed_lost_followers_at TEXT,
+        last_viewed_added_following_at TEXT,
+        last_viewed_removed_following_at TEXT,
         date_created TEXT NOT NULL,
         date_updated TEXT NOT NULL
       );

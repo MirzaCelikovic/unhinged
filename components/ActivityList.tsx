@@ -6,16 +6,36 @@ import { router, usePathname } from 'expo-router';
 import { FollowerStats, AccountListType, getAccountListLabel } from '~/lib/useFollowerStats';
 import { useRevenueCat } from '~/contexts/RevenueCatContext';
 
+interface ActivityCounts {
+  newFollowsCount: number;
+  unfollowsCount: number;
+  newFollowersCount: number;
+  lostFollowersCount: number;
+}
+
 interface ActivityListProps {
   stats: FollowerStats;
   userId: string;
   isMainAccount?: boolean;
+  activityCounts?: ActivityCounts;
 }
 
-export default function ActivityList({ stats, userId, isMainAccount = false }: ActivityListProps) {
+export default function ActivityList({ stats, userId, isMainAccount = false, activityCounts }: ActivityListProps) {
   const pathname = usePathname();
   const tab = pathname.includes('/tracking') ? 'tracking' : 'home';
   const { isSubscribed, presentPaywall } = useRevenueCat();
+
+  // Map activity types to their new activity counts
+  const getNewActivityCount = (type: AccountListType): number => {
+    if (!activityCounts) return 0;
+    switch (type) {
+      case 'addedFollowing': return activityCounts.newFollowsCount;
+      case 'removedFollowing': return activityCounts.unfollowsCount;
+      case 'gainedFollowers': return activityCounts.newFollowersCount;
+      case 'lostFollowers': return activityCounts.lostFollowersCount;
+      default: return 0;
+    }
+  };
 
   const items: { type: AccountListType; count: number }[] = [
     { type: 'addedFollowing', count: stats.addedFollowing },
@@ -61,9 +81,14 @@ export default function ActivityList({ stats, userId, isMainAccount = false }: A
           key={item.type}
           className={`flex-row items-center justify-between p-6 active:opacity-80 ${index < items.length - 1 ? 'border-b border-gray-100' : ''}`}
           onPress={() => handlePress(item)}>
-          <Text className="font-roboto-medium text-base text-gray-900">
-            {getAccountListLabel(item.type, isMainAccount)}
-          </Text>
+          <View className="flex-row items-center gap-3">
+            {getNewActivityCount(item.type) > 0 && (
+              <View className="h-3 w-3 rounded-full bg-error" />
+            )}
+            <Text className="font-roboto-medium text-base text-gray-900">
+              {getAccountListLabel(item.type, isMainAccount)}
+            </Text>
+          </View>
           <View className="flex-row items-center gap-2">
             {isSubscribed ? (
               <>

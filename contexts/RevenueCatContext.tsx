@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import Purchases, { CustomerInfo, PurchasesOffering, LOG_LEVEL } from 'react-native-purchases';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { analytics, Events } from '~/contexts/AnalyticsContext';
@@ -32,6 +32,7 @@ interface RevenueCatContextType {
   // Actions
   presentPaywall: (source?: string) => Promise<boolean>;
   presentPaywallIfNeeded: (source?: string) => Promise<boolean>;
+  presentPaywallOnLaunch: () => Promise<boolean>;
   restorePurchases: () => Promise<boolean>;
   refreshCustomerInfo: () => Promise<void>;
   presentCustomerCenter: () => Promise<void>;
@@ -69,6 +70,7 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
   const [currentOffering, setCurrentOffering] = useState<PurchasesOffering | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasShownAutomaticPaywallRef = useRef(false);
 
   // Derive subscription status from customer info
   const isSubscribed = customerInfo?.entitlements.active[ENTITLEMENT_ID] !== undefined;
@@ -200,6 +202,15 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
     }
   }, []);
 
+  // Present paywall on launch (only once per session)
+  const presentPaywallOnLaunch = useCallback(async (): Promise<boolean> => {
+    if (hasShownAutomaticPaywallRef.current) {
+      return false;
+    }
+    hasShownAutomaticPaywallRef.current = true;
+    return presentPaywallIfNeeded('app_launch');
+  }, [presentPaywallIfNeeded]);
+
   // Restore purchases
   const restorePurchases = useCallback(async (): Promise<boolean> => {
     try {
@@ -253,6 +264,7 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
     expirationDate,
     presentPaywall,
     presentPaywallIfNeeded,
+    presentPaywallOnLaunch,
     restorePurchases,
     refreshCustomerInfo,
     presentCustomerCenter,

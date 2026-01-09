@@ -11,6 +11,7 @@ import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext
 import { useInstagram } from '~/lib/useInstagram';
 import { useEffect, useState } from 'react';
 import { useFollowerStats } from '~/lib/useFollowerStats';
+import { useInstagramActivity } from '~/lib/useInstagramActivity';
 import { useQueryClient } from '@tanstack/react-query';
 import Circles from '~/assets/circles.svg';
 import Spinner from '~/components/Spinner';
@@ -36,6 +37,7 @@ export default function Index() {
   const { account } = useAccountContext();
   const { data: instagram } = useInstagram(userId);
   const { data: stats, hasNewActivity } = useFollowerStats(userId, account?.latest_activity_date);
+  const { data: activityCounts } = useInstagramActivity(userId);
   const queryClient = useQueryClient();
   const { track } = useAnalytics();
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -243,7 +245,7 @@ export default function Index() {
               )}
 
               {/* Activity List */}
-              <ActivityList stats={stats} userId={userId!} isMainAccount />
+              <ActivityList stats={stats} userId={userId!} isMainAccount activityCounts={activityCounts} />
             </View>
           </ScrollView>
         </Animated.View>

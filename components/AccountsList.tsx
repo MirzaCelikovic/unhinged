@@ -1,13 +1,24 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Pressable, ScrollView, Alert, Linking } from 'react-native';
 import { router } from 'expo-router';
+import { useSQLiteContext } from 'expo-sqlite';
+import { useQueryClient } from '@tanstack/react-query';
 import { X, Search } from 'lucide-react-native';
 import Circles from '~/assets/circles.svg';
 import Logo from '~/assets/logo_black.svg';
 import { useAccountList, AccountListType, getAccountListLabel } from '~/lib/useFollowerStats';
+import { markActivityCategoryAsViewed, ActivityCategory } from '~/lib/useInstagramActivity';
 import { useInstagram } from '~/contexts/InstagramContext';
 import AccountCard from './AccountCard';
 import TextField from './TextField';
+
+// Map AccountListType to ActivityCategory for marking as viewed
+const ACTIVITY_CATEGORY_MAP: Partial<Record<AccountListType, ActivityCategory>> = {
+  gainedFollowers: 'gainedFollowers',
+  lostFollowers: 'lostFollowers',
+  addedFollowing: 'addedFollowing',
+  removedFollowing: 'removedFollowing',
+};
 
 interface AccountsListProps {
   userId: string;
@@ -18,9 +29,22 @@ interface AccountsListProps {
 export default function AccountsList({ userId, type, isMainAccount }: AccountsListProps) {
   const { data: accounts, isLoading } = useAccountList(userId ?? null, type ?? null);
   const { followUser, unfollowUser } = useInstagram();
+  const db = useSQLiteContext();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [loadingAccountId, setLoadingAccountId] = useState<string | null>(null);
   const [completedActions, setCompletedActions] = useState<Set<string>>(new Set());
+
+  // Mark this activity category as viewed when opening the list
+  useEffect(() => {
+    const category = ACTIVITY_CATEGORY_MAP[type];
+    if (userId && category) {
+      markActivityCategoryAsViewed(db, userId, category).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['instagramActivity', userId] });
+        queryClient.invalidateQueries({ queryKey: ['hasAnyInstagramActivity'] });
+      });
+    }
+  }, [userId, type]);
 
   // Determine action type based on list type - only show actions for main account
   const actionType = isMainAccount
