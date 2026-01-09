@@ -9,6 +9,7 @@ import {
   Keyboard,
   ScrollView,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Instagram } from '~/lib/types';
 import { fetchPublicProfile } from '~/lib/fetchPublicProfile';
@@ -104,7 +105,14 @@ export default function UsernameSearch({
           {FAKE_ACCOUNTS.map((account) => (
             <View key={account.id} className="overflow-hidden rounded-2xl">
               <View className="flex-row items-center gap-3 bg-white p-4">
-                <Image source={account.image} className="h-12 w-12 rounded-full" blurRadius={8} />
+                <View className="relative h-12 w-12 overflow-hidden rounded-full">
+                  <Image source={account.image} className="h-12 w-12 rounded-full" />
+                  <BlurView
+                    intensity={20}
+                    tint="light"
+                    style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                  />
+                </View>
                 <View className="flex-1 justify-center">
                   <View className="h-4 w-32 rounded bg-gray-300" />
                 </View>
