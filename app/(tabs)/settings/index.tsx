@@ -1,5 +1,5 @@
-import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
-import { useState, useEffect } from 'react';
+import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Linking, Modal } from 'react-native';
+import { useState, useEffect, memo } from 'react';
 import * as Application from 'expo-application';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
@@ -11,14 +11,25 @@ import { useAccountContext } from '~/contexts/AccountContext';
 import { useOnboarding } from '~/lib/useOnboarding';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 import Circles from '~/assets/circles.svg';
+import Spinner from '~/components/Spinner';
+
+const DeletingModal = memo(({ visible }: { visible: boolean }) => (
+  <Modal visible={visible} animationType="fade" statusBarTranslucent>
+    <View className="flex-1 items-center justify-center bg-background">
+      <Spinner size={40} color="#000" />
+      <Text className="mt-4 font-roboto-medium text-lg text-black">Deleting your account...</Text>
+    </View>
+  </Modal>
+));
 
 export default function Settings() {
   const { disconnect, isLoggedIn } = useInstagram();
   const { isSubscribed, presentPaywall } = useRevenueCat();
-  const { account } = useAccountContext();
+  const { account, deleteAccount } = useAccountContext();
   const { resetOnboarding } = useOnboarding();
   const { track } = useAnalytics();
   const [showCopied, setShowCopied] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Track screen view
   useEffect(() => {
@@ -47,14 +58,25 @@ export default function Settings() {
   const handleDeleteAccount = () => {
     Alert.alert(
       'Delete Account',
-      'Are you sure? This action is irreversible and you will lose access to all data and insights.',
+      "Are you sure? All your tracked accounts and their activity will be gone forever.",
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            // TODO: Implement account deletion
+          onPress: async () => {
+            setIsDeleting(true);
+            // Wait first while UI is stable (gives user time to force quit if they change their mind)
+            await new Promise((resolve) => setTimeout(resolve, 3000));
+            // Clear Instagram cookies (fire and forget)
+            if (isLoggedIn) {
+              disconnect();
+            }
+            // Delete all account data
+            await deleteAccount();
+            // Reset onboarding status
+            resetOnboarding();
+            router.replace('/start');
           },
         },
       ]
@@ -160,6 +182,8 @@ export default function Settings() {
           </Pressable>
         </View>
       </ScrollView>
+
+      <DeletingModal visible={isDeleting} />
     </View>
   );
 }

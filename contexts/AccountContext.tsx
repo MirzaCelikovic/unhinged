@@ -1,9 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
+import { useSQLiteContext } from 'expo-sqlite';
 import { useAccount, useCreateAccount } from '~/lib/useAccount';
 import { useTrackedInstagrams } from '~/lib/useInstagram';
 import { useSecureStorage } from '~/lib/useSecureStorage';
+import { setStorageItemAsync } from '~/lib/useStorage';
+import { clearAllData } from '~/lib/database';
 import { Account, Instagram } from '~/lib/types';
 import { CustomerIO } from 'customerio-reactnative';
 import * as Notifications from 'expo-notifications';
@@ -18,6 +21,7 @@ interface AccountContextType {
   trackedInstagrams: Instagram[];
   isLoading: boolean;
   updateAccountSettings: (settings: Record<string, boolean>) => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
@@ -33,6 +37,7 @@ export const useAccountContext = () => {
 export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const storage = useSecureStorage();
   const api = useApi();
+  const db = useSQLiteContext();
   const queryClient = useQueryClient();
   const [storedAccountId, setStoredAccountId] = useState<string | null>(null);
   const [isCheckingStorage, setIsCheckingStorage] = useState(true);
@@ -158,6 +163,63 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  // Delete account and all associated data
+  const deleteAccount = async () => {
+    if (!account?.uuid) {
+      throw new Error('No account available');
+    }
+
+    console.log('Starting account deletion...');
+
+    // 1. Untrack all tracked accounts (API + local cleanup)
+    for (const tracked of trackedInstagrams) {
+      try {
+        console.log(`Untracking ${tracked.username}...`);
+        await api.delete(`/api/v1/account/${account.uuid}/tracks/${tracked.user_id}/`);
+      } catch (error) {
+        console.error(`Failed to untrack ${tracked.username}:`, error);
+      }
+    }
+
+    // 2. Disconnect Instagram from backend
+    if (account.instagram_user_id) {
+      try {
+        console.log('Disconnecting Instagram from backend...');
+        await api.delete(`/api/v1/account/${account.uuid}/instagram/`);
+      } catch (error) {
+        console.error('Failed to disconnect Instagram:', error);
+      }
+    }
+
+    // 3. Clear all SQLite data
+    console.log('Clearing local database...');
+    await clearAllData(db);
+
+    // 4. Delete instagram_user_id from AsyncStorage
+    console.log('Clearing instagram_user_id...');
+    await setStorageItemAsync('instagram_user_id', null);
+
+    // 5. Delete account_id from SecureStore
+    console.log('Clearing account_id...');
+    await storage.removeItem(ACCOUNT_ID_KEY);
+
+    // 6. Delete account from backend
+    try {
+      console.log('Deleting account from backend...');
+      await api.delete(`/api/v1/account/${account.uuid}/`);
+    } catch (error) {
+      console.error('Failed to delete account from backend:', error);
+    }
+
+    // 7. Clear all query caches
+    queryClient.clear();
+
+    // 8. Reset local state
+    setStoredAccountId(null);
+
+    console.log('Account deletion complete');
+  };
+
   // Hide splash screen and render children only when initialization is complete
   if (isLoading) {
     return null;
@@ -171,6 +233,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     trackedInstagrams,
     isLoading,
     updateAccountSettings,
+    deleteAccount,
   };
 
   return <AccountContext.Provider value={value}>{children}</AccountContext.Provider>;
