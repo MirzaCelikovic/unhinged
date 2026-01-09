@@ -345,11 +345,12 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (trackedIndex !== -1) {
         const updatedTracked = [...prev.trackedAccounts];
         updatedTracked[trackedIndex] = { ...updatedTracked[trackedIndex], [field]: status };
+        // If mainAccount is null, consider it complete (not syncing)
         const mainComplete =
-          prev.mainAccount &&
-          prev.mainAccount.metadata === 'complete' &&
-          prev.mainAccount.following === 'complete' &&
-          prev.mainAccount.followers === 'complete';
+          !prev.mainAccount ||
+          (prev.mainAccount.metadata === 'complete' &&
+            prev.mainAccount.following === 'complete' &&
+            prev.mainAccount.followers === 'complete');
         const allTrackedComplete = updatedTracked.every(
           (acc) =>
             acc.metadata === 'complete' &&
