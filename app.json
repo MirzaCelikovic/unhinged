@@ -51,7 +51,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "so.unhinged",
-      "appleTeamId": "DUZR4LXSY7"
+      "appleTeamId": "DUZR4LXSY7",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
