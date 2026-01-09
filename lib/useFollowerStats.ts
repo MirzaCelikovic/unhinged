@@ -112,10 +112,10 @@ const fetchFollowerStats = async (db: any, userId: string): Promise<FollowerStat
   };
 };
 
-export const useFollowerStats = (userId: string | null) => {
+export const useFollowerStats = (userId: string | null, latestActivityDate?: string | null) => {
   const db = useSQLiteContext();
 
-  return useQuery<FollowerStats>({
+  const query = useQuery<FollowerStats>({
     queryKey: ['followerStats', userId],
     queryFn: () => fetchFollowerStats(db, userId!),
     enabled: !!userId,
@@ -129,6 +129,17 @@ export const useFollowerStats = (userId: string | null) => {
       lastSyncedAt: null,
     },
   });
+
+  // Check if there's new activity since last sync (both dates are UTC)
+  const hasNewActivity =
+    !!latestActivityDate &&
+    !!query.data?.lastSyncedAt &&
+    new Date(latestActivityDate) > new Date(query.data.lastSyncedAt);
+
+  return {
+    ...query,
+    hasNewActivity,
+  };
 };
 
 // Account list item

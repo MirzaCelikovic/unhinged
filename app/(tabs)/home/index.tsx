@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { useFollowerStats } from '~/lib/useFollowerStats';
 import { useQueryClient } from '@tanstack/react-query';
 import Circles from '~/assets/circles.svg';
+import Spinner from '~/components/Spinner';
 import InstagramCard from '~/components/InstagramCard';
 import ActivityList from '~/components/ActivityList';
 import NotConnected from '~/components/NotConnected';
@@ -22,6 +23,8 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
+  withRepeat,
+  withSequence,
   runOnJS,
 } from 'react-native-reanimated';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
@@ -32,12 +35,29 @@ export default function Index() {
   const { isLoggedIn, syncState, showLogin, sync, userId } = useInstagramContext();
   const { account } = useAccountContext();
   const { data: instagram } = useInstagram(userId);
-  const { data: stats } = useFollowerStats(userId);
+  const { data: stats, hasNewActivity } = useFollowerStats(userId, account?.latest_activity_date);
   const queryClient = useQueryClient();
   const { track } = useAnalytics();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [homeState, setHomeState] = useState<HomeState | null>(null);
   const contentOpacity = useSharedValue(1);
+  const refreshPulse = useSharedValue(0);
+
+  // Pulse animation for refresh button
+  useEffect(() => {
+    refreshPulse.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 800 }),
+        withTiming(0, { duration: 800 })
+      ),
+      -1,
+      false
+    );
+  }, []);
+
+  const refreshTextStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + refreshPulse.value * 0.12 }],
+  }));
 
   // Track screen view
   useEffect(() => {
@@ -179,24 +199,45 @@ export default function Index() {
         <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
           <ScrollView className="flex-1">
             <View className="p-4 pt-32">
-              {/* Last sync time and refresh button */}
-              <View className="flex-row items-center justify-between px-3 py-1">
-                <Text className="font-roboto-bold text-base text-black">
-                  {formatLastSyncTime(stats.lastSyncedAt)}
-                </Text>
-                <Pressable
-                  className="py-2 active:opacity-70"
-                  onPress={handleRefresh}
-                  disabled={syncState.isActive}>
-                  <Text className="font-roboto-bold text-base text-black">
-                    {syncState.isActive ? 'Syncing...' : 'Refresh'}
+              {/* Sync status banner */}
+              {hasNewActivity ? (
+                <View className="mb-3 flex-row items-center justify-between rounded-2xl bg-white px-4 py-3">
+                  <View className="flex-row items-center gap-3">
+                    <View className="h-3 w-3 rounded-full bg-error" />
+                    <Text className="font-roboto-medium text-base text-black">
+                      New Instagram activity found
+                    </Text>
+                  </View>
+                  {syncState.isActive ? (
+                    <Spinner size={20} color="#000000" />
+                  ) : (
+                    <Pressable className="active:opacity-70" onPress={handleRefresh}>
+                      <Animated.Text style={refreshTextStyle} className="font-roboto-bold text-base text-black">
+                        Refresh
+                      </Animated.Text>
+                    </Pressable>
+                  )}
+                </View>
+              ) : (
+                <View className="mb-3 flex-row items-center justify-between rounded-2xl bg-white px-4 py-3">
+                  <Text className="font-roboto-medium text-base text-black">
+                    {formatLastSyncTime(stats.lastSyncedAt)}
                   </Text>
-                </Pressable>
-              </View>
+                  {syncState.isActive ? (
+                    <Spinner size={20} color="#9ca3af" />
+                  ) : (
+                    <Pressable className="active:opacity-70" onPress={handleRefresh}>
+                      <Text className="font-roboto-bold text-base text-gray-400">
+                        Refresh
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
+              )}
 
               {/* Instagram Account Card */}
               {instagram && (
-                <View className="mb-6">
+                <View className="mb-3">
                   <InstagramCard account={instagram} isMainAccount />
                 </View>
               )}

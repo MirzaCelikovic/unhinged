@@ -43,7 +43,7 @@ export default function InstagramCard({ account, isMainAccount = false }: Instag
     );
   };
   return (
-    <View className="w-full rounded-3xl bg-white p-4">
+    <View className="w-full rounded-2xl bg-white p-4">
       {/* Top row: Profile pic and stats */}
       <View className="flex-row items-center">
         {/* Profile Picture */}
