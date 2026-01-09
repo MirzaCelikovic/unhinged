@@ -19,6 +19,8 @@ export default function TabLayout() {
   const hasMainAccountActivity = mainAccountActivity?.hasNewActivity || false;
   const trackedUserIds = trackedInstagrams.map((ig) => ig.user_id);
   const { data: hasAnyTrackedActivity } = useHasAnyInstagramActivity(trackedUserIds);
+  // Show home tab indicator if not subscribed (we show fake indicators in activity list), or if there's actual activity
+  const showHomeIndicator = (!isSubscribed && mainUserId) || hasMainAccountActivity;
   // Show tracking tab indicator if not subscribed and has tracked accounts, or if there's actual activity
   const showTrackingIndicator = (!isSubscribed && trackedInstagrams.length > 0) || hasAnyTrackedActivity;
 
@@ -69,7 +71,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => (
             <View>
               <TabHomeIcon color={color} width={28} height={28} />
-              {hasMainAccountActivity && (
+              {showHomeIndicator && (
                 <View className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-error" />
               )}
             </View>
