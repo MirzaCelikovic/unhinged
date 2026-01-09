@@ -25,15 +25,23 @@ export default function ActivityList({ stats, userId, isMainAccount = false, act
   const tab = pathname.includes('/tracking') ? 'tracking' : 'home';
   const { isSubscribed, presentPaywall } = useRevenueCat();
 
-  // Map activity types to their new activity counts
-  const getNewActivityCount = (type: AccountListType): number => {
-    if (!activityCounts) return 0;
+  // Check if row should show unread indicator
+  const hasUnreadIndicator = (type: AccountListType): boolean => {
+    if (!activityCounts) return false;
     switch (type) {
-      case 'addedFollowing': return activityCounts.newFollowsCount;
-      case 'removedFollowing': return activityCounts.unfollowsCount;
-      case 'gainedFollowers': return activityCounts.newFollowersCount;
-      case 'lostFollowers': return activityCounts.lostFollowersCount;
-      default: return 0;
+      case 'addedFollowing':
+        // For tracked accounts, always show if not subscribed
+        return (!isSubscribed && !isMainAccount) || activityCounts.newFollowsCount > 0;
+      case 'removedFollowing':
+        return activityCounts.unfollowsCount > 0;
+      case 'gainedFollowers':
+        // Always show if not subscribed (main or tracked)
+        return !isSubscribed || activityCounts.newFollowersCount > 0;
+      case 'lostFollowers':
+        // For main account, always show if not subscribed
+        return (!isSubscribed && isMainAccount) || activityCounts.lostFollowersCount > 0;
+      default:
+        return false;
     }
   };
 
@@ -82,12 +90,12 @@ export default function ActivityList({ stats, userId, isMainAccount = false, act
           className={`flex-row items-center justify-between p-6 active:opacity-80 ${index < items.length - 1 ? 'border-b border-gray-100' : ''}`}
           onPress={() => handlePress(item)}>
           <View className="flex-row items-center gap-3">
-            {getNewActivityCount(item.type) > 0 && (
-              <View className="h-3 w-3 rounded-full bg-error" />
-            )}
             <Text className="font-roboto-medium text-base text-gray-900">
               {getAccountListLabel(item.type, isMainAccount)}
             </Text>
+            {hasUnreadIndicator(item.type) && (
+              <View className="h-3 w-3 rounded-full bg-error" />
+            )}
           </View>
           <View className="flex-row items-center gap-2">
             {isSubscribed ? (

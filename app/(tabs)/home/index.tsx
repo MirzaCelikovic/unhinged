@@ -201,51 +201,62 @@ export default function Index() {
         <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
           <ScrollView className="flex-1">
             <View className="p-4 pt-32">
-              {/* Sync status banner */}
-              {hasNewActivity ? (
-                <View className="mb-3 flex-row items-center justify-between rounded-2xl bg-white px-4 py-3">
-                  <View className="flex-row items-center gap-3">
-                    <View className="h-3 w-3 rounded-full bg-error" />
-                    <Text className="font-roboto-medium text-base text-black">
-                      New Instagram activity found
-                    </Text>
-                  </View>
-                  {syncState.isActive ? (
-                    <Spinner size={20} color="#000000" />
-                  ) : (
-                    <Pressable className="active:opacity-70" onPress={handleRefresh}>
-                      <Animated.Text style={refreshTextStyle} className="font-roboto-bold text-base text-black">
-                        Refresh
-                      </Animated.Text>
-                    </Pressable>
-                  )}
-                </View>
+              {/* Show sync progress or normal content */}
+              {syncState.isActive && syncState.mainAccount && !(
+                syncState.mainAccount.metadata === 'complete' &&
+                syncState.mainAccount.following === 'complete' &&
+                syncState.mainAccount.followers === 'complete'
+              ) ? (
+                <InitialSync onComplete={() => {}} />
               ) : (
-                <View className="mb-3 flex-row items-center justify-between rounded-2xl bg-white px-4 py-3">
-                  <Text className="font-roboto-medium text-base text-black">
-                    {formatLastSyncTime(stats.lastSyncedAt)}
-                  </Text>
-                  {syncState.isActive ? (
-                    <Spinner size={20} color="#9ca3af" />
+                <>
+                  {/* Sync status banner */}
+                  {hasNewActivity ? (
+                    <View className="mb-3 flex-row items-center justify-between rounded-2xl bg-white px-4 py-3">
+                      <View className="flex-row items-center gap-3">
+                        <View className="h-3 w-3 rounded-full bg-error" />
+                        <Text className="font-roboto-medium text-base text-black">
+                          New Instagram activity found
+                        </Text>
+                      </View>
+                      {syncState.isActive ? (
+                        <Spinner size={20} color="#000000" />
+                      ) : (
+                        <Pressable className="active:opacity-70" onPress={handleRefresh}>
+                          <Animated.Text style={refreshTextStyle} className="font-roboto-bold text-base text-black">
+                            Refresh
+                          </Animated.Text>
+                        </Pressable>
+                      )}
+                    </View>
                   ) : (
-                    <Pressable className="active:opacity-70" onPress={handleRefresh}>
-                      <Text className="font-roboto-bold text-base text-gray-400">
-                        Refresh
+                    <View className="mb-3 flex-row items-center justify-between rounded-2xl bg-white px-4 py-3">
+                      <Text className="font-roboto-medium text-base text-black">
+                        {formatLastSyncTime(stats.lastSyncedAt)}
                       </Text>
-                    </Pressable>
+                      {syncState.isActive ? (
+                        <Spinner size={20} color="#9ca3af" />
+                      ) : (
+                        <Pressable className="active:opacity-70" onPress={handleRefresh}>
+                          <Text className="font-roboto-bold text-base text-gray-400">
+                            Refresh
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
                   )}
-                </View>
-              )}
 
-              {/* Instagram Account Card */}
-              {instagram && (
-                <View className="mb-3">
-                  <InstagramCard account={instagram} isMainAccount />
-                </View>
-              )}
+                  {/* Instagram Account Card */}
+                  {instagram && (
+                    <View className="mb-3">
+                      <InstagramCard account={instagram} isMainAccount />
+                    </View>
+                  )}
 
-              {/* Activity List */}
-              <ActivityList stats={stats} userId={userId!} isMainAccount activityCounts={activityCounts} />
+                  {/* Activity List */}
+                  <ActivityList stats={stats} userId={userId!} isMainAccount activityCounts={activityCounts} />
+                </>
+              )}
             </View>
           </ScrollView>
         </Animated.View>

@@ -30,6 +30,7 @@ import Button from '~/components/Button';
 import Spinner from '~/components/Spinner';
 import { Instagram } from '~/lib/types';
 import { useInstagramActivity } from '~/lib/useInstagramActivity';
+import { useRevenueCat } from '~/contexts/RevenueCatContext';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
 const NOTIFICATIONS_LATER_KEY = 'notifications_sheet_dismissed_at';
@@ -43,6 +44,7 @@ interface TrackedAccountItemProps {
 
 function TrackedAccountItem({ account, syncStatus }: TrackedAccountItemProps) {
   const { data: activity } = useInstagramActivity(account.user_id);
+  const { isSubscribed } = useRevenueCat();
 
   // Check if this account is still syncing
   const isSyncing =
@@ -50,6 +52,9 @@ function TrackedAccountItem({ account, syncStatus }: TrackedAccountItemProps) {
     (syncStatus.metadata === 'syncing' ||
       syncStatus.following === 'syncing' ||
       syncStatus.followers === 'syncing');
+
+  // Show indicator if not subscribed or if there's actual new activity
+  const showIndicator = !isSubscribed || activity.hasNewActivity;
 
   return (
     <Pressable
@@ -69,14 +74,19 @@ function TrackedAccountItem({ account, syncStatus }: TrackedAccountItemProps) {
         ) : (
           <View className="h-[60px] w-[60px] rounded-full bg-gray-300" />
         )}
-        <Text className="font-roboto-bold text-xl text-gray-900">@{account.username}</Text>
+        <View>
+          <Text className="font-roboto-bold text-xl text-gray-900">@{account.username}</Text>
+          {account.full_name && (
+            <Text className="font-roboto-regular text-sm text-gray-500">{account.full_name}</Text>
+          )}
+        </View>
       </View>
       <View className="flex-row items-center gap-2">
         {isSyncing ? (
           <Spinner size={24} color="#6b7280" />
         ) : (
           <>
-            {activity.hasNewActivity && <View className="h-3 w-3 rounded-full bg-error" />}
+            {showIndicator && <View className="h-3 w-3 rounded-full bg-error" />}
             <CircleChevronRight size={24} color="black" />
           </>
         )}

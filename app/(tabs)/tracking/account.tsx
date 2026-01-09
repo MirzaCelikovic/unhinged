@@ -9,6 +9,7 @@ import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext
 import { useInstagram, useRemoveTrackedInstagram } from '~/lib/useInstagram';
 import { useFollowerStats } from '~/lib/useFollowerStats';
 import { useInstagramActivity, markInstagramActivityAsViewed } from '~/lib/useInstagramActivity';
+import { useRevenueCat } from '~/contexts/RevenueCatContext';
 import Circles from '~/assets/circles.svg';
 import Logo from '~/assets/logo_black.svg';
 import InstagramCard from '~/components/InstagramCard';
@@ -37,6 +38,10 @@ export default function TrackingAccount() {
   const { data: instagram } = useInstagram(userId || null);
   const { data: stats } = useFollowerStats(userId || null);
   const { data: activityCounts } = useInstagramActivity(userId || null);
+  const { isSubscribed } = useRevenueCat();
+
+  // Show indicator on Insights tab if not subscribed or has unread activity
+  const hasInsightsIndicator = !isSubscribed || activityCounts?.hasNewActivity;
 
   // Segmented nav state
   const [activeTab, setActiveTab] = useState<'feed' | 'stats'>('feed');
@@ -113,12 +118,15 @@ export default function TrackingAccount() {
                 </Text>
               </Pressable>
               <Pressable
-                className={`rounded-full px-4 py-2 ${activeTab === 'stats' ? 'bg-white' : ''}`}
+                className={`flex-row items-center gap-2 rounded-full px-4 py-2 ${activeTab === 'stats' ? 'bg-white' : ''}`}
                 onPress={() => setActiveTab('stats')}>
                 <Text
                   className={`font-roboto-medium text-sm ${activeTab === 'stats' ? 'text-gray-900' : 'text-gray-500'}`}>
                   Insights
                 </Text>
+                {hasInsightsIndicator && (
+                  <View className="h-3 w-3 rounded-full bg-error" />
+                )}
               </Pressable>
             </View>
 

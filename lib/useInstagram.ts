@@ -65,6 +65,7 @@ const fetchInstagramsData = async (db: any, userIds: string[]): Promise<Map<stri
       `SELECT
         user_id,
         username,
+        full_name,
         biography,
         profile_pic_url,
         media_count,

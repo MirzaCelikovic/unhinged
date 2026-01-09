@@ -368,7 +368,10 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   // Sync all accounts (main user + tracked accounts)
-  const sync = () => {
+  // TODO: Remove this fake delay - for testing sync UI only
+  const FAKE_SYNC_DELAY_MS = 0;
+
+  const sync = async () => {
     // Skip if already syncing
     if (syncState.isActive) {
       console.log('⏭️ Sync already in progress, skipping');
@@ -414,6 +417,11 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       mainAccount: mainAccountStatus,
       trackedAccounts: trackedAccountStatuses,
     });
+
+    // TODO: Remove this fake delay - for testing sync UI only
+    if (FAKE_SYNC_DELAY_MS > 0) {
+      await new Promise((resolve) => setTimeout(resolve, FAKE_SYNC_DELAY_MS));
+    }
 
     // Start all fetches in parallel for main account
     fetchMetadata(account.instagram_username);
