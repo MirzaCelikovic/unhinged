@@ -88,9 +88,21 @@ export default function Settings() {
                 <CircleChevronRight size={24} color="#9ca3af" />
               </Pressable>
               <Pressable
-                className="flex-row items-center justify-between p-4 active:opacity-80"
+                className="flex-row items-center justify-between border-b border-gray-100 p-4 active:opacity-80"
                 onPress={() => Linking.openURL('https://unhinged.so/support/')}>
                 <Text className="font-roboto-medium text-base text-gray-900">Support</Text>
+                <CircleChevronRight size={24} color="#9ca3af" />
+              </Pressable>
+              <Pressable
+                className="flex-row items-center justify-between border-b border-gray-100 p-4 active:opacity-80"
+                onPress={() => Linking.openURL('https://unhinged.so/privacy/')}>
+                <Text className="font-roboto-medium text-base text-gray-900">Privacy Policy</Text>
+                <CircleChevronRight size={24} color="#9ca3af" />
+              </Pressable>
+              <Pressable
+                className="flex-row items-center justify-between p-4 active:opacity-80"
+                onPress={() => Linking.openURL('https://unhinged.so/terms/')}>
+                <Text className="font-roboto-medium text-base text-gray-900">Terms of Service</Text>
                 <CircleChevronRight size={24} color="#9ca3af" />
               </Pressable>
             </View>
