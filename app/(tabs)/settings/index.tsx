@@ -89,19 +89,19 @@ export default function Settings() {
               </Pressable>
               <Pressable
                 className="flex-row items-center justify-between border-b border-gray-100 p-4 active:opacity-80"
-                onPress={() => Linking.openURL('https://unhinged.so/support/')}>
+                onPress={() => Linking.openURL(process.env.EXPO_PUBLIC_SUPPORT_URL!)}>
                 <Text className="font-roboto-medium text-base text-gray-900">Support</Text>
                 <CircleChevronRight size={24} color="#9ca3af" />
               </Pressable>
               <Pressable
                 className="flex-row items-center justify-between border-b border-gray-100 p-4 active:opacity-80"
-                onPress={() => Linking.openURL('https://unhinged.so/privacy/')}>
+                onPress={() => Linking.openURL(process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL!)}>
                 <Text className="font-roboto-medium text-base text-gray-900">Privacy Policy</Text>
                 <CircleChevronRight size={24} color="#9ca3af" />
               </Pressable>
               <Pressable
                 className="flex-row items-center justify-between p-4 active:opacity-80"
-                onPress={() => Linking.openURL('https://unhinged.so/terms/')}>
+                onPress={() => Linking.openURL(process.env.EXPO_PUBLIC_TERMS_OF_SERVICE_URL!)}>
                 <Text className="font-roboto-medium text-base text-gray-900">Terms of Service</Text>
                 <CircleChevronRight size={24} color="#9ca3af" />
               </Pressable>

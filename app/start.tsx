@@ -16,11 +16,11 @@ export default function Start() {
   const { completeOnboarding } = useOnboarding();
 
   const openTerms = () => {
-    Linking.openURL('https://unhinged.so/terms-of-service/');
+    Linking.openURL(process.env.EXPO_PUBLIC_TERMS_OF_SERVICE_URL!);
   };
 
   const openPrivacy = () => {
-    Linking.openURL('https://unhinged.so/privacy-policy/');
+    Linking.openURL(process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL!);
   };
 
   const handleStart = () => {
