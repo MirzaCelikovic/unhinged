@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Pressable, ScrollView, Alert, Linking } from 'react-native';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, Pressable, Alert, Linking } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useQueryClient } from '@tanstack/react-query';
@@ -158,48 +159,51 @@ export default function AccountsList({ userId, type, isMainAccount }: AccountsLi
             <Text className="text-gray-500">No accounts found</Text>
           </View>
         ) : (
-          <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-            <View className="gap-3 pb-8">
-              {filteredAccounts.map((account) => {
-                const isCompleted = completedActions.has(account.id);
-                const isLoading = loadingAccountId === account.id;
+          <FlashList
+            data={filteredAccounts}
+            keyExtractor={(item) => item.id}
+            estimatedItemSize={76}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 32 }}
+            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+            renderItem={({ item: account }) => {
+              const isCompleted = completedActions.has(account.id);
+              const isLoading = loadingAccountId === account.id;
 
-                // Determine action props
-                let actionProps = {};
-                if (actionType === 'follow' && !isCompleted) {
-                  actionProps = {
-                    actionLabel: 'Follow',
-                    actionVariant: 'primary' as const,
-                    actionLoading: isLoading,
-                    onAction: () => handleFollow(account.id, account.username, account.profile_pic_url),
-                  };
-                } else if (actionType === 'unfollow' && !isCompleted) {
-                  actionProps = {
-                    actionLabel: 'Unfollow',
-                    actionVariant: 'secondary' as const,
-                    actionLoading: isLoading,
-                    onAction: () => handleUnfollow(account.id, account.username),
-                  };
-                } else if (isCompleted) {
-                  actionProps = {
-                    actionLabel: actionType === 'follow' ? 'Following' : 'Unfollowed',
-                    actionVariant: 'secondary' as const,
-                  };
-                }
+              // Determine action props
+              let actionProps = {};
+              if (actionType === 'follow' && !isCompleted) {
+                actionProps = {
+                  actionLabel: 'Follow',
+                  actionVariant: 'primary' as const,
+                  actionLoading: isLoading,
+                  onAction: () => handleFollow(account.id, account.username, account.profile_pic_url),
+                };
+              } else if (actionType === 'unfollow' && !isCompleted) {
+                actionProps = {
+                  actionLabel: 'Unfollow',
+                  actionVariant: 'secondary' as const,
+                  actionLoading: isLoading,
+                  onAction: () => handleUnfollow(account.id, account.username),
+                };
+              } else if (isCompleted) {
+                actionProps = {
+                  actionLabel: actionType === 'follow' ? 'Following' : 'Unfollowed',
+                  actionVariant: 'secondary' as const,
+                };
+              }
 
-                return (
-                  <AccountCard
-                    key={account.id}
-                    username={account.username}
-                    fullName={account.full_name}
-                    profilePicUrl={account.profile_pic_url}
-                    onPress={() => openInstagramProfile(account.username)}
-                    {...actionProps}
-                  />
-                );
-              })}
-            </View>
-          </ScrollView>
+              return (
+                <AccountCard
+                  username={account.username}
+                  fullName={account.full_name}
+                  profilePicUrl={account.profile_pic_url}
+                  onPress={() => openInstagramProfile(account.username)}
+                  {...actionProps}
+                />
+              );
+            }}
+          />
         )}
       </View>
     </View>
