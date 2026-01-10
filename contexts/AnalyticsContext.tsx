@@ -24,6 +24,7 @@ export const Events = {
   COMPARISON_COMPLETED: 'Comparison Completed',
   INSTAGRAM_CONNECTED_ONBOARDING: 'Instagram Connected Onboarding',
   INSTAGRAM_CONNECTED: 'Instagram Connected',
+  ACCOUNT_TRACKED: 'Account Tracked',
   HOME_SCREEN_VIEWED: 'Home Screen Viewed',
   TRACKING_SCREEN_VIEWED: 'Tracking Screen Viewed',
   SETTINGS_SCREEN_VIEWED: 'Settings Screen Viewed',

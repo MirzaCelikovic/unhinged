@@ -8,6 +8,7 @@ import StartTracking from '~/components/StartTracking';
 import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext';
 import { useAccountContext } from '~/contexts/AccountContext';
 import { useAddTrackedInstagram } from '~/lib/useInstagram';
+import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
 export default function TrackModal() {
   const [isLoading, setIsLoading] = useState(false);
@@ -16,6 +17,7 @@ export default function TrackModal() {
   const { fetchUserId, syncTrackedAccount, syncState } = useInstagramContext();
   const { account } = useAccountContext();
   const addTrackedInstagram = useAddTrackedInstagram();
+  const { track } = useAnalytics();
 
   // Auto-close modal once metadata is fetched for the added account
   useEffect(() => {
@@ -86,6 +88,7 @@ export default function TrackModal() {
         username: trimmedUsername,
       });
       console.log('✅ Tracked account registered');
+      track(Events.ACCOUNT_TRACKED);
 
       // Store userId to watch for metadata completion
       setAddedUserId(result.userId);
