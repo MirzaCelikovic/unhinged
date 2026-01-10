@@ -15,6 +15,12 @@ import * as SplashScreen from 'expo-splash-screen';
 import * as Notifications from 'expo-notifications';
 import '../global.css';
 
+
+// Disable console.log in production for performance
+if (!__DEV__) {
+  console.log = () => {};
+}
+
 // Configure notification handling for foreground
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
