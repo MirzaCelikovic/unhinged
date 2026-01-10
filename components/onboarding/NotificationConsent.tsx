@@ -1,14 +1,23 @@
 import { View, Text, Pressable, Image } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import Button from '~/components/Button';
+import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
 interface NotificationConsentProps {
   onComplete: () => void;
 }
 
 export default function NotificationConsent({ onComplete }: NotificationConsentProps) {
+  const { track } = useAnalytics();
+
   const handleEnableNotifications = async () => {
     await Notifications.requestPermissionsAsync();
+    track(Events.NOTIFICATIONS_ACTIVATED, { activated: true });
+    onComplete();
+  };
+
+  const handleSkip = () => {
+    track(Events.NOTIFICATIONS_ACTIVATED, { activated: false });
     onComplete();
   };
 
@@ -32,7 +41,7 @@ export default function NotificationConsent({ onComplete }: NotificationConsentP
       <View className="pb-8">
         <Button label="Stay up to date" onPress={handleEnableNotifications} />
 
-        <Pressable className="mt-4 py-3" onPress={onComplete}>
+        <Pressable className="mt-4 py-3" onPress={handleSkip}>
           <Text className="text-center font-roboto-medium text-base text-black">
             I don't want to stay updated
           </Text>

@@ -1,5 +1,6 @@
 import { View, Text, Image, Dimensions } from 'react-native';
 import Button from '~/components/Button';
+import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -8,6 +9,7 @@ interface HelpScreen2Props {
 }
 
 export default function HelpScreen2({ onNext }: HelpScreen2Props) {
+  const { track } = useAnalytics();
   return (
     <View className="flex-1">
       <Text className="mt-4 px-4 text-center font-roboto-extrablack text-4xl tracking-tighter">
@@ -42,7 +44,10 @@ export default function HelpScreen2({ onNext }: HelpScreen2Props) {
           Clean up your following and unfollow users with one tap
         </Text>
         <View className="mt-6">
-          <Button label="Continue" onPress={onNext} />
+          <Button label="Continue" onPress={() => {
+            track(Events.HWH2_COMPLETED);
+            onNext();
+          }} />
         </View>
       </View>
     </View>

@@ -23,6 +23,7 @@ import Logo from '~/assets/logo_black.svg';
 import { Instagram } from '~/lib/types';
 import { useInstagram } from '~/contexts/InstagramContext';
 import { useAccountContext } from '~/contexts/AccountContext';
+import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
 interface OnboardingProps {
   onBack: () => void;
@@ -149,6 +150,7 @@ export default function Onboarding({ onBack, onComplete }: OnboardingProps) {
   const [trackResult, setTrackResult] = useState<Instagram | null>(null);
   const { showLogin, isLoggedIn, sync } = useInstagram();
   const { account } = useAccountContext();
+  const { track } = useAnalytics();
 
   const progressWidth = useSharedValue(((0 + 1) / STEPS.length) * 100);
   const step = STEPS[currentStep];
@@ -156,6 +158,7 @@ export default function Onboarding({ onBack, onComplete }: OnboardingProps) {
   // When user successfully connects Instagram and account data is ready, start sync and complete onboarding
   useEffect(() => {
     if (isLoggedIn === true && step.type === 'connect' && account?.instagram_username) {
+      track(Events.INSTAGRAM_CONNECTED_ONBOARDING, { connected: true });
       sync();
       onComplete();
     }
@@ -187,6 +190,14 @@ export default function Onboarding({ onBack, onComplete }: OnboardingProps) {
   };
 
   const handleSelect = (choiceId: string) => {
+    // Track HDYHAU completion when source step is completed
+    if (step.id === 'source') {
+      track(Events.HDYHAU_COMPLETED, { source: choiceId.toLowerCase() });
+    }
+    // Track HCWH completion when help_with step is completed
+    if (step.id === 'help_with') {
+      track(Events.HCWH_COMPLETED, { answer: choiceId.toLowerCase() });
+    }
     setAnswers({ ...answers, [step.id]: choiceId });
     handleNext();
   };

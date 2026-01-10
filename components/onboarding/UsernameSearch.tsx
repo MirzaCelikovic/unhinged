@@ -17,6 +17,7 @@ import InstagramCard from '~/components/InstagramCard';
 import Button from '~/components/Button';
 import TextField from '~/components/TextField';
 import Unhinged from '~/assets/unhinged_2.svg';
+import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
 const FAKE_ACCOUNTS = [
   {
@@ -53,6 +54,7 @@ export default function UsernameSearch({
   const [username, setUsername] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState('');
+  const { track } = useAnalytics();
 
   const svgOpacity = useSharedValue(1);
   const svgScale = useSharedValue(1);
@@ -122,7 +124,10 @@ export default function UsernameSearch({
         </View>
 
         <View className="mt-8">
-          <Button label="Continue" onPress={() => onNext(savedResult.username)} />
+          <Button label="Continue" onPress={() => {
+            track(Events.USERNAME_RESULT_COMPLETED);
+            onNext(savedResult.username);
+          }} />
         </View>
       </ScrollView>
     );
@@ -136,6 +141,7 @@ export default function UsernameSearch({
 
     try {
       const profile = await fetchPublicProfile(username);
+      track(Events.USERNAME_SEARCH_COMPLETED);
       onResultFetched(profile);
     } catch (err) {
       setError('Could not find this account. Please check the username.');
@@ -173,7 +179,10 @@ export default function UsernameSearch({
             disabled={!username.trim()}
           />
         </View>
-        <Pressable className="mt-4 py-3" onPress={() => onNext(null)}>
+        <Pressable className="mt-4 py-3" onPress={() => {
+          track(Events.USERNAME_SEARCH_SKIPPED);
+          onNext(null);
+        }}>
           <Text className="text-center font-roboto-medium text-base text-black">Skip</Text>
         </Pressable>
       </View>

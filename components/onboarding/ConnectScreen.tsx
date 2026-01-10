@@ -1,6 +1,7 @@
 import { View, Text, Pressable } from 'react-native';
 import { LockKeyhole, Shield, FolderCheck, EyeOff } from 'lucide-react-native';
 import IgGradient from '~/assets/ig_gradient.svg';
+import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
 interface ConnectScreenProps {
   onConnect: () => void;
@@ -8,6 +9,7 @@ interface ConnectScreenProps {
 }
 
 export default function ConnectScreen({ onConnect, onSkip }: ConnectScreenProps) {
+  const { track } = useAnalytics();
   return (
     <View className="flex-1 px-4">
       <Text className="text-center font-roboto-extrablack text-4xl tracking-tighter">
@@ -59,7 +61,10 @@ export default function ConnectScreen({ onConnect, onSkip }: ConnectScreenProps)
             <Text className="absolute font-roboto-medium text-lg text-white">Connect Instagram</Text>
           </View>
         </Pressable>
-        <Pressable className="mt-4 py-3" onPress={onSkip}>
+        <Pressable className="mt-4 py-3" onPress={() => {
+          track(Events.INSTAGRAM_CONNECTED_ONBOARDING, { connected: false });
+          onSkip();
+        }}>
           <Text className="text-center font-roboto-medium text-base text-black">Skip</Text>
         </Pressable>
       </View>

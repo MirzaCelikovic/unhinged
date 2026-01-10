@@ -1,5 +1,6 @@
 import { View, Text, Image, Dimensions } from 'react-native';
 import Button from '~/components/Button';
+import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -8,6 +9,7 @@ interface HelpScreen1Props {
 }
 
 export default function HelpScreen1({ onNext }: HelpScreen1Props) {
+  const { track } = useAnalytics();
   return (
     <View className="flex-1">
       <Text className="mt-4 px-4 text-center font-roboto-extrablack text-4xl tracking-tighter">
@@ -35,7 +37,10 @@ export default function HelpScreen1({ onNext }: HelpScreen1Props) {
           See who starts following them and who follows them back.
         </Text>
         <View className="mt-6">
-          <Button label="Continue" onPress={onNext} />
+          <Button label="Continue" onPress={() => {
+            track(Events.HWH1_COMPLETED);
+            onNext();
+          }} />
         </View>
       </View>
     </View>

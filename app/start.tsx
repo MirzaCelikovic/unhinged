@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
@@ -8,12 +8,18 @@ import Logo from '~/assets/logo_black.svg';
 import Button from '~/components/Button';
 import Onboarding from '~/components/Onboarding';
 import { useOnboarding } from '~/lib/useOnboarding';
+import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
 type Screen = 'start' | 'onboarding';
 
 export default function Start() {
   const [screen, setScreen] = useState<Screen>('start');
   const { completeOnboarding } = useOnboarding();
+  const { track } = useAnalytics();
+
+  useEffect(() => {
+    track(Events.START_SCREEN_VIEWED);
+  }, []);
 
   const openTerms = () => {
     Linking.openURL(process.env.EXPO_PUBLIC_TERMS_OF_SERVICE_URL!);
@@ -24,6 +30,7 @@ export default function Start() {
   };
 
   const handleStart = () => {
+    track(Events.ONBOARDING_STARTED);
     setScreen('onboarding');
   };
 
