@@ -1,14 +1,12 @@
 import { View, Text, Alert, ScrollView, StyleSheet, SafeAreaView, Pressable } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { useSQLiteContext } from 'expo-sqlite';
-import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { X } from 'lucide-react-native';
 import { useAccountContext } from '~/contexts/AccountContext';
 import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext';
 import { useInstagram, useRemoveTrackedInstagram } from '~/lib/useInstagram';
 import { useFollowerStats } from '~/lib/useFollowerStats';
-import { useInstagramActivity, markInstagramActivityAsViewed } from '~/lib/useInstagramActivity';
+import { useInstagramActivity } from '~/lib/useInstagramActivity';
 import { useRevenueCat } from '~/contexts/RevenueCatContext';
 import Circles from '~/assets/circles.svg';
 import Logo from '~/assets/logo_black.svg';
@@ -23,8 +21,6 @@ export default function TrackingAccount() {
   const { account } = useAccountContext();
   const { syncState } = useInstagramContext();
   const removeTrackedInstagram = useRemoveTrackedInstagram();
-  const db = useSQLiteContext();
-  const queryClient = useQueryClient();
 
   // Check if this account is still syncing
   const syncStatus = syncState.trackedAccounts.find((acc) => acc.userId === userId);
@@ -45,15 +41,6 @@ export default function TrackingAccount() {
 
   // Segmented nav state
   const [activeTab, setActiveTab] = useState<'feed' | 'stats'>('feed');
-
-  // Mark activity as viewed when opening this screen
-  useEffect(() => {
-    if (userId) {
-      markInstagramActivityAsViewed(db, userId).then(() => {
-        queryClient.invalidateQueries({ queryKey: ['instagramActivity', userId] });
-      });
-    }
-  }, [userId]);
 
   const handleStopTracking = () => {
     if (!account?.uuid || !userId) return;
