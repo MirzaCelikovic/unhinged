@@ -74,7 +74,7 @@ export default function ActivityList({ stats, userId, isMainAccount = false, act
 
   const handlePress = (item: { type: AccountListType; count: number }) => {
     if (!isSubscribed) {
-      presentPaywall('activity_list');
+      presentPaywall(isMainAccount ? 'activity_list_account' : 'activity_list_tracked');
       return;
     }
     router.push(

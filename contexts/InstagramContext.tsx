@@ -9,6 +9,7 @@ import { useAccountContext } from './AccountContext';
 import { syncFollowingList, syncFollowersList, addFollowing, removeFollowing } from '~/lib/syncing';
 import { clearAllData } from '~/lib/database';
 import * as Notifications from 'expo-notifications';
+import { analytics, Events } from '~/contexts/AnalyticsContext';
 
 // Constants
 const INSTAGRAM_APP_ID = '936619743392459';
@@ -603,6 +604,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           justLoggedInRef.current = true;
           setUserId(data.userId!);
           setIsLoggedIn(true);
+          analytics.track(Events.INSTAGRAM_CONNECTED);
 
           // Connect Instagram account
           if (account?.uuid && data.userId && data.username) {

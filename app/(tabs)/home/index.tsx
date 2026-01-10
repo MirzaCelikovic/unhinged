@@ -63,8 +63,9 @@ export default function Index() {
 
   // Track screen view
   useEffect(() => {
-    track(Events.HOME_SCREEN_VIEWED);
-  }, []);
+    if (isLoggedIn === null) return;
+    track(Events.HOME_SCREEN_VIEWED, { connected: isLoggedIn });
+  }, [isLoggedIn]);
 
   // Set initial home state when login status is determined
   useEffect(() => {

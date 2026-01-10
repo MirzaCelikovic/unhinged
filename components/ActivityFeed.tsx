@@ -263,7 +263,7 @@ export default function ActivityFeed({
 
   const handleEventPress = (username: string) => {
     if (!isSubscribed) {
-      presentPaywall('activity_feed');
+      presentPaywall('activity_feed_tracked');
       return;
     }
     openInstagramProfile(username);
