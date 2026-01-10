@@ -130,22 +130,6 @@ export default function Settings() {
             </View>
           </View>
 
-          {/* Debug Section */}
-          <View className="mt-4">
-            <Text className="mb-3 font-roboto-bold text-lg text-black">Debug</Text>
-            <View className="overflow-hidden rounded-2xl bg-white">
-              <Pressable
-                className="flex-row items-center justify-between p-4 active:opacity-80"
-                onPress={() => {
-                  resetOnboarding();
-                  router.replace('/start');
-                }}>
-                <Text className="font-roboto-medium text-base text-gray-900">Reset Onboarding</Text>
-                <CircleChevronRight size={24} color="#9ca3af" />
-              </Pressable>
-            </View>
-          </View>
-
           {/* Danger Zone Section */}
           <View className="mt-4">
             <Text className="mb-3 font-roboto-bold text-lg text-black">Danger Zone</Text>
@@ -168,6 +152,24 @@ export default function Settings() {
               </Pressable>
             </View>
           </View>
+
+          {/* Debug Section - only visible in development */}
+          {__DEV__ && (
+            <View className="mt-4">
+              <Text className="mb-3 font-roboto-bold text-lg text-black">Debug</Text>
+              <View className="overflow-hidden rounded-2xl bg-white">
+                <Pressable
+                  className="flex-row items-center justify-between p-4 active:opacity-80"
+                  onPress={() => {
+                    resetOnboarding();
+                    router.replace('/start');
+                  }}>
+                  <Text className="font-roboto-medium text-base text-gray-900">Reset Onboarding</Text>
+                  <CircleChevronRight size={24} color="#9ca3af" />
+                </Pressable>
+              </View>
+            </View>
+          )}
 
           {/* Version */}
           <Pressable
