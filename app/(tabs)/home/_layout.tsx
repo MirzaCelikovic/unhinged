@@ -25,11 +25,7 @@ export default function HomeLayout() {
       <Stack.Screen
         name="index"
         options={{
-          headerShown: true,
-          headerTitle: '',
-          headerTransparent: true,
-          headerShadowVisible: false,
-          header: () => <LogoHeader />,
+          headerShown: false,
         }}
       />
       <Stack.Screen

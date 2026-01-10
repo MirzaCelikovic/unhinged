@@ -1,4 +1,5 @@
-import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Linking, Modal } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Linking, Modal, SafeAreaView } from 'react-native';
+import Logo from '~/assets/logo_black.svg';
 import { useState, useEffect, memo } from 'react';
 import * as Application from 'expo-application';
 import * as Clipboard from 'expo-clipboard';
@@ -89,8 +90,15 @@ export default function Settings() {
         <Circles width={700} height={700} />
       </View>
 
-      <ScrollView className="flex-1 pt-24">
-        <View className="p-4">
+      {/* Header */}
+      <SafeAreaView>
+        <View className="items-center justify-center pb-2 pt-2">
+          <Logo width={160} height={30} />
+        </View>
+      </SafeAreaView>
+
+      <ScrollView className="flex-1">
+        <View className="px-4 pb-4 pt-2">
           {/* Settings Section */}
           <View className="mt-4">
             <Text className="mb-3 font-roboto-bold text-lg text-black">Settings</Text>
@@ -173,7 +181,7 @@ export default function Settings() {
 
           {/* Version */}
           <Pressable
-            className="mt-8 items-center pb-32"
+            className="mt-8 items-center pb-8"
             onLongPress={handleCopyUserId}
             delayLongPress={500}>
             <Text className="font-roboto-medium text-base text-gray-500">

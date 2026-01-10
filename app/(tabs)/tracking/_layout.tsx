@@ -17,17 +17,7 @@ export default function TrackingLayout() {
       <Stack.Screen
         name="index"
         options={{
-          headerShown: true,
-          headerTitle: '',
-          headerTransparent: true,
-          headerShadowVisible: false,
-          header: () => (
-            <SafeAreaView>
-              <View className="pb-3">
-                <LogoHeader />
-              </View>
-            </SafeAreaView>
-          ),
+          headerShown: false,
         }}
       />
       <Stack.Screen

@@ -9,7 +9,9 @@ import {
   Linking,
   Platform,
   ActivityIndicator,
+  SafeAreaView,
 } from 'react-native';
+import Logo from '~/assets/logo_black.svg';
 import { useCallback, useEffect, useRef } from 'react';
 import { router } from 'expo-router';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
@@ -207,7 +209,15 @@ export default function Tracking() {
       <View style={StyleSheet.absoluteFill} className="items-center justify-center">
         <Circles width={700} height={700} />
       </View>
-      <View className="flex-1 justify-between p-4 pt-32">
+
+      {/* Header */}
+      <SafeAreaView>
+        <View className="items-center justify-center pb-2 pt-2">
+          <Logo width={160} height={30} />
+        </View>
+      </SafeAreaView>
+
+      <View className="flex-1 justify-between px-4 pb-4 pt-2">
         {/* Tracked accounts list */}
         <View>
           <View className="gap-3">
@@ -224,7 +234,7 @@ export default function Tracking() {
         </View>
 
         {/* Add another account CTA - bottom aligned */}
-        <View className="background-red items-center pb-24">
+        <View className="background-red items-center pb-4">
           <Text className="px-2 text-center font-roboto-extrablack text-4xl tracking-tighter">
             Why stop now? The more, the messier!
           </Text>

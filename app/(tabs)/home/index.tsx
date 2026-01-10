@@ -6,7 +6,9 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
+  SafeAreaView,
 } from 'react-native';
+import Logo from '~/assets/logo_black.svg';
 import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext';
 import { useInstagram } from '~/lib/useInstagram';
 import { useEffect, useState } from 'react';
@@ -186,6 +188,13 @@ export default function Index() {
         <Circles width={700} height={700} />
       </View>
 
+      {/* Header */}
+      <SafeAreaView>
+        <View className="items-center justify-center pb-2 pt-2">
+          <Logo width={160} height={30} />
+        </View>
+      </SafeAreaView>
+
       {homeState === 'notConnected' && (
         <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
           <NotConnected onConnect={showLogin} />
@@ -201,7 +210,7 @@ export default function Index() {
       {homeState === 'connected' && (
         <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
           <ScrollView className="flex-1">
-            <View className="p-4 pt-32">
+            <View className="px-4 pb-4 pt-2">
               {/* Show sync progress or normal content */}
               {syncState.isActive && syncState.mainAccount && !(
                 syncState.mainAccount.metadata === 'complete' &&
