@@ -16,15 +16,17 @@ public class CioSdkAppDelegateHandler: NSObject {
   public func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) {
 
     
-    let center  = UNUserNotificationCenter.current()
-    center.requestAuthorization(options: [.sound, .alert, .badge]) { (granted, error) in
-      if error == nil{
-        DispatchQueue.main.async {
-          UIApplication.shared.registerForRemoteNotifications()
-        }
-      }
-    }
-    
+    // NOTE: Commented out automatic push notification permission request
+    // Permission will be requested manually from JavaScript when appropriate
+    // let center  = UNUserNotificationCenter.current()
+    // center.requestAuthorization(options: [.sound, .alert, .badge]) { (granted, error) in
+    //   if error == nil{
+    //     DispatchQueue.main.async {
+    //       UIApplication.shared.registerForRemoteNotifications()
+    //     }
+    //   }
+    // }
+
     // Code to make the CIO SDK compatible with expo-notifications package.
     //
     // The CIO SDK and expo-notifications both need to handle when a push gets clicked. However, iOS only allows one click handler to be set per app.
