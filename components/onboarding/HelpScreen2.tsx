@@ -1,4 +1,4 @@
-import { View, Text, Image, Dimensions } from 'react-native';
+import { View, Text, Image, Dimensions, ScrollView } from 'react-native';
 import Button from '~/components/Button';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
@@ -11,7 +11,7 @@ interface HelpScreen2Props {
 export default function HelpScreen2({ onNext }: HelpScreen2Props) {
   const { track } = useAnalytics();
   return (
-    <View className="flex-1">
+    <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }} bounces={false}>
       <Text className="mt-4 px-4 text-center font-roboto-extrablack text-4xl tracking-tighter">
         Here's how we'll help
       </Text>
@@ -36,8 +36,10 @@ export default function HelpScreen2({ onNext }: HelpScreen2Props) {
         </View>
       </View>
 
+      <View className="flex-1" />
+
       <View className="px-4 pb-8">
-        <Text className="mt-8 text-center font-roboto-extrablack text-4xl">
+        <Text className="text-center font-roboto-extrablack text-4xl">
           See who's not following you back
         </Text>
         <Text className="font-roboto mt-2 text-center text-base text-black">
@@ -50,6 +52,6 @@ export default function HelpScreen2({ onNext }: HelpScreen2Props) {
           }} />
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }

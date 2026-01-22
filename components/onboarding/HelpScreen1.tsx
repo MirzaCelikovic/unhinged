@@ -1,4 +1,4 @@
-import { View, Text, Image, Dimensions } from 'react-native';
+import { View, Text, Image, Dimensions, ScrollView } from 'react-native';
 import Button from '~/components/Button';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
@@ -11,7 +11,7 @@ interface HelpScreen1Props {
 export default function HelpScreen1({ onNext }: HelpScreen1Props) {
   const { track } = useAnalytics();
   return (
-    <View className="flex-1">
+    <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }} bounces={false}>
       <Text className="mt-4 px-4 text-center font-roboto-extrablack text-4xl tracking-tighter">
         Here's how we'll help
       </Text>
@@ -31,8 +31,10 @@ export default function HelpScreen1({ onNext }: HelpScreen1Props) {
         </View>
       </View>
 
+      <View className="flex-1" />
+
       <View className="px-4 pb-8">
-        <Text className="mt-8 text-center font-roboto-extrablack text-4xl">Track people privately</Text>
+        <Text className="text-center font-roboto-extrablack text-4xl">Track people privately</Text>
         <Text className="font-roboto mt-2 text-center text-base text-black">
           See who starts following them and who follows them back.
         </Text>
@@ -43,6 +45,6 @@ export default function HelpScreen1({ onNext }: HelpScreen1Props) {
           }} />
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }

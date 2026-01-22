@@ -1,4 +1,4 @@
-import { View, Text, Image } from 'react-native';
+import { View, Text, Image, ScrollView } from 'react-native';
 import Button from '~/components/Button';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
@@ -10,13 +10,15 @@ export default function ReviewScreen({ onNext }: ReviewScreenProps) {
   const { track } = useAnalytics();
 
   return (
-    <View className="flex-1 px-4">
-      <Text className="text-center font-roboto-extrablack text-4xl tracking-tighter">
-        Everyone loves being Unhinged
-      </Text>
-      <Text className="font-roboto mt-3 text-center text-base text-black">
-        See what our users have to say
-      </Text>
+    <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }} bounces={false}>
+      <View className="px-4">
+        <Text className="text-center font-roboto-extrablack text-4xl tracking-tighter">
+          Everyone loves being Unhinged
+        </Text>
+        <Text className="font-roboto mt-3 text-center text-base text-black">
+          See what our users have to say
+        </Text>
+      </View>
 
       <View className="flex-1 items-center justify-center">
         <Image
@@ -26,12 +28,12 @@ export default function ReviewScreen({ onNext }: ReviewScreenProps) {
         />
       </View>
 
-      <View className="pb-8">
+      <View className="px-4 pb-8">
         <Button label="Continue" onPress={() => {
           track(Events.REVIEW_COMPLETED);
           onNext();
         }} />
       </View>
-    </View>
+    </ScrollView>
   );
 }
