@@ -188,13 +188,6 @@ export default function Index() {
         <Circles width={700} height={700} />
       </View>
 
-      {/* Header */}
-      <SafeAreaView>
-        <View className="items-center justify-center pb-2 pt-2">
-          <Logo width={160} height={30} />
-        </View>
-      </SafeAreaView>
-
       {homeState === 'notConnected' && (
         <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
           <NotConnected onConnect={showLogin} />
@@ -209,6 +202,13 @@ export default function Index() {
 
       {homeState === 'connected' && (
         <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
+          {/* Header - only shown when connected */}
+          <SafeAreaView>
+            <View className="items-center justify-center pb-2 pt-2">
+              <Logo width={160} height={30} />
+            </View>
+          </SafeAreaView>
+
           <ScrollView className="flex-1">
             <View className="px-4 pb-4 pt-2">
               {/* Show sync progress or normal content */}
