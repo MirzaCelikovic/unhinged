@@ -69,7 +69,10 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
     const initAnalytics = async () => {
       // Request tracking transparency permission (iOS only, no-op on Android)
       try {
+        // Delay to ensure UI is ready before showing ATT prompt
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         const { status } = await requestTrackingPermissionsAsync();
+        console.log('ATT permission status:', status);
         if (status === 'granted') {
           Purchases.collectDeviceIdentifiers();
         }
