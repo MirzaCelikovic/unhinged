@@ -62,7 +62,7 @@
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "so.unhinged",
       "appleTeamId": "DUZR4LXSY7",
       "infoPlist": {
