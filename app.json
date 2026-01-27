@@ -45,7 +45,10 @@
           "appID": "2328179097653718",
           "clientToken": "1ffd4bc66b0bba220fc331166452af60",
           "displayName": "Unhinged",
-          "scheme": "fb2328179097653718"
+          "scheme": "fb2328179097653718",
+          "autoLogAppEventsEnabled": false,
+          "isAutoInitEnabled": false,
+          "advertiserIDCollectionEnabled": true
         }
       ]
     ],

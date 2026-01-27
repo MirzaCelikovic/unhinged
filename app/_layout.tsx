@@ -61,8 +61,8 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FFE51F' }}>
       <SQLiteProvider databaseName="unhinged.db" onInit={initializeDatabase}>
         <QueryClientProvider client={qc}>
-          <AnalyticsProvider>
-            <RevenueCatProvider>
+          <RevenueCatProvider>
+            <AnalyticsProvider>
               <AccountProvider>
                 <BottomSheetModalProvider>
                   <InstagramProvider>
@@ -74,8 +74,8 @@ export default function RootLayout() {
                   </InstagramProvider>
                 </BottomSheetModalProvider>
               </AccountProvider>
-            </RevenueCatProvider>
-          </AnalyticsProvider>
+            </AnalyticsProvider>
+          </RevenueCatProvider>
         </QueryClientProvider>
       </SQLiteProvider>
     </GestureHandlerRootView>

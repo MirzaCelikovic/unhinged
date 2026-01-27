@@ -67,39 +67,55 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
     if (isInitialized.current) return;
     isInitialized.current = true;
 
-    const initFacebookSDK = async () => {
+    const initMetaAndRevenueCatAttribution = async () => {
       try {
+        // 1) RevenueCat is already configured (RevenueCatProvider is parent)
+
+        // 2) Initialize Meta SDK
         Settings.initializeSDK();
+
+        // 3) Set FB anonymous ID ASAP (independent of ATT)
         const anonymousId = await AppEventsLogger.getAnonymousID();
         if (anonymousId) {
           Purchases.setFBAnonymousID(anonymousId);
         }
-        console.log('Facebook SDK initialized');
+
+        // 4) Collect identifiers right away (pre-ATT)
+        Purchases.collectDeviceIdentifiers();
+        Purchases.enableAdServicesAttributionTokenCollection();
+
+        // 5) Track app activation
+        AppEventsLogger.activateApp();
+
+        console.log('Meta + RevenueCat attribution initialized');
       } catch (e) {
-        console.log('Facebook SDK initialization failed:', e);
+        console.log('Meta/RevenueCat attribution init failed:', e);
       }
     };
 
-    const initAppTrackingTransparency = async () => {
+    const requestATTAndRefreshIdentifiers = async () => {
       try {
         // Delay to ensure UI is ready before showing ATT prompt
         await new Promise((resolve) => setTimeout(resolve, 1000));
         const { status } = await requestTrackingPermissionsAsync();
         console.log('ATT permission status:', status);
 
-        Settings.setAdvertiserTrackingEnabled(status === 'granted');
-        Settings.setAdvertiserIDCollectionEnabled(status === 'granted');
+        const granted = status === 'granted';
 
+        // Gate Meta advertiser tracking based on ATT
+        Settings.setAdvertiserTrackingEnabled(granted);
+        Settings.setAdvertiserIDCollectionEnabled(granted);
+
+        // Re-collect after ATT so $idfa can update if granted
         Purchases.collectDeviceIdentifiers();
-        Purchases.enableAdServicesAttributionTokenCollection();
       } catch (e) {
-        console.log('Tracking transparency request failed:', e);
+        console.log('ATT request failed:', e);
       }
     };
 
     const initAnalytics = async () => {
-      await initFacebookSDK();
-      await initAppTrackingTransparency();
+      await initMetaAndRevenueCatAttribution();
+      await requestATTAndRefreshIdentifiers();
 
       // Initialize Amplitude
       const amplitudeApiKey = process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY!;
