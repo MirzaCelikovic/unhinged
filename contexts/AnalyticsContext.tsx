@@ -3,6 +3,7 @@ import * as amplitude from '@amplitude/analytics-react-native';
 import { SessionReplayPlugin } from '@amplitude/plugin-session-replay-react-native';
 import { CustomerIO } from 'customerio-reactnative';
 import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
+import { AppEventsLogger, Settings } from 'react-native-fbsdk-next';
 import Purchases from 'react-native-purchases';
 
 export const Events = {
@@ -66,19 +67,39 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
     if (isInitialized.current) return;
     isInitialized.current = true;
 
-    const initAnalytics = async () => {
-      // Request tracking transparency permission (iOS only, no-op on Android)
+    const initFacebookSDK = async () => {
+      try {
+        Settings.initializeSDK();
+        const anonymousId = await AppEventsLogger.getAnonymousID();
+        if (anonymousId) {
+          Purchases.setFBAnonymousID(anonymousId);
+        }
+        console.log('Facebook SDK initialized');
+      } catch (e) {
+        console.log('Facebook SDK initialization failed:', e);
+      }
+    };
+
+    const initAppTrackingTransparency = async () => {
       try {
         // Delay to ensure UI is ready before showing ATT prompt
         await new Promise((resolve) => setTimeout(resolve, 1000));
         const { status } = await requestTrackingPermissionsAsync();
         console.log('ATT permission status:', status);
-        if (status === 'granted') {
-          Purchases.collectDeviceIdentifiers();
-        }
+
+        Settings.setAdvertiserTrackingEnabled(status === 'granted');
+        Settings.setAdvertiserIDCollectionEnabled(status === 'granted');
+
+        Purchases.collectDeviceIdentifiers();
+        Purchases.enableAdServicesAttributionTokenCollection();
       } catch (e) {
         console.log('Tracking transparency request failed:', e);
       }
+    };
+
+    const initAnalytics = async () => {
+      await initFacebookSDK();
+      await initAppTrackingTransparency();
 
       // Initialize Amplitude
       const amplitudeApiKey = process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY!;
