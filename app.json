@@ -3,7 +3,7 @@
     "name": "Unhinged",
     "slug": "unhinged-app",
     "scheme": "unhinged",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "web": {
       "favicon": "./assets/favicon.png"
     },
@@ -24,6 +24,7 @@
           "ios": {
             "pushNotification": {
               "useRichPush": true,
+              "disableNotificationRegistration": true,
               "env": {
                 "cdpApiKey": "2d855adb91d014d623db",
                 "region": "eu"
