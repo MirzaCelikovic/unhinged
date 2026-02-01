@@ -19,6 +19,7 @@ import Circles from '~/assets/circles.svg';
 import Spinner from '~/components/Spinner';
 import InstagramCard from '~/components/InstagramCard';
 import ActivityList from '~/components/ActivityList';
+import NewActivityBanner from '~/components/NewActivityBanner';
 import NotConnected from '~/components/NotConnected';
 import InitialSync from '~/components/InitialSync';
 import { useAccountContext } from '~/contexts/AccountContext';
@@ -26,8 +27,6 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-  withRepeat,
-  withSequence,
   runOnJS,
 } from 'react-native-reanimated';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
@@ -45,23 +44,6 @@ export default function Index() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [homeState, setHomeState] = useState<HomeState | null>(null);
   const contentOpacity = useSharedValue(1);
-  const refreshPulse = useSharedValue(0);
-
-  // Pulse animation for refresh button
-  useEffect(() => {
-    refreshPulse.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 800 }),
-        withTiming(0, { duration: 800 })
-      ),
-      -1,
-      false
-    );
-  }, []);
-
-  const refreshTextStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 + refreshPulse.value * 0.12 }],
-  }));
 
   // Track screen view
   useEffect(() => {
@@ -221,24 +203,8 @@ export default function Index() {
               ) : (
                 <>
                   {/* Sync status banner */}
-                  {hasNewActivity ? (
-                    <View className="mb-3 flex-row items-center justify-between rounded-2xl bg-white px-4 py-3">
-                      <View className="flex-row items-center gap-3">
-                        <View className="h-3 w-3 rounded-full bg-error" />
-                        <Text className="font-roboto-medium text-base text-black">
-                          New Instagram activity found
-                        </Text>
-                      </View>
-                      {syncState.isActive ? (
-                        <Spinner size={20} color="#000000" />
-                      ) : (
-                        <Pressable className="active:opacity-70" onPress={handleRefresh}>
-                          <Animated.Text style={refreshTextStyle} className="font-roboto-bold text-base text-black">
-                            Refresh
-                          </Animated.Text>
-                        </Pressable>
-                      )}
-                    </View>
+                  {hasNewActivity || true ? (
+                    <NewActivityBanner isSyncing={syncState.isActive} onRefresh={handleRefresh} />
                   ) : (
                     <View className="mb-3 flex-row items-center justify-between rounded-2xl bg-white px-4 py-3">
                       <Text className="font-roboto-medium text-base text-black">

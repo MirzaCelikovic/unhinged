@@ -32,8 +32,10 @@ import Button from '~/components/Button';
 import Spinner from '~/components/Spinner';
 import { Instagram } from '~/lib/types';
 import { useInstagramActivity } from '~/lib/useInstagramActivity';
+import { useFollowerStats } from '~/lib/useFollowerStats';
 import { useRevenueCat } from '~/contexts/RevenueCatContext';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
+import NewActivityBanner from '~/components/NewActivityBanner';
 
 const NOTIFICATIONS_LATER_KEY = 'notifications_sheet_dismissed_at';
 const NOTIFICATIONS_LATER_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -98,8 +100,9 @@ function TrackedAccountItem({ account, syncStatus }: TrackedAccountItemProps) {
 }
 
 export default function Tracking() {
-  const { trackedInstagrams, isLoading } = useAccountContext();
-  const { isLoggedIn, showLogin, syncState } = useInstagramContext();
+  const { trackedInstagrams, isLoading, account } = useAccountContext();
+  const { isLoggedIn, showLogin, syncState, userId, sync } = useInstagramContext();
+  const { data: stats, hasNewActivity } = useFollowerStats(userId, account?.latest_activity_date);
   const { track } = useAnalytics();
   const notificationsSheetRef = useRef<BottomSheetModal>(null);
   const hasShownNotificationsSheet = useRef(false);
@@ -220,6 +223,10 @@ export default function Tracking() {
       <View className="flex-1 justify-between px-4 pb-4 pt-2">
         {/* Tracked accounts list */}
         <View>
+          {/* New activity banner */}
+          {hasNewActivity || true ? (
+            <NewActivityBanner isSyncing={syncState.isActive} onRefresh={sync} />
+          ) : null}
           <View className="gap-3">
             {trackedInstagrams.map((instagram) => (
               <TrackedAccountItem
