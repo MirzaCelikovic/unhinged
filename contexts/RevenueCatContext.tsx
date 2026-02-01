@@ -150,10 +150,14 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
           const info = await Purchases.getCustomerInfo();
           setCustomerInfo(info);
           const entitlement = info.entitlements.active[ENTITLEMENT_ID];
-          analytics.track(Events.PURCHASE, {
-            source,
-            product: entitlement?.productIdentifier,
-          });
+          // Only track if there's actually an active entitlement
+          if (entitlement) {
+            analytics.track(Events.PURCHASE, {
+              source,
+              product: entitlement.productIdentifier,
+              restored: result === PAYWALL_RESULT.RESTORED,
+            });
+          }
           return true;
         case PAYWALL_RESULT.NOT_PRESENTED:
         case PAYWALL_RESULT.ERROR:
@@ -182,10 +186,14 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
           const info = await Purchases.getCustomerInfo();
           setCustomerInfo(info);
           const entitlement = info.entitlements.active[ENTITLEMENT_ID];
-          analytics.track(Events.PURCHASE, {
-            source,
-            product: entitlement?.productIdentifier,
-          });
+          // Only track if there's actually an active entitlement
+          if (entitlement) {
+            analytics.track(Events.PURCHASE, {
+              source,
+              product: entitlement.productIdentifier,
+              restored: result === PAYWALL_RESULT.RESTORED,
+            });
+          }
           return true;
         case PAYWALL_RESULT.NOT_PRESENTED:
           // User already has entitlement
