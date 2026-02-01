@@ -224,7 +224,7 @@ export default function Tracking() {
         {/* Tracked accounts list */}
         <View>
           {/* New activity banner */}
-          {hasNewActivity || true ? (
+          {hasNewActivity ? (
             <NewActivityBanner isSyncing={syncState.isActive} onRefresh={sync} />
           ) : null}
           <View className="gap-3">

@@ -203,7 +203,7 @@ export default function Index() {
               ) : (
                 <>
                   {/* Sync status banner */}
-                  {hasNewActivity || true ? (
+                  {hasNewActivity ? (
                     <NewActivityBanner isSyncing={syncState.isActive} onRefresh={handleRefresh} />
                   ) : (
                     <View className="mb-3 flex-row items-center justify-between rounded-2xl bg-white px-4 py-3">
