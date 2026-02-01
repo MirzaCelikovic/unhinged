@@ -67,8 +67,8 @@ export default function TrackModal() {
       }
 
       // Check if account has too many followers or following
-      const MAX_FOLLOWERS = 3000;
-      const MAX_FOLLOWING = 1000;
+      const MAX_FOLLOWERS = 5000;
+      const MAX_FOLLOWING = 2500;
       if (result.followersCount > MAX_FOLLOWERS) {
         console.log('❌ Account has too many followers:', result.followersCount);
         setError('This account has too many followers. To avoid overwhelming Instagram with automated requests (which could make your account look like a bot), tracking is limited to personal accounts.');
