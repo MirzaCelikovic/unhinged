@@ -59,10 +59,12 @@ interface FollowUserParams {
 
 interface InstagramContextType {
   isLoggedIn: boolean | null;
+  sessionExpired: boolean;
   userId: string | null;
   isLoadingUserId: boolean;
   syncState: SyncState;
   showLogin: () => void;
+  reconnect: () => void;
   disconnect: () => void;
   fetchUserId: (username: string) => Promise<UserIdResult>;
   sync: () => void;
@@ -138,6 +140,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [[isLoadingUserId, userId], setUserId] = useStorage('instagram_user_id');
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [syncState, setSyncState] = useState<SyncState>({
     isActive: false,
     mainAccount: null,
@@ -602,29 +605,52 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         case 'LOGIN_SUCCESS':
           closeLoginModal();
           justLoggedInRef.current = true;
-          setUserId(data.userId!);
-          setIsLoggedIn(true);
-          analytics.track(Events.INSTAGRAM_CONNECTED);
 
-          // Connect Instagram account
-          if (account?.uuid && data.userId && data.username) {
-            connectInstagram.mutate({
-              uuid: account.uuid,
-              userId: data.userId,
-              username: data.username,
-            });
+          // Check if this is a different account than before
+          const previousUserId = account?.instagram_user_id;
+          const newUserId = data.userId!;
+          const isDifferentAccount = previousUserId && previousUserId !== newUserId;
+
+          if (isDifferentAccount) {
+            console.log('🔄 Different account detected, clearing all data');
+            // Clear all local data for the old account
+            const clearAndSetup = async () => {
+              await clearAllData(db);
+              // Disconnect old account from backend
+              if (account?.uuid) {
+                disconnectInstagram.mutate({ uuid: account.uuid });
+              }
+              // Now set up the new account
+              setUserId(newUserId);
+              setIsLoggedIn(true);
+              setSessionExpired(false);
+              analytics.track(Events.INSTAGRAM_CONNECTED);
+              // Connect new Instagram account
+              if (account?.uuid && data.username) {
+                connectInstagram.mutate({
+                  uuid: account.uuid,
+                  userId: newUserId,
+                  username: data.username,
+                });
+              }
+            };
+            clearAndSetup();
+          } else {
+            // Same account or first login
+            setUserId(newUserId);
+            setIsLoggedIn(true);
+            setSessionExpired(false);
+            analytics.track(Events.INSTAGRAM_CONNECTED);
+
+            // Connect Instagram account
+            if (account?.uuid && data.userId && data.username) {
+              connectInstagram.mutate({
+                uuid: account.uuid,
+                userId: data.userId,
+                username: data.username,
+              });
+            }
           }
-
-          // Show notification sheet if permission is undetermined
-          // const checkAndShowNotificationSheet = async () => {
-          //   const { status } = await Notifications.getPermissionsAsync();
-          //   console.log('🔔 Notification permission status after login:', status);
-          //   if (status === 'undetermined') {
-          //     console.log('🔔 Showing notifications sheet');
-          //     showNotificationsSheet();
-          //   }
-          // };
-          // checkAndShowNotificationSheet();
           break;
 
         case 'LOGOUT_SUCCESS':
@@ -661,9 +687,11 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         case 'LOGIN_STATUS_CHECK':
           if (data.success) {
             setIsLoggedIn(true);
+            setSessionExpired(false);
           } else {
+            // Session was valid before (we had userId) but is now invalid
+            setSessionExpired(true);
             setIsLoggedIn(false);
-            setUserId(null);
           }
           break;
 
@@ -876,13 +904,21 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Show login modal
   const showLogin = () => setShowLoginModal(true);
 
+  // Reconnect - used when session has expired
+  const reconnect = () => {
+    setSessionExpired(false);
+    setShowLoginModal(true);
+  };
+
   // Context value
   const value: InstagramContextType = {
     isLoggedIn,
+    sessionExpired,
     userId,
     isLoadingUserId,
     syncState,
     showLogin,
+    reconnect,
     disconnect: handleDisconnect,
     fetchUserId,
     sync,

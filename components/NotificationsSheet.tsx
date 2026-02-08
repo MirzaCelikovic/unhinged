@@ -8,6 +8,7 @@ import {
 } from '@gorhom/bottom-sheet';
 import { CircleCheck } from 'lucide-react-native';
 import Circles from '~/assets/circles.svg';
+import Button from '~/components/Button';
 
 interface NotificationsSheetProps {
   onEnableNotifications: () => void;
@@ -72,13 +73,7 @@ const NotificationsSheetComponent = forwardRef<BottomSheetModal, NotificationsSh
               </View>
             </View>
 
-            <Pressable
-              className="mb-3 rounded-3xl bg-black py-4 active:opacity-80"
-              onPress={onEnableNotifications}>
-              <Text className="text-center font-roboto-medium text-base text-white">
-                Enable notifications
-              </Text>
-            </Pressable>
+            <Button label="Enable notifications" onPress={onEnableNotifications} />
 
             <Pressable className="py-3 active:opacity-70" onPress={onMaybeLater}>
               <Text className="text-center font-roboto-medium text-base text-gray-500">
