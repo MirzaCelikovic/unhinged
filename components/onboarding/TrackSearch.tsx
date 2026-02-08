@@ -170,6 +170,9 @@ export default function TrackSearch({ onNext, savedResult, onResultFetched }: Tr
             error={error}
           />
         </View>
+        <Text className="mt-4 px-2 text-center font-roboto-regular text-sm text-gray-600">
+          This action is completely private and they will never know or be notified.
+        </Text>
         <View className="mt-6 w-full">
           <Button
             label="Continue"
