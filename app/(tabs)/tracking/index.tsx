@@ -103,6 +103,7 @@ export default function Tracking() {
   const { trackedInstagrams, isLoading, account } = useAccountContext();
   const { isLoggedIn, showLogin, syncState, userId, sync } = useInstagramContext();
   const { data: stats, hasNewActivity } = useFollowerStats(userId, account?.latest_activity_date);
+  const { isSubscribed, presentPaywall } = useRevenueCat();
   const { track } = useAnalytics();
   const notificationsSheetRef = useRef<BottomSheetModal>(null);
   const hasShownNotificationsSheet = useRef(false);
@@ -249,6 +250,11 @@ export default function Tracking() {
             <Button
               label="Track account"
               onPress={() => {
+                // Non-paying users can only track 1 account
+                if (!isSubscribed && trackedInstagrams.length >= 1) {
+                  presentPaywall('tracking_add_account');
+                  return;
+                }
                 if (trackedInstagrams.length >= MAX_TRACKED_ACCOUNTS) {
                   Alert.alert(
                     'Limit Reached',
