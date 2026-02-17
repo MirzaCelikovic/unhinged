@@ -5,7 +5,6 @@ import Animated, {
   useSharedValue,
   withTiming,
   withRepeat,
-  withSequence,
 } from 'react-native-reanimated';
 import Spinner from '~/components/Spinner';
 
@@ -15,27 +14,31 @@ interface NewActivityBannerProps {
 }
 
 export default function NewActivityBanner({ isSyncing, onRefresh }: NewActivityBannerProps) {
-  const pulse = useSharedValue(0);
+  const sonar = useSharedValue(0);
 
   useEffect(() => {
-    pulse.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 800 }),
-        withTiming(0, { duration: 800 })
-      ),
+    sonar.value = withRepeat(
+      withTiming(1, { duration: 1500 }),
       -1,
       false
     );
   }, []);
 
-  const dotPulseStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 + pulse.value * 0.3 }],
+  const sonarRingStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + sonar.value * 2 }],
+    opacity: 1 - sonar.value,
   }));
 
   return (
     <View className="mb-3 flex-row items-center justify-between rounded-2xl bg-white px-4 py-3">
       <View className="flex-row items-center gap-3">
-        <Animated.View style={dotPulseStyle} className="h-3 w-3 rounded-full bg-error" />
+        <View className="h-5 w-5 items-center justify-center">
+          <Animated.View
+            style={sonarRingStyle}
+            className="absolute h-3 w-3 rounded-full bg-error"
+          />
+          <View className="h-3 w-3 rounded-full bg-error" />
+        </View>
         <Text className="font-roboto-medium text-base text-black">
           New Instagram activity found
         </Text>
