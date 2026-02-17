@@ -50,6 +50,14 @@
           "isAutoInitEnabled": false,
           "advertiserIDCollectionEnabled": true
         }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "unhinged-app",
+          "organization": "unhinged"
+        }
       ]
     ],
     "orientation": "portrait",
@@ -60,7 +68,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#FFE51F"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "so.unhinged",

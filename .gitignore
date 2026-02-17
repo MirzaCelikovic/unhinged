@@ -24,3 +24,5 @@ web-build/
 
 # Build artifacts
 build-*.ipa
+
+.env.local

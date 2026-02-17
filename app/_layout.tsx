@@ -14,6 +14,15 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Notifications from 'expo-notifications';
 import '../global.css';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  sendDefaultPii: true,
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration()],
+});
 
 
 // Disable console.log in production for performance
@@ -34,7 +43,7 @@ SplashScreen.preventAutoHideAsync();
 
 const qc = new QueryClient();
 
-export default function RootLayout() {
+export default Sentry.wrap(function RootLayout() {
   const [fontsLoaded] = useFonts({
     RobotoFlex: require('../assets/fonts/RobotoFlex-Regular.ttf'),
     'RobotoFlex-Medium': require('../assets/fonts/RobotoFlex-Medium.ttf'),
@@ -80,4 +89,4 @@ export default function RootLayout() {
       </SQLiteProvider>
     </GestureHandlerRootView>
   );
-}
+});

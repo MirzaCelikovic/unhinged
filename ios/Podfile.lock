@@ -2146,6 +2146,30 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - RNSentry (8.0.0):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Sentry (= 9.4.1)
+    - Yoga
   - RNSVG (15.15.0):
     - hermes-engine
     - RCTRequired
@@ -2262,6 +2286,9 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - Sentry (9.4.1):
+    - Sentry/Core (= 9.4.1)
+  - Sentry/Core (9.4.1)
   - Sovran (1.1.2)
   - Yoga (0.0.0)
 
@@ -2366,6 +2393,7 @@ DEPENDENCIES:
   - RNPurchases (from `../node_modules/react-native-purchases`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNScreens (from `../node_modules/react-native-screens`)
+  - "RNSentry (from `../node_modules/@sentry/react-native`)"
   - RNSVG (from `../node_modules/react-native-svg`)
   - RNWorklets (from `../node_modules/react-native-worklets`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
@@ -2393,6 +2421,7 @@ SPEC REPOS:
     - PurchasesHybridCommonUI
     - RevenueCat
     - RevenueCatUI
+    - Sentry
     - Sovran
 
 EXTERNAL SOURCES:
@@ -2593,6 +2622,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-reanimated"
   RNScreens:
     :path: "../node_modules/react-native-screens"
+  RNSentry:
+    :path: "../node_modules/@sentry/react-native"
   RNSVG:
     :path: "../node_modules/react-native-svg"
   RNWorklets:
@@ -2720,8 +2751,10 @@ SPEC CHECKSUMS:
   RNPurchases: c98ca8ab78ce1574b387be23b0d6b6b39814c3b8
   RNReanimated: 00771d2ba7c810124852092eb29c0d1edf50cc58
   RNScreens: dd61bc3a3e6f6901ad833efa411917d44827cf51
+  RNSentry: 0792f6cd9127491ef892d3a74953e273a36b86ad
   RNSVG: a97976dfa46d3edffa2c6ef5837b16fe8e031375
   RNWorklets: 28ee7370ca8da356fcc914e3e68b97e9752196d2
+  Sentry: 990a381d8592207a52e7be654b31a27738c3a6a8
   Sovran: 117d186f9e9cd47a231ee48dace5cd064a4b8ec8
   Yoga: 5934998fbeaef7845dbf698f698518695ab4cd1a
 
