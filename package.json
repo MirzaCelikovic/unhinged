@@ -8,7 +8,7 @@
     "lint": "eslint \"**/*.{js,jsx,ts,tsx}\" && prettier -c \"**/*.{js,jsx,ts,tsx,json}\"",
     "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier \"**/*.{js,jsx,ts,tsx,json}\" --write",
     "prebuild:ios": "expo prebuild --platform ios",
-    "build:ios": "eas build --platform ios --local",
+    "build:ios": "./scripts/build-ios.sh",
     "submit:ios": "eas submit --platform ios --path"
   },
   "dependencies": {
