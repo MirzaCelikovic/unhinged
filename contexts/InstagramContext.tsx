@@ -433,12 +433,17 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     fetchFollowing(userId);
     fetchFollowers(userId);
 
-    // Start all fetches in parallel for tracked accounts
-    trackedInstagrams.forEach((tracked) => {
+    // Start fetches for tracked accounts with staggered delays
+    for (let i = 0; i < trackedInstagrams.length; i++) {
+      // Add random delay between accounts to avoid burst requests
+      if (i > 0 || true) { // Always delay tracked accounts (main account already started)
+        await new Promise((resolve) => setTimeout(resolve, 300 + Math.random() * 400));
+      }
+      const tracked = trackedInstagrams[i];
       fetchMetadata(tracked.username);
       fetchFollowing(tracked.user_id);
       fetchFollowers(tracked.user_id);
-    });
+    }
   };
 
   // Sync a single tracked account (used when adding a new tracked account)
@@ -1143,6 +1148,13 @@ const instagramAPI = `
 
           hasMore = data.has_more || false;
           maxId = data.next_max_id || null;
+
+          // Rate limiting - randomized delay between requests
+          if (hasMore) {
+            await new Promise(function(resolve) {
+              setTimeout(resolve, 500 + Math.random() * 500);
+            });
+          }
         }
 
         sendMessage('FOLLOWING_COMPLETE', {
@@ -1242,9 +1254,11 @@ const instagramAPI = `
             debugLog('📥 [Following-GraphQL] No more pages. Final count:', allUsers.length, '| Expected:', totalCount);
           }
 
-          // Rate limiting - wait 1 second between requests
+          // Rate limiting - randomized delay between requests
           if (hasNextPage) {
-            await new Promise(function(resolve) { setTimeout(resolve, 1000); });
+            await new Promise(function(resolve) {
+              setTimeout(resolve, 500 + Math.random() * 500);
+            });
           }
         }
 
@@ -1323,6 +1337,13 @@ const instagramAPI = `
 
           if (!hasMore) {
             debugLog('📥 [Followers] No more pages. Final count:', allUsers.length);
+          }
+
+          // Rate limiting - randomized delay between requests
+          if (hasMore) {
+            await new Promise(function(resolve) {
+              setTimeout(resolve, 500 + Math.random() * 500);
+            });
           }
         }
 
@@ -1426,9 +1447,11 @@ const instagramAPI = `
             debugLog('📥 [Followers-GraphQL] No more pages. Final count:', allUsers.length, '| Expected:', totalCount);
           }
 
-          // Rate limiting - wait 1 second between requests
+          // Rate limiting - randomized delay between requests
           if (hasNextPage) {
-            await new Promise(function(resolve) { setTimeout(resolve, 1000); });
+            await new Promise(function(resolve) {
+              setTimeout(resolve, 500 + Math.random() * 500);
+            });
           }
         }
 
