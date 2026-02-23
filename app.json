@@ -3,7 +3,7 @@
     "name": "Unhinged",
     "slug": "unhinged-app",
     "scheme": "unhinged",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "web": {
       "favicon": "./assets/favicon.png"
     },
@@ -68,9 +68,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#FFE51F"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "so.unhinged",
