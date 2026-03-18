@@ -39,7 +39,7 @@ import NewActivityBanner from '~/components/NewActivityBanner';
 
 const NOTIFICATIONS_LATER_KEY = 'notifications_sheet_dismissed_at';
 const NOTIFICATIONS_LATER_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
-const MAX_TRACKED_ACCOUNTS = 5;
+import { MAX_TRACKED_ACCOUNTS_FREE, MAX_TRACKED_ACCOUNTS_PAID } from '~/lib/constants';
 
 interface TrackedAccountItemProps {
   account: Instagram;
@@ -251,14 +251,15 @@ export default function Tracking() {
               label="Track account"
               onPress={() => {
                 // Non-paying users can only track 1 account
-                if (!isSubscribed && trackedInstagrams.length >= 1) {
-                  presentPaywall('tracking_add_account');
-                  return;
-                }
-                if (trackedInstagrams.length >= MAX_TRACKED_ACCOUNTS) {
+                const maxAccounts = isSubscribed ? MAX_TRACKED_ACCOUNTS_PAID : MAX_TRACKED_ACCOUNTS_FREE;
+                if (trackedInstagrams.length >= maxAccounts) {
+                  if (!isSubscribed) {
+                    presentPaywall('tracking_add_account');
+                    return;
+                  }
                   Alert.alert(
                     'Limit Reached',
-                    `You can track up to ${MAX_TRACKED_ACCOUNTS} accounts. Tracking more could trigger Instagram's automated activity detection, which may flag your account as a bot.`,
+                    `You can track up to ${maxAccounts} accounts. Tracking more could trigger Instagram's automated activity detection, which may flag your account as a bot.`,
                     [{ text: 'OK' }]
                   );
                   return;

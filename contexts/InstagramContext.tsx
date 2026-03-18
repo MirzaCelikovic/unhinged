@@ -35,6 +35,13 @@ export interface AccountSyncStatus {
   metadata: SyncStepStatus;
   following: SyncStepStatus;
   followers: SyncStepStatus;
+  followingDisabled?: boolean;
+  followersDisabled?: boolean;
+}
+
+export interface SyncOptions {
+  skipFollowing?: boolean;
+  skipFollowers?: boolean;
 }
 
 export interface SyncState {
@@ -68,7 +75,7 @@ interface InstagramContextType {
   disconnect: () => void;
   fetchUserId: (username: string) => Promise<UserIdResult>;
   sync: () => void;
-  syncTrackedAccount: (userId: string, username: string) => void;
+  syncTrackedAccount: (userId: string, username: string, options?: SyncOptions) => void;
   followUser: (params: FollowUserParams) => Promise<FollowResult>;
   unfollowUser: (targetUserId: string) => Promise<FollowResult>;
 }
@@ -400,22 +407,56 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       trackedInstagrams.length
     );
 
+    // Read sync preferences for main account
+    const mainSyncPrefs = await db.getFirstAsync<{
+      followers_sync_disabled: number;
+      following_sync_disabled: number;
+    }>(
+      'SELECT followers_sync_disabled, following_sync_disabled FROM sync_state WHERE instagram_user_id = ?',
+      [userId]
+    );
+    const mainSkipFollowing = mainSyncPrefs?.following_sync_disabled === 1;
+    const mainSkipFollowers = mainSyncPrefs?.followers_sync_disabled === 1;
+
+    // Read sync preferences for all tracked accounts
+    const trackedPrefs = new Map<string, { skipFollowing: boolean; skipFollowers: boolean }>();
+    for (const tracked of trackedInstagrams) {
+      const prefs = await db.getFirstAsync<{
+        followers_sync_disabled: number;
+        following_sync_disabled: number;
+      }>(
+        'SELECT followers_sync_disabled, following_sync_disabled FROM sync_state WHERE instagram_user_id = ?',
+        [tracked.user_id]
+      );
+      trackedPrefs.set(tracked.user_id, {
+        skipFollowing: prefs?.following_sync_disabled === 1,
+        skipFollowers: prefs?.followers_sync_disabled === 1,
+      });
+    }
+
     // Initialize sync state with all accounts
     const mainAccountStatus: AccountSyncStatus = {
       userId,
       username: account.instagram_username,
       metadata: 'syncing',
-      following: 'syncing',
-      followers: 'syncing',
+      following: mainSkipFollowing ? 'complete' : 'syncing',
+      followers: mainSkipFollowers ? 'complete' : 'syncing',
+      followingDisabled: mainSkipFollowing,
+      followersDisabled: mainSkipFollowers,
     };
 
-    const trackedAccountStatuses: AccountSyncStatus[] = trackedInstagrams.map((tracked) => ({
-      userId: tracked.user_id,
-      username: tracked.username,
-      metadata: 'syncing',
-      following: 'syncing',
-      followers: 'syncing',
-    }));
+    const trackedAccountStatuses: AccountSyncStatus[] = trackedInstagrams.map((tracked) => {
+      const prefs = trackedPrefs.get(tracked.user_id);
+      return {
+        userId: tracked.user_id,
+        username: tracked.username,
+        metadata: 'syncing',
+        following: prefs?.skipFollowing ? 'complete' : 'syncing',
+        followers: prefs?.skipFollowers ? 'complete' : 'syncing',
+        followingDisabled: prefs?.skipFollowing,
+        followersDisabled: prefs?.skipFollowers,
+      };
+    });
 
     setSyncState({
       isActive: true,
@@ -430,8 +471,8 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     // Start all fetches in parallel for main account
     fetchMetadata(account.instagram_username);
-    fetchFollowing(userId);
-    fetchFollowers(userId);
+    if (!mainSkipFollowing) fetchFollowing(userId);
+    if (!mainSkipFollowers) fetchFollowers(userId);
 
     // Start fetches for tracked accounts with staggered delays
     for (let i = 0; i < trackedInstagrams.length; i++) {
@@ -440,28 +481,33 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         await new Promise((resolve) => setTimeout(resolve, 300 + Math.random() * 400));
       }
       const tracked = trackedInstagrams[i];
+      const prefs = trackedPrefs.get(tracked.user_id);
       fetchMetadata(tracked.username);
-      fetchFollowing(tracked.user_id);
-      fetchFollowers(tracked.user_id);
+      if (!prefs?.skipFollowing) fetchFollowing(tracked.user_id);
+      if (!prefs?.skipFollowers) fetchFollowers(tracked.user_id);
     }
   };
 
   // Sync a single tracked account (used when adding a new tracked account)
-  const syncTrackedAccount = (trackedUserId: string, trackedUsername: string) => {
+  const syncTrackedAccount = (trackedUserId: string, trackedUsername: string, options?: SyncOptions) => {
     if (!isLoggedIn || !userId) {
       console.warn('⚠️ Cannot sync tracked account: not logged in');
       return;
     }
 
-    console.log('🔄 Starting sync for tracked account:', trackedUsername);
+    const { skipFollowing = false, skipFollowers = false } = options || {};
+
+    console.log('🔄 Starting sync for tracked account:', trackedUsername, { skipFollowing, skipFollowers });
 
     // Create sync status for the new tracked account
     const newTrackedStatus: AccountSyncStatus = {
       userId: trackedUserId,
       username: trackedUsername,
       metadata: 'syncing',
-      following: 'syncing',
-      followers: 'syncing',
+      following: skipFollowing ? 'complete' : 'syncing',
+      followers: skipFollowers ? 'complete' : 'syncing',
+      followingDisabled: skipFollowing,
+      followersDisabled: skipFollowers,
     };
 
     // Add to sync state (or update if already exists)
@@ -479,10 +525,10 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       };
     });
 
-    // Start fetches for this tracked account
+    // Start fetches for this tracked account (skip disabled ones)
     fetchMetadata(trackedUsername);
-    fetchFollowing(trackedUserId);
-    fetchFollowers(trackedUserId);
+    if (!skipFollowing) fetchFollowing(trackedUserId);
+    if (!skipFollowers) fetchFollowers(trackedUserId);
   };
 
   // Disconnect (logout)

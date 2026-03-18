@@ -125,13 +125,18 @@ export default function TrackedAccountSync({ userId, username }: TrackedAccountS
   const trackedAccount = syncState.trackedAccounts.find((acc) => acc.userId === userId);
 
   // Derive step states from tracked account status
+  const followingDisabled = trackedAccount?.followingDisabled;
+  const followersDisabled = trackedAccount?.followersDisabled;
+
   // Step 1: Metadata fetching
   const step1State = trackedAccount ? toStepState(trackedAccount.metadata) : 'waiting';
 
-  // Step 2: Following + Followers syncing (combined)
-  const step2State = trackedAccount
-    ? getCombinedState([trackedAccount.following, trackedAccount.followers])
-    : 'waiting';
+  // Step 2: Following + Followers syncing (only include active syncs)
+  const activeSyncSteps = [
+    ...(!followingDisabled && trackedAccount ? [trackedAccount.following] : []),
+    ...(!followersDisabled && trackedAccount ? [trackedAccount.followers] : []),
+  ] as SyncStepStatus[];
+  const step2State = activeSyncSteps.length > 0 ? getCombinedState(activeSyncSteps) : 'completed' as SyncStepState;
 
   // Step 3: Analyzing (complete when everything is done)
   const step3State =
@@ -144,6 +149,16 @@ export default function TrackedAccountSync({ userId, username }: TrackedAccountS
         ? 'active'
         : 'waiting';
 
+  // Dynamic labels based on what's being synced
+  const step2Label =
+    followingDisabled && followersDisabled
+      ? 'Syncing with Instagram'
+      : followersDisabled
+        ? 'Syncing following list'
+        : followingDisabled
+          ? 'Syncing followers list'
+          : 'Syncing with Instagram';
+
   return (
     <View className="flex-1 items-center justify-center p-4">
       <Unhinged width={110} height={110} />
@@ -151,13 +166,17 @@ export default function TrackedAccountSync({ userId, username }: TrackedAccountS
         Syncing @{username}
       </Text>
       <Text className="mt-4 px-12 text-center font-roboto-regular text-lg tracking-tighter">
-        This might take a minute depending on number of followers.
+        {followingDisabled && followersDisabled
+          ? 'Fetching profile information...'
+          : 'This might take a minute depending on number of followers.'}
       </Text>
 
       <View className="mt-6 w-full gap-4">
         <SyncStep label="Fetching profile" state={step1State} />
-        <SyncStep label="Syncing with Instagram" state={step2State} />
-        <SyncStep label="Analyzing followers" state={step3State} />
+        {(!followingDisabled || !followersDisabled) && (
+          <SyncStep label={step2Label} state={step2State} />
+        )}
+        <SyncStep label="Analyzing activity" state={step3State} />
       </View>
 
       <RandomProfilePhotos userId={userId} />

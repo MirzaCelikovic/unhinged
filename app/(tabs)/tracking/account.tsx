@@ -1,7 +1,9 @@
-import { View, Text, Alert, ScrollView, StyleSheet, SafeAreaView, Pressable } from 'react-native';
+import { View, Text, Alert, ScrollView, StyleSheet, SafeAreaView, Pressable, Switch } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react-native';
+import { useSQLiteContext } from 'expo-sqlite';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAccountContext } from '~/contexts/AccountContext';
 import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext';
 import { useInstagram, useRemoveTrackedInstagram } from '~/lib/useInstagram';
@@ -14,13 +16,18 @@ import InstagramCard from '~/components/InstagramCard';
 import ActivityList from '~/components/ActivityList';
 import ActivityFeed from '~/components/ActivityFeed';
 import TrackedAccountSync from '~/components/TrackedAccountSync';
-import Button from '~/components/Button';
+import {
+  FOLLOWERS_WARN_THRESHOLD,
+  FOLLOWING_WARN_THRESHOLD,
+} from '~/lib/constants';
 
 export default function TrackingAccount() {
   const { userId, username } = useLocalSearchParams<{ userId: string; username: string }>();
   const { account } = useAccountContext();
   const { syncState } = useInstagramContext();
   const removeTrackedInstagram = useRemoveTrackedInstagram();
+  const db = useSQLiteContext();
+  const queryClient = useQueryClient();
 
   // Check if this account is still syncing
   const syncStatus = syncState.trackedAccounts.find((acc) => acc.userId === userId);
@@ -40,7 +47,56 @@ export default function TrackingAccount() {
   const hasInsightsIndicator = !isSubscribed || activityCounts?.hasNewActivity;
 
   // Segmented nav state
-  const [activeTab, setActiveTab] = useState<'feed' | 'stats'>('feed');
+  const [activeTab, setActiveTab] = useState<'feed' | 'stats' | 'settings'>('feed');
+
+  // Sync preferences
+  const { data: syncPrefs } = useQuery({
+    queryKey: ['syncPrefs', userId],
+    queryFn: async () => {
+      const result = await db.getFirstAsync<{
+        followers_sync_disabled: number;
+        following_sync_disabled: number;
+      }>(
+        'SELECT followers_sync_disabled, following_sync_disabled FROM sync_state WHERE instagram_user_id = ?',
+        [userId]
+      );
+      return result;
+    },
+    enabled: !!userId,
+  });
+
+  const [trackFollowing, setTrackFollowing] = useState(true);
+  const [trackFollowers, setTrackFollowers] = useState(true);
+
+  useEffect(() => {
+    if (syncPrefs) {
+      setTrackFollowing(!syncPrefs.following_sync_disabled);
+      setTrackFollowers(!syncPrefs.followers_sync_disabled);
+    }
+  }, [syncPrefs]);
+
+  const followersCount = instagram?.followers_count || 0;
+  const followingCount = instagram?.following_count || 0;
+  const followersWarn = followersCount >= FOLLOWERS_WARN_THRESHOLD;
+  const followingWarn = followingCount >= FOLLOWING_WARN_THRESHOLD;
+
+  const handleToggleFollowing = async (value: boolean) => {
+    setTrackFollowing(value);
+    await db.runAsync(
+      'UPDATE sync_state SET following_sync_disabled = ?, date_updated = ? WHERE instagram_user_id = ?',
+      [value ? 0 : 1, new Date().toISOString(), userId]
+    );
+    queryClient.invalidateQueries({ queryKey: ['syncPrefs', userId] });
+  };
+
+  const handleToggleFollowers = async (value: boolean) => {
+    setTrackFollowers(value);
+    await db.runAsync(
+      'UPDATE sync_state SET followers_sync_disabled = ?, date_updated = ? WHERE instagram_user_id = ?',
+      [value ? 0 : 1, new Date().toISOString(), userId]
+    );
+    queryClient.invalidateQueries({ queryKey: ['syncPrefs', userId] });
+  };
 
   const handleStopTracking = () => {
     if (!account?.uuid || !userId) return;
@@ -95,7 +151,7 @@ export default function TrackingAccount() {
             {instagram && <InstagramCard account={instagram} />}
 
             {/* Segmented Nav */}
-            <View className="flex-row gap-2">
+            <View className="flex-row items-center gap-2">
               <Pressable
                 className={`rounded-full px-4 py-2 ${activeTab === 'feed' ? 'bg-white' : ''}`}
                 onPress={() => setActiveTab('feed')}>
@@ -115,6 +171,14 @@ export default function TrackingAccount() {
                   <View className="h-3 w-3 rounded-full bg-error" />
                 )}
               </Pressable>
+              <Pressable
+                className={`ml-auto rounded-full px-4 py-2 ${activeTab === 'settings' ? 'bg-white' : ''}`}
+                onPress={() => setActiveTab('settings')}>
+                <Text
+                  className={`font-roboto-medium text-sm ${activeTab === 'settings' ? 'text-gray-900' : 'text-gray-500'}`}>
+                  Settings
+                </Text>
+              </Pressable>
             </View>
 
             {/* Tab Content */}
@@ -128,13 +192,51 @@ export default function TrackingAccount() {
             {activeTab === 'stats' && stats && userId && (
               <ActivityList stats={stats} userId={userId} activityCounts={activityCounts} />
             )}
-          </View>
-          <View className="mt-auto p-4 pb-12">
-            <Button
-              label="Stop Tracking"
-              onPress={handleStopTracking}
-              loading={removeTrackedInstagram.isPending}
-            />
+            {activeTab === 'settings' && (
+              <View className="overflow-hidden rounded-2xl bg-white">
+                <View className="border-b border-gray-100 p-4">
+                  <View className="flex-row items-center justify-between">
+                    <Text className="font-roboto-medium text-base text-gray-900">
+                      Sync following activity
+                    </Text>
+                    <Switch
+                      value={trackFollowing}
+                      onValueChange={handleToggleFollowing}
+                      trackColor={{ false: '#d1d5db', true: '#000000' }}
+                      thumbColor="#ffffff"
+                    />
+                  </View>
+                  {followingWarn && (
+                    <Text className="mt-2 font-roboto-regular text-sm text-gray-400">
+                      We recommend keeping this off for this account to protect your Instagram session from rate limiting.
+                    </Text>
+                  )}
+                </View>
+                <View className="border-b border-gray-100 p-4">
+                  <View className="flex-row items-center justify-between">
+                    <Text className="font-roboto-medium text-base text-gray-900">
+                      Sync followers activity
+                    </Text>
+                    <Switch
+                      value={trackFollowers}
+                      onValueChange={handleToggleFollowers}
+                      trackColor={{ false: '#d1d5db', true: '#000000' }}
+                      thumbColor="#ffffff"
+                    />
+                  </View>
+                  {followersWarn && (
+                    <Text className="mt-2 font-roboto-regular text-sm text-gray-400">
+                      We recommend keeping this off for this account to protect your Instagram session from rate limiting.
+                    </Text>
+                  )}
+                </View>
+                <Pressable
+                  className="p-4 active:opacity-80"
+                  onPress={handleStopTracking}>
+                  <Text className="font-roboto-medium text-base text-error">Stop Tracking</Text>
+                </Pressable>
+              </View>
+            )}
           </View>
         </ScrollView>
       )}

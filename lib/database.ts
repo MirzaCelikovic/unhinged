@@ -1,8 +1,14 @@
 import * as SQLite from 'expo-sqlite';
 
-const CURRENT_DB_VERSION = 1;
+const CURRENT_DB_VERSION = 2;
 
-// Migration functions
+// Helper to check if a column exists on a table
+const hasColumn = async (db: SQLite.SQLiteDatabase, table: string, column: string): Promise<boolean> => {
+  const tableInfo = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${table})`);
+  return tableInfo.some((c) => c.name === column);
+};
+
+// Migration functions — each must be idempotent (safe to re-run)
 const migrations: { [version: number]: (db: SQLite.SQLiteDatabase) => Promise<void> } = {
   1: async (db: SQLite.SQLiteDatabase) => {
     await db.execAsync(`
@@ -78,12 +84,27 @@ const migrations: { [version: number]: (db: SQLite.SQLiteDatabase) => Promise<vo
     `);
   },
 
-  // Example for future migrations:
-  // 2: async (db: SQLite.SQLiteDatabase) => {
-  //   await db.execAsync(`
-  //     ALTER TABLE sync_state ADD COLUMN new_column TEXT;
-  //   `);
-  // },
+  2: async (db: SQLite.SQLiteDatabase) => {
+    if (!(await hasColumn(db, 'sync_state', 'followers_sync_disabled'))) {
+      await db.execAsync(
+        `ALTER TABLE sync_state ADD COLUMN followers_sync_disabled INTEGER NOT NULL DEFAULT 0`
+      );
+    }
+    if (!(await hasColumn(db, 'sync_state', 'following_sync_disabled'))) {
+      await db.execAsync(
+        `ALTER TABLE sync_state ADD COLUMN following_sync_disabled INTEGER NOT NULL DEFAULT 0`
+      );
+    }
+
+    // For existing tracked accounts with 5K+ followers, disable follower sync
+    await db.execAsync(`
+      UPDATE sync_state
+      SET followers_sync_disabled = 1
+      WHERE instagram_user_id IN (
+        SELECT user_id FROM instagrams WHERE followers_count >= 3000
+      )
+    `);
+  },
 };
 
 // Initialize database with migrations
@@ -97,19 +118,25 @@ export const initializeDatabase = async (db: SQLite.SQLiteDatabase): Promise<voi
   const result = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   const currentVersion = result?.user_version || 0;
 
-  // Run migrations
-  if (currentVersion < CURRENT_DB_VERSION) {
-    for (let version = currentVersion + 1; version <= CURRENT_DB_VERSION; version++) {
-      const migration = migrations[version];
-      if (migration) {
+  console.log(`📦 DB version: ${currentVersion}, target: ${CURRENT_DB_VERSION}`);
+
+  // Run migrations one at a time, updating version after each succeeds
+  for (let version = currentVersion + 1; version <= CURRENT_DB_VERSION; version++) {
+    const migration = migrations[version];
+    if (migration) {
+      console.log(`📦 Running migration ${version}...`);
+      try {
         await migration(db);
+        await db.execAsync(`PRAGMA user_version = ${version}`);
+        console.log(`✅ Migration ${version} complete`);
+      } catch (error) {
+        console.error(`❌ Migration ${version} failed:`, error);
+        throw error; // Don't continue with further migrations
       }
     }
-
-    // Update version
-    await db.execAsync(`PRAGMA user_version = ${CURRENT_DB_VERSION}`);
   }
 };
+
 
 // Get current UTC timestamp in ISO 8601 format
 export const getCurrentUTCTimestamp = (): string => {

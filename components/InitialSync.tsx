@@ -130,14 +130,18 @@ export default function InitialSync({
 
   // Derive step states from syncState
   const mainAccount = syncState.mainAccount;
+  const followingDisabled = mainAccount?.followingDisabled;
+  const followersDisabled = mainAccount?.followersDisabled;
 
   // Step 1: Metadata fetching
   const step1State = mainAccount ? toStepState(mainAccount.metadata) : 'waiting';
 
-  // Step 2: Following + Followers syncing (combined)
-  const step2State = mainAccount
-    ? getCombinedState([mainAccount.following, mainAccount.followers])
-    : 'waiting';
+  // Step 2: Following + Followers syncing (only include active syncs)
+  const activeSyncSteps = [
+    ...(!followingDisabled && mainAccount ? [mainAccount.following] : []),
+    ...(!followersDisabled && mainAccount ? [mainAccount.followers] : []),
+  ] as SyncStepStatus[];
+  const step2State = activeSyncSteps.length > 0 ? getCombinedState(activeSyncSteps) : 'completed' as SyncStepState;
 
   // Step 3: Analyzing (complete when everything is done)
   const step3State =
@@ -157,6 +161,15 @@ export default function InitialSync({
     }
   }, [syncState.isActive, mainAccount, step3State, onComplete]);
 
+  const step2Label =
+    followingDisabled && followersDisabled
+      ? 'Syncing with Instagram'
+      : followersDisabled
+        ? 'Syncing following list'
+        : followingDisabled
+          ? 'Syncing followers list'
+          : 'Syncing with Instagram';
+
   return (
     <View className="flex-1 items-center justify-center p-4">
       <Unhinged width={110} height={110} />
@@ -164,13 +177,17 @@ export default function InitialSync({
         Syncing...
       </Text>
       <Text className="font-roboto-regular mt-4 px-12 text-center text-lg tracking-tighter">
-        This might take a minute depending on number of followers.
+        {followingDisabled && followersDisabled
+          ? 'Fetching profile information...'
+          : 'This might take a minute depending on number of followers.'}
       </Text>
 
       <View className="mt-6 w-full gap-4">
         <SyncStep label="Fetching profile" state={step1State} />
-        <SyncStep label="Syncing with Instagram" state={step2State} />
-        <SyncStep label="Analyzing followers" state={step3State} />
+        {(!followingDisabled || !followersDisabled) && (
+          <SyncStep label={step2Label} state={step2State} />
+        )}
+        <SyncStep label="Analyzing activity" state={step3State} />
       </View>
 
       {(mainAccount?.userId || _userId) && (

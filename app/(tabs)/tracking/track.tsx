@@ -1,16 +1,27 @@
 import { View, StyleSheet, SafeAreaView, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react-native';
+import { X, CircleChevronLeft } from 'lucide-react-native';
+import { useSQLiteContext } from 'expo-sqlite';
 import Circles from '~/assets/circles.svg';
 import Logo from '~/assets/logo_black.svg';
 import StartTracking from '~/components/StartTracking';
+import TrackConfirm from '~/components/TrackConfirm';
 import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext';
 import { useAccountContext } from '~/contexts/AccountContext';
 import { useAddTrackedInstagram } from '~/lib/useInstagram';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
+import { fetchPublicProfile } from '~/lib/fetchPublicProfile';
+import { Instagram } from '~/lib/types';
+import {
+  FOLLOWERS_WARN_THRESHOLD,
+  FOLLOWING_WARN_THRESHOLD,
+} from '~/lib/constants';
+
+type TrackStep = 'search' | 'confirm';
 
 export default function TrackModal() {
+  const [step, setStep] = useState<TrackStep>('search');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [addedUserId, setAddedUserId] = useState<string | null>(null);
@@ -18,6 +29,17 @@ export default function TrackModal() {
   const { account } = useAccountContext();
   const addTrackedInstagram = useAddTrackedInstagram();
   const { track } = useAnalytics();
+  const db = useSQLiteContext();
+
+  // Found account data for confirm screen
+  const [foundProfile, setFoundProfile] = useState<Instagram | null>(null);
+  const [foundUserId, setFoundUserId] = useState<string | null>(null);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+
+  // Sync toggle state
+  const [trackFollowing, setTrackFollowing] = useState(true);
+  const [trackFollowers, setTrackFollowers] = useState(true);
 
   // Auto-close modal once metadata is fetched for the added account
   useEffect(() => {
@@ -32,7 +54,6 @@ export default function TrackModal() {
   const handleContinue = async (inputUsername: string) => {
     setError('');
 
-    // Validate username is not empty
     const trimmedUsername = inputUsername.trim();
     if (!trimmedUsername) {
       setError('Invalid username');
@@ -48,11 +69,10 @@ export default function TrackModal() {
 
     try {
       console.log('🔍 Fetching user ID for:', trimmedUsername);
-      // Fetch user ID and check if we have access
       const result = await fetchUserId(trimmedUsername);
       console.log('✅ Got result:', result);
 
-      // Check if account is accessible (either public or we follow them)
+      // Check if account is accessible
       if (result.isPrivate && !result.followedByViewer) {
         console.log('❌ Account is private and not followed');
         setError('You are not following this account');
@@ -66,45 +86,98 @@ export default function TrackModal() {
         return;
       }
 
-      // Check if account has too many followers or following
-      const MAX_FOLLOWERS = 5000;
-      const MAX_FOLLOWING = 2500;
-      if (result.followersCount > MAX_FOLLOWERS) {
-        console.log('❌ Account has too many followers:', result.followersCount);
-        setError('This account has too many followers. To avoid overwhelming Instagram with automated requests (which could make your account look like a bot), tracking is limited to personal accounts.');
-        return;
+      // Fetch full profile for the confirmation card
+      let profile: Instagram;
+      try {
+        profile = await fetchPublicProfile(trimmedUsername);
+      } catch {
+        // Fallback: construct minimal profile from fetchUserId result
+        profile = {
+          user_id: result.userId,
+          username: trimmedUsername,
+          followers_count: result.followersCount,
+          following_count: result.followingCount,
+        };
       }
-      if (result.followingCount > MAX_FOLLOWING) {
-        console.log('❌ Account has too many following:', result.followingCount);
-        setError('This account follows too many people. To avoid overwhelming Instagram with automated requests (which could make your account look like a bot), tracking is limited to personal accounts.');
-        return;
-      }
 
-      // Register tracked account with backend first
-      console.log('📝 Registering tracked account with backend');
-      await addTrackedInstagram.mutateAsync({
-        accountId: account.uuid,
-        userId: result.userId,
-        username: trimmedUsername,
-      });
-      console.log('✅ Tracked account registered');
-      track(Events.ACCOUNT_TRACKED);
+      // Set toggle defaults based on thresholds
+      setTrackFollowing(result.followingCount < FOLLOWING_WARN_THRESHOLD);
+      setTrackFollowers(result.followersCount < FOLLOWERS_WARN_THRESHOLD);
 
-      // Store userId to watch for metadata completion
-      setAddedUserId(result.userId);
-
-      // Sync just this tracked account (will auto-close when metadata is done)
-      syncTrackedAccount(result.userId, trimmedUsername);
+      setFoundProfile(profile);
+      setFoundUserId(result.userId);
+      setFollowersCount(result.followersCount);
+      setFollowingCount(result.followingCount);
+      setStep('confirm');
     } catch (err) {
       console.log('❌ Error:', err);
       if (err instanceof Error && err.message.includes('not found')) {
         setError('Account not found');
       } else {
-        setError('Failed to add tracked account');
+        setError('Failed to look up account');
       }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleStartTracking = async () => {
+    if (!foundProfile || !foundUserId || !account?.uuid) return;
+
+    setIsLoading(true);
+
+    try {
+      // Register with backend
+      console.log('📝 Registering tracked account with backend');
+      await addTrackedInstagram.mutateAsync({
+        accountId: account.uuid,
+        userId: foundUserId,
+        username: foundProfile.username,
+      });
+      console.log('✅ Tracked account registered');
+      track(Events.ACCOUNT_TRACKED);
+
+      // Set sync preferences in SQLite before starting sync
+      const now = new Date().toISOString();
+      await db.runAsync(
+        `INSERT INTO sync_state (instagram_user_id, followers_sync_disabled, following_sync_disabled, date_created, date_updated)
+         VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(instagram_user_id) DO UPDATE SET
+           followers_sync_disabled = ?, following_sync_disabled = ?, date_updated = ?`,
+        [
+          foundUserId,
+          trackFollowers ? 0 : 1,
+          trackFollowing ? 0 : 1,
+          now,
+          now,
+          trackFollowers ? 0 : 1,
+          trackFollowing ? 0 : 1,
+          now,
+        ]
+      );
+
+      // Store userId to watch for metadata completion
+      setAddedUserId(foundUserId);
+
+      // Start sync with appropriate flags
+      syncTrackedAccount(foundUserId, foundProfile.username, {
+        skipFollowing: !trackFollowing,
+        skipFollowers: !trackFollowers,
+      });
+    } catch (err) {
+      console.log('❌ Error:', err);
+      setError('Failed to add tracked account');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleToggleFollowing = (value: boolean) => {
+    setTrackFollowing(value);
+  };
+
+  const handleToggleFollowers = (value: boolean) => {
+    setTrackFollowers(value);
   };
 
   return (
@@ -116,6 +189,13 @@ export default function TrackModal() {
       {/* Header */}
       <SafeAreaView>
         <View className="flex-row items-center justify-between px-4 pb-3">
+          {step === 'confirm' ? (
+            <Pressable
+              className="absolute left-4 z-10 p-2 active:opacity-70"
+              onPress={() => setStep('search')}>
+              <CircleChevronLeft size={24} color="#000000" />
+            </Pressable>
+          ) : null}
           <View className="flex-1 items-center pt-6">
             <Logo width={160} height={30} />
           </View>
@@ -129,7 +209,21 @@ export default function TrackModal() {
 
       {/* Content */}
       <View className="flex-1">
-        <StartTracking onContinue={handleContinue} isLoading={isLoading} error={error} />
+        {step === 'search' ? (
+          <StartTracking onContinue={handleContinue} isLoading={isLoading} error={error} />
+        ) : foundProfile ? (
+          <TrackConfirm
+            profile={foundProfile}
+            followersCount={followersCount}
+            followingCount={followingCount}
+            trackFollowing={trackFollowing}
+            trackFollowers={trackFollowers}
+            onToggleFollowing={handleToggleFollowing}
+            onToggleFollowers={handleToggleFollowers}
+            onStartTracking={handleStartTracking}
+            isLoading={isLoading}
+          />
+        ) : null}
       </View>
     </View>
   );
