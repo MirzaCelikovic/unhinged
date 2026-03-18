@@ -107,7 +107,7 @@ export default function Settings() {
                 <Pressable
                   className="flex-row items-center justify-between border-b border-gray-100 p-4 active:opacity-80"
                   onPress={() => presentPaywall('settings_subscribe')}>
-                  <Text className="font-roboto-medium text-base text-gray-900">Subscribe Now</Text>
+                  <Text className="font-roboto-medium text-base text-gray-900">Upgrade Now</Text>
                   <CircleChevronRight size={24} color="#9ca3af" />
                 </Pressable>
               )}
