@@ -67,64 +67,47 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
     if (isInitialized.current) return;
     isInitialized.current = true;
 
-    const initMetaAndRevenueCatAttribution = async () => {
+    const initAnalytics = async () => {
       try {
-        // 1) RevenueCat is already configured (RevenueCatProvider is parent)
+        // 1) Request ATT FIRST — before any Meta SDK calls
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const { status } = await requestTrackingPermissionsAsync();
+        console.log('ATT permission status:', status);
+        const granted = status === 'granted';
 
-        // 2) Initialize Meta SDK
+        // 2) Initialize Meta SDK with ATT status already known
         Settings.initializeSDK();
+        Settings.setAdvertiserTrackingEnabled(granted);
+        Settings.setAdvertiserIDCollectionEnabled(granted);
 
-        // 3) Set FB anonymous ID ASAP (independent of ATT)
+        // 3) Enable auto-log AFTER ATT — triggers app activation with IDFA if granted
+        Settings.setAutoLogAppEventsEnabled(true);
+
+        // 4) RevenueCat attribution (after ATT so IDFA is available)
         const anonymousId = await AppEventsLogger.getAnonymousID();
         if (anonymousId) {
           Purchases.setFBAnonymousID(anonymousId);
         }
-
-        // 4) Collect identifiers right away (pre-ATT)
         Purchases.collectDeviceIdentifiers();
         Purchases.enableAdServicesAttributionTokenCollection();
-
-        // 5) Track app activation
-        AppEventsLogger.activateApp();
 
         console.log('Meta + RevenueCat attribution initialized');
       } catch (e) {
         console.log('Meta/RevenueCat attribution init failed:', e);
       }
-    };
-
-    const requestATTAndRefreshIdentifiers = async () => {
-      try {
-        // Delay to ensure UI is ready before showing ATT prompt
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        const { status } = await requestTrackingPermissionsAsync();
-        console.log('ATT permission status:', status);
-
-        const granted = status === 'granted';
-
-        // Gate Meta advertiser tracking based on ATT
-        Settings.setAdvertiserTrackingEnabled(granted);
-        Settings.setAdvertiserIDCollectionEnabled(granted);
-
-        // Re-collect after ATT so $idfa can update if granted
-        Purchases.collectDeviceIdentifiers();
-      } catch (e) {
-        console.log('ATT request failed:', e);
-      }
-    };
-
-    const initAnalytics = async () => {
-      await initMetaAndRevenueCatAttribution();
-      await requestATTAndRefreshIdentifiers();
 
       // Initialize Amplitude
-      const amplitudeApiKey = process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY!;
-      console.log('Initializing Amplitude');
-      await amplitude.init(amplitudeApiKey, undefined, { serverZone: 'EU', disableCookies: true })
-        .promise;
-      const sessionReplayPlugin = new SessionReplayPlugin({ sampleRate: 1.0 });
-      amplitude.add(sessionReplayPlugin);
-      console.log('Amplitude Session Replay enabled');
+      try {
+        const amplitudeApiKey = process.env.EXPO_PUBLIC_AMPLITUDE_API_KEY!;
+        console.log('Initializing Amplitude');
+        await amplitude.init(amplitudeApiKey, undefined, { serverZone: 'EU', disableCookies: true })
+          .promise;
+        const sessionReplayPlugin = new SessionReplayPlugin({ sampleRate: 1.0 });
+        amplitude.add(sessionReplayPlugin);
+        console.log('Amplitude Session Replay enabled');
+      } catch (e) {
+        console.log('Amplitude init failed:', e);
+      }
     };
 
     initAnalytics();
