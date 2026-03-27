@@ -207,3 +207,7 @@ npm run submit:ios      # Submit to App Store
 1. Increment `CURRENT_DB_VERSION` in `lib/database.ts`
 2. Add migration function to `migrations` object
 3. Migrations run automatically on app start
+
+## Commit Guidelines
+
+- Do not add `Co-Authored-By` lines to commit messages.
