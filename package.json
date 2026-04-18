@@ -9,7 +9,10 @@
     "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier \"**/*.{js,jsx,ts,tsx,json}\" --write",
     "prebuild:ios": "expo prebuild --platform ios",
     "build:ios": "./scripts/build-ios.sh",
-    "submit:ios": "eas submit --platform ios --path"
+    "submit:ios": "eas submit --platform ios --path",
+    "prebuild:android": "expo prebuild --platform android",
+    "build:android": "./scripts/build-android.sh",
+    "submit:android": "eas submit --platform android --path"
   },
   "dependencies": {
     "@amplitude/analytics-react-native": "^1.5.32",

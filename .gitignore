@@ -24,5 +24,6 @@ web-build/
 
 # Build artifacts
 build-*.ipa
+build-*.aab
 
 .env.local
