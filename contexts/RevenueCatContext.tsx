@@ -1,10 +1,13 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import { Platform } from 'react-native';
 import Purchases, { CustomerInfo, PurchasesOffering, LOG_LEVEL } from 'react-native-purchases';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { analytics, Events } from '~/contexts/AnalyticsContext';
 
-// RevenueCat API Key from environment
-const REVENUECAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY!;
+// RevenueCat API Key from environment (platform-specific)
+const REVENUECAT_API_KEY = Platform.OS === 'android'
+  ? process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_GOOG!
+  : process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_APPL!;
 
 // Entitlement identifier
 export const ENTITLEMENT_ID = 'Unhinged Subscription';
