@@ -6,7 +6,6 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   useSharedValue,
-  runOnJS,
 } from 'react-native-reanimated';
 import { CircleChevronLeft } from 'lucide-react-native';
 import ChoiceQuestion from '~/components/onboarding/ChoiceQuestion';
@@ -19,6 +18,7 @@ import ReviewScreen from '~/components/onboarding/ReviewScreen';
 import StatsScreen from '~/components/onboarding/StatsScreen';
 import ComparisonScreen from '~/components/onboarding/ComparisonScreen';
 import ConnectScreen from '~/components/onboarding/ConnectScreen';
+import StartScreen from '~/components/onboarding/StartScreen';
 import Logo from '~/assets/logo_black.svg';
 import { Instagram } from '~/lib/types';
 import { useInstagram } from '~/contexts/InstagramContext';
@@ -26,7 +26,6 @@ import { useAccountContext } from '~/contexts/AccountContext';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
 interface OnboardingProps {
-  onBack: () => void;
   onComplete: () => void;
 }
 
@@ -72,14 +71,23 @@ interface ComparisonStep {
   type: 'comparison';
 }
 
+interface StartStep {
+  id: string;
+  type: 'start';
+}
+
 interface ConnectStep {
   id: string;
   type: 'connect';
 }
 
-type Step = ChoiceStep | UsernameStep | TrackStep | HelpStep | NotificationsStep | ReviewStep | StatsStep | ComparisonStep | ConnectStep;
+type Step = StartStep | ChoiceStep | UsernameStep | TrackStep | HelpStep | NotificationsStep | ReviewStep | StatsStep | ComparisonStep | ConnectStep;
 
 const STEPS: Step[] = [
+  {
+    id: 'start',
+    type: 'start',
+  },
   {
     id: 'source',
     type: 'choice',
@@ -143,7 +151,7 @@ const STEPS: Step[] = [
   },
 ];
 
-export default function Onboarding({ onBack, onComplete }: OnboardingProps) {
+export default function Onboarding({ onComplete }: OnboardingProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [instagramResult, setInstagramResult] = useState<Instagram | null>(null);
@@ -152,7 +160,9 @@ export default function Onboarding({ onBack, onComplete }: OnboardingProps) {
   const { account } = useAccountContext();
   const { track } = useAnalytics();
 
-  const progressWidth = useSharedValue(((0 + 1) / STEPS.length) * 100);
+  // Progress bar excludes the start step (step 0)
+  const stepsWithProgress = STEPS.length - 1;
+  const progressWidth = useSharedValue((1 / stepsWithProgress) * 100);
   const step = STEPS[currentStep];
 
   // When user successfully connects Instagram and account data is ready, start sync and complete onboarding
@@ -170,13 +180,11 @@ export default function Onboarding({ onBack, onComplete }: OnboardingProps) {
 
   const goToStep = (newStep: number) => {
     setCurrentStep(newStep);
-    progressWidth.value = withTiming(((newStep + 1) / STEPS.length) * 100, { duration: 300 });
+    progressWidth.value = withTiming((Math.max(newStep, 1) / stepsWithProgress) * 100, { duration: 300 });
   };
 
   const handleBack = () => {
-    if (currentStep === 0) {
-      onBack();
-    } else {
+    if (currentStep > 0) {
       goToStep(currentStep - 1);
     }
   };
@@ -209,33 +217,38 @@ export default function Onboarding({ onBack, onComplete }: OnboardingProps) {
     handleNext();
   };
 
+  const isStartStep = step.type === 'start';
+
   return (
     <View className="flex-1">
       {/* Header with back button, logo, and progress bar */}
-      <View className="px-4 pt-2">
-        <View className="mb-4 flex-row items-center">
-          <Pressable onPress={handleBack} className="p-2 active:opacity-70">
-            <CircleChevronLeft size={28} color="#000000" />
-          </Pressable>
-          <View className="flex-1 items-center">
-            <Logo width={160} height={50} />
+      {!isStartStep && (
+        <View className="px-4 pt-2">
+          <View className="mb-4 flex-row items-center">
+            <Pressable onPress={handleBack} className="p-2 active:opacity-70">
+              <CircleChevronLeft size={28} color="#000000" />
+            </Pressable>
+            <View className="flex-1 items-center">
+              <Logo width={160} height={50} />
+            </View>
+            <View className="w-[44px]" />
           </View>
-          <View className="w-[44px]" />
-        </View>
 
-        {/* Progress bar */}
-        <View className="h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
-          <Animated.View className="h-full rounded-full bg-black" style={progressAnimatedStyle} />
+          {/* Progress bar */}
+          <View className="h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+            <Animated.View className="h-full rounded-full bg-black" style={progressAnimatedStyle} />
+          </View>
         </View>
-      </View>
+      )}
 
       {/* Content */}
-      <View className="flex-1 pt-8">
+      <View className={`flex-1 ${isStartStep ? '' : 'pt-8'}`}>
         <Animated.View
           key={step.id}
           entering={FadeIn.duration(300)}
           exiting={FadeOut.duration(300)}
           className="flex-1">
+          {step.type === 'start' && <StartScreen onNext={handleNext} />}
           {step.type === 'choice' && (
             <ChoiceQuestion
               question={(step as ChoiceStep).question}
