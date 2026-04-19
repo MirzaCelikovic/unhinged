@@ -11,6 +11,36 @@
       "tsconfigPaths": true
     },
     "plugins": [
+      [
+        "expo-font",
+        {
+          "android": {
+            "fonts": [
+              {
+                "fontFamily": "Roboto Flex",
+                "fontDefinitions": [
+                  {
+                    "path": "./assets/fonts/RobotoFlex-Regular.ttf",
+                    "weight": 400
+                  },
+                  {
+                    "path": "./assets/fonts/RobotoFlex-Medium.ttf",
+                    "weight": 500
+                  },
+                  {
+                    "path": "./assets/fonts/RobotoFlex-Bold.ttf",
+                    "weight": 700
+                  },
+                  {
+                    "path": "./assets/fonts/RobotoFlex-Black.ttf",
+                    "weight": 900
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
       "expo-router",
       "expo-secure-store",
       "expo-sqlite",
