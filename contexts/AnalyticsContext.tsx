@@ -88,8 +88,12 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
         if (anonymousId) {
           Purchases.setFBAnonymousID(anonymousId);
         }
-        Purchases.collectDeviceIdentifiers();
-        Purchases.enableAdServicesAttributionTokenCollection();
+        try {
+          Purchases.collectDeviceIdentifiers();
+          Purchases.enableAdServicesAttributionTokenCollection();
+        } catch {
+          // IDFA may already be set — safe to ignore
+        }
 
         console.log('Meta + RevenueCat attribution initialized');
       } catch (e) {
