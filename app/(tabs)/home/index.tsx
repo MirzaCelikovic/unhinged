@@ -23,6 +23,8 @@ import NewActivityBanner from '~/components/NewActivityBanner';
 import NotConnected from '~/components/NotConnected';
 import InitialSync from '~/components/InitialSync';
 import { useAccountContext } from '~/contexts/AccountContext';
+import { useAddTrackedInstagram } from '~/lib/useInstagram';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -34,12 +36,13 @@ import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 type HomeState = 'notConnected' | 'initialSync' | 'connected';
 
 export default function Index() {
-  const { isLoggedIn, syncState, showLogin, sync, userId } = useInstagramContext();
+  const { isLoggedIn, syncState, showLogin, sync, syncTrackedAccount, userId } = useInstagramContext();
   const { account } = useAccountContext();
   const { data: instagram } = useInstagram(userId);
   const { data: stats, hasNewActivity } = useFollowerStats(userId, account?.latest_activity_date);
   const { data: activityCounts } = useInstagramActivity(userId);
   const queryClient = useQueryClient();
+  const addTrackedInstagram = useAddTrackedInstagram();
   const { track } = useAnalytics();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [homeState, setHomeState] = useState<HomeState | null>(null);
@@ -109,10 +112,29 @@ export default function Index() {
     }
   }, [syncState.isActive, userId]);
 
-  const handleInitialSyncComplete = () => {
+  const handleInitialSyncComplete = async () => {
     // Invalidate queries to fetch fresh data
     if (userId) {
       queryClient.invalidateQueries({ queryKey: ['followerStats', userId] });
+    }
+
+    // Check for pending tracked account from onboarding
+    try {
+      const pending = await AsyncStorage.getItem('pending_track');
+      if (pending && account?.uuid) {
+        const { user_id, username } = JSON.parse(pending);
+        await AsyncStorage.removeItem('pending_track');
+        addTrackedInstagram.mutate(
+          { accountId: account.uuid, userId: user_id, username },
+          {
+            onSuccess: () => {
+              syncTrackedAccount(user_id, username);
+            },
+          }
+        );
+      }
+    } catch (e) {
+      console.error('Failed to process pending track:', e);
     }
 
     contentOpacity.value = withTiming(0, { duration: 200 }, (finished) => {

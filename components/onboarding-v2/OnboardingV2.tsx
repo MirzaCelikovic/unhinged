@@ -17,6 +17,7 @@ import RevealScreen from '~/components/onboarding-v2/RevealScreen';
 import Logo from '~/assets/logo_black.svg';
 import { Instagram } from '~/lib/types';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface OnboardingV2Props {
   onComplete: () => void;
@@ -202,6 +203,13 @@ export default function OnboardingV2({ onComplete }: OnboardingV2Props) {
               onNext={(username, profile) => {
                 setAnswers({ ...answers, track_username: username });
                 setTrackProfile(profile);
+
+                // Stash locally so we can auto-track after Instagram connection
+                AsyncStorage.setItem('pending_track', JSON.stringify({
+                  user_id: profile.user_id,
+                  username: profile.username,
+                }));
+
                 handleNext();
               }}
             />
