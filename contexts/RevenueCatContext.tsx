@@ -36,6 +36,7 @@ interface RevenueCatContextType {
   presentPaywall: (source?: string) => Promise<boolean>;
   presentPaywallIfNeeded: (source?: string) => Promise<boolean>;
   presentPaywallOnLaunch: () => Promise<boolean>;
+  skipLaunchPaywall: () => void;
   restorePurchases: () => Promise<boolean>;
   refreshCustomerInfo: () => Promise<void>;
   presentCustomerCenter: () => Promise<void>;
@@ -222,6 +223,10 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
     return presentPaywallIfNeeded('app_launch');
   }, [presentPaywallIfNeeded]);
 
+  const skipLaunchPaywall = useCallback(() => {
+    hasShownAutomaticPaywallRef.current = true;
+  }, []);
+
   // Restore purchases
   const restorePurchases = useCallback(async (): Promise<boolean> => {
     try {
@@ -276,6 +281,7 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
     presentPaywall,
     presentPaywallIfNeeded,
     presentPaywallOnLaunch,
+    skipLaunchPaywall,
     restorePurchases,
     refreshCustomerInfo,
     presentCustomerCenter,
