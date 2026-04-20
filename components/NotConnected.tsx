@@ -16,10 +16,10 @@ export default function NotConnected({ onConnect }: NotConnectedProps) {
       <View className="mt-32 flex-1 items-center justify-center">
         <Instagram width={120} height={120} />
         <Text className="mt-6 px-12 text-center font-roboto-extrablack text-4xl tracking-tighter">
-          Connect your Instagram
+          One connection away from the truth.
         </Text>
-        <Text className="font-roboto-regular mt-6 px-12 text-center text-lg tracking-tighter">
-          Start monitoring your followers and discover who's not following you back
+        <Text className="font-roboto mt-6 px-12 text-center text-lg tracking-tighter">
+          Connect Instagram to start watching without being watched.
         </Text>
       </View>
       <View className="p-4 pb-20">
