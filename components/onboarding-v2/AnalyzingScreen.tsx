@@ -11,6 +11,7 @@ import { Circle, CircleCheck } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import Button from '~/components/Button';
 import Spinner from '~/components/Spinner';
+import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
 const CHECKLIST = [
   'Pulling 90 days of public activity.',
@@ -46,6 +47,7 @@ interface AnalyzingScreenProps {
 }
 
 export default function AnalyzingScreen({ username, onNext }: AnalyzingScreenProps) {
+  const { track } = useAnalytics();
   const [completedItems, setCompletedItems] = useState<number>(0);
   const [redFlagsState, setRedFlagsState] = useState<'hidden' | 'spinning' | 'found'>('hidden');
   const [analysisComplete, setAnalysisComplete] = useState(false);
@@ -108,6 +110,7 @@ export default function AnalyzingScreen({ username, onNext }: AnalyzingScreenPro
     timers.push(
       setTimeout(() => {
         setAnalysisComplete(true);
+        track(Events.ANALYZING_COMPLETED);
       }, totalChecklistTime + 3500)
     );
 

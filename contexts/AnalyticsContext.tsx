@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import * as amplitude from '@amplitude/analytics-react-native';
 import { SessionReplayPlugin } from '@amplitude/plugin-session-replay-react-native';
+import { Experiment, ExperimentClient } from '@amplitude/experiment-js-client';
 import { CustomerIO } from 'customerio-reactnative';
 import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import { AppEventsLogger, Settings } from 'react-native-fbsdk-next';
@@ -23,6 +24,13 @@ export const Events = {
   REVIEW_COMPLETED: 'Review Completed',
   STATS_COMPLETED: 'Stats Completed',
   COMPARISON_COMPLETED: 'Comparison Completed',
+  WHO_COMPLETED: 'Who Completed',
+  ALARM_BELLS_COMPLETED: 'Alarm Bells Completed',
+  ANALYZING_COMPLETED: 'Analyzing Completed',
+  REVEAL_VIEWED: 'Reveal Viewed',
+  REVEAL_PAYWALL_TRIGGERED: 'Reveal Paywall Triggered',
+  REVEAL_MAYBE_LATER: 'Reveal Maybe Later',
+  REVEAL_SUBSCRIBED: 'Reveal Subscribed',
   INSTAGRAM_CONNECTED_ONBOARDING: 'Instagram Connected Onboarding',
   INSTAGRAM_CONNECTED: 'Instagram Connected',
   ACCOUNT_TRACKED: 'Account Tracked',
@@ -48,6 +56,8 @@ export const analytics = {
 interface AnalyticsContextType {
   track: (event: string, properties?: Record<string, any>) => void;
   identify: (userId: string) => void;
+  getVariant: (flagKey: string) => string | undefined;
+  experimentsReady: boolean;
 }
 
 const AnalyticsContext = createContext<AnalyticsContextType | undefined>(undefined);
@@ -62,6 +72,8 @@ export const useAnalytics = () => {
 
 export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   const isInitialized = useRef(false);
+  const experimentClientRef = useRef<ExperimentClient | null>(null);
+  const [experimentsReady, setExperimentsReady] = useState(false);
 
   useEffect(() => {
     if (isInitialized.current) return;
@@ -109,13 +121,36 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
         const sessionReplayPlugin = new SessionReplayPlugin({ sampleRate: 1.0 });
         amplitude.add(sessionReplayPlugin);
         console.log('Amplitude Session Replay enabled');
+
+        // Initialize Amplitude Experiment
+        const deploymentKey = process.env.EXPO_PUBLIC_AMPLITUDE_DEPLOYMENT_KEY;
+        if (deploymentKey) {
+          const experimentClient = Experiment.initializeWithAmplitudeAnalytics(deploymentKey, {
+            serverZone: 'eu',
+          });
+          await experimentClient.fetch();
+          experimentClientRef.current = experimentClient;
+          console.log('Amplitude Experiment initialized');
+        }
       } catch (e) {
         console.log('Amplitude init failed:', e);
       }
+
+      setExperimentsReady(true);
     };
 
     initAnalytics();
   }, []);
 
-  return <AnalyticsContext.Provider value={analytics}>{children}</AnalyticsContext.Provider>;
+  const getVariant = (flagKey: string): string | undefined => {
+    return experimentClientRef.current?.variant(flagKey)?.value;
+  };
+
+  const contextValue: AnalyticsContextType = {
+    ...analytics,
+    getVariant,
+    experimentsReady,
+  };
+
+  return <AnalyticsContext.Provider value={contextValue}>{children}</AnalyticsContext.Provider>;
 }

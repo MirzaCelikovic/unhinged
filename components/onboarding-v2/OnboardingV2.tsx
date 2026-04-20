@@ -143,6 +143,9 @@ export default function OnboardingV2({ onComplete }: OnboardingV2Props) {
   };
 
   const handleSelect = (choiceId: string) => {
+    if (step.id === 'who') {
+      track(Events.WHO_COMPLETED, { who: choiceId });
+    }
     setAnswers({ ...answers, [step.id]: choiceId });
     handleNext();
   };
@@ -185,6 +188,7 @@ export default function OnboardingV2({ onComplete }: OnboardingV2Props) {
               subtitle={(step as MultiSelectStep).subtitle}
               choices={(step as MultiSelectStep).choices}
               onSubmit={(selectedIds) => {
+                track(Events.ALARM_BELLS_COMPLETED, { selections: selectedIds });
                 setAnswers({ ...answers, [step.id]: selectedIds.join(',') });
                 handleNext();
               }}

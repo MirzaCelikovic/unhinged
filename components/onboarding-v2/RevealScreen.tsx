@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, Image, ScrollView, Pressable } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,6 +7,7 @@ import { Lock } from 'lucide-react-native';
 import Button from '~/components/Button';
 import UnhingedCircle from '~/assets/unhinged_circle.svg';
 import { useRevenueCat } from '~/contexts/RevenueCatContext';
+import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
 interface RevealScreenProps {
   username: string;
@@ -47,12 +48,19 @@ export default function RevealScreen({
   onNext,
 }: RevealScreenProps) {
   const { isSubscribed, presentPaywall, skipLaunchPaywall } = useRevenueCat();
+  const { track } = useAnalytics();
   const [hasSeenPaywall, setHasSeenPaywall] = useState(false);
+
+  useEffect(() => {
+    track(Events.REVEAL_VIEWED);
+  }, []);
 
   const handlePaywall = async () => {
     skipLaunchPaywall();
+    track(Events.REVEAL_PAYWALL_TRIGGERED);
     const purchased = await presentPaywall('onboarding_v2_reveal');
     if (purchased) {
+      track(Events.REVEAL_SUBSCRIBED);
       onNext();
     } else {
       setHasSeenPaywall(true);
@@ -170,7 +178,7 @@ export default function RevealScreen({
           <Button label="Show me everything" onPress={handleContinue} />
           {hasSeenPaywall && !isSubscribed && (
             <Animated.View entering={FadeIn.duration(400)}>
-              <Pressable onPress={onNext} className="mt-3 py-2">
+              <Pressable onPress={() => { track(Events.REVEAL_MAYBE_LATER); onNext(); }} className="mt-3 py-2">
                 <Text className="text-center font-roboto-medium text-base text-black">
                   Maybe later
                 </Text>
