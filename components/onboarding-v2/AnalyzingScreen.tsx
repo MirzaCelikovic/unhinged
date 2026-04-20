@@ -48,10 +48,15 @@ interface AnalyzingScreenProps {
 
 export default function AnalyzingScreen({ username, onNext }: AnalyzingScreenProps) {
   const { track } = useAnalytics();
+  const mountedRef = useRef(true);
   const [completedItems, setCompletedItems] = useState<number>(0);
   const [redFlagsState, setRedFlagsState] = useState<'hidden' | 'spinning' | 'found'>('hidden');
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [currentReview, setCurrentReview] = useState(0);
+
+  useEffect(() => {
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const progressWidth = useSharedValue(0);
   const redFlagBgOpacity = useSharedValue(0);
@@ -85,6 +90,7 @@ export default function AnalyzingScreen({ username, onNext }: AnalyzingScreenPro
     CHECKLIST.forEach((_, index) => {
       timers.push(
         setTimeout(() => {
+          if (!mountedRef.current) return;
           setCompletedItems(index + 1);
         }, (index + 1) * itemDelay)
       );
@@ -93,6 +99,7 @@ export default function AnalyzingScreen({ username, onNext }: AnalyzingScreenPro
     // Show spinner card after checklist
     timers.push(
       setTimeout(() => {
+        if (!mountedRef.current) return;
         setRedFlagsState('spinning');
       }, totalChecklistTime + 500)
     );
@@ -100,6 +107,7 @@ export default function AnalyzingScreen({ username, onNext }: AnalyzingScreenPro
     // Transform to RED FLAGS FOUND
     timers.push(
       setTimeout(() => {
+        if (!mountedRef.current) return;
         setRedFlagsState('found');
         redFlagBgOpacity.value = withTiming(1, { duration: 400 });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -109,6 +117,7 @@ export default function AnalyzingScreen({ username, onNext }: AnalyzingScreenPro
     // Analysis complete — show continue, hide social proof
     timers.push(
       setTimeout(() => {
+        if (!mountedRef.current) return;
         setAnalysisComplete(true);
         track(Events.ANALYZING_COMPLETED);
       }, totalChecklistTime + 3500)
