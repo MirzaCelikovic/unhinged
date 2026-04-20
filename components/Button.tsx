@@ -20,7 +20,7 @@ export default function Button({
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
-      className={`rounded-3xl bg-black px-6 py-4 active:opacity-80 ${fullWidth ? 'w-full' : ''} ${disabled || loading ? 'opacity-80' : ''}`}>
+      className={`rounded-2xl bg-black px-6 py-4 active:opacity-80 ${fullWidth ? 'w-full' : ''} ${disabled || loading ? 'opacity-80' : ''}`}>
       <View className="flex-row items-center justify-center" style={{ minHeight: 24 }}>
         {loading ? (
           <Spinner size={20} color="#ffffff" />
