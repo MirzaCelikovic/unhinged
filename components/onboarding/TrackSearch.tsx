@@ -133,13 +133,14 @@ export default function TrackSearch({ onNext, savedResult, onResultFetched }: Tr
   }
 
   const handleContinue = async () => {
-    if (!username.trim()) return;
+    const cleaned = username.trim().replace(/^@/, '').match(/(?:instagram\.com)\/([a-zA-Z0-9._]+)/)?.[1] || username.trim().replace(/^@/, '');
+    if (!cleaned) return;
 
     setIsSearching(true);
     setError('');
 
     try {
-      const profile = await fetchPublicProfile(username);
+      const profile = await fetchPublicProfile(cleaned);
       track(Events.TRACK_SEARCH_COMPLETED);
       onResultFetched(profile);
     } catch (err) {
