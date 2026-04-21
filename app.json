@@ -3,7 +3,7 @@
     "name": "Unhinged",
     "slug": "unhinged-app",
     "scheme": "unhinged",
-    "version": "1.0.8",
+    "version": "1.1.0",
     "web": {
       "favicon": "./assets/favicon.png"
     },
@@ -68,6 +68,14 @@
                 "region": "eu"
               }
             }
+          },
+          "android": {
+            "pushNotification": {
+              "env": {
+                "cdpApiKey": "2d855adb91d014d623db",
+                "region": "eu"
+              }
+            }
           }
         }
       ],
@@ -102,9 +110,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "so.unhinged",
@@ -118,7 +124,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "so.unhinged"
+      "package": "so.unhinged",
+      "googleServicesFile": "./google-services.json"
     },
     "extra": {
       "eas": {

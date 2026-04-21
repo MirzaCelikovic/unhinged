@@ -149,8 +149,8 @@ export default function Tracking() {
       // Register device push token with Customer.io
       try {
         const { data: deviceToken } = await Notifications.getDevicePushTokenAsync();
-        if (Platform.OS === 'ios' && deviceToken) {
-          console.log('🔧 Registering iOS push token with Customer.io:', deviceToken);
+        if (deviceToken) {
+          console.log('🔧 Registering push token with Customer.io:', deviceToken);
           CustomerIO.registerDeviceToken(deviceToken);
         }
       } catch (error) {

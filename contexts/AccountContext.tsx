@@ -118,8 +118,8 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
           const { status } = await Notifications.getPermissionsAsync();
           if (status === 'granted') {
             const { data: deviceToken } = await Notifications.getDevicePushTokenAsync();
-            if (Platform.OS === 'ios' && deviceToken) {
-              console.log('🔧 Registering iOS push token with Customer.io:', deviceToken);
+            if (deviceToken) {
+              console.log('🔧 Registering push token with Customer.io:', deviceToken);
               CustomerIO.registerDeviceToken(deviceToken);
             }
           } else {
