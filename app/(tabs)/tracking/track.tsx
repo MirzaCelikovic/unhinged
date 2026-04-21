@@ -1,4 +1,5 @@
-import { View, StyleSheet, SafeAreaView, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { X, CircleChevronLeft } from 'lucide-react-native';
@@ -187,7 +188,7 @@ export default function TrackModal() {
       </View>
 
       {/* Header */}
-      <SafeAreaView>
+      <SafeAreaView edges={['top']}>
         <View className="flex-row items-center justify-between px-4 pb-3">
           {step === 'confirm' ? (
             <Pressable

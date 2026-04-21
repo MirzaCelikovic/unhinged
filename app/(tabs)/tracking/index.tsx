@@ -9,8 +9,8 @@ import {
   Linking,
   Platform,
   ActivityIndicator,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Logo from '~/assets/logo_black.svg';
 import { useCallback, useEffect, useRef } from 'react';
 import { router } from 'expo-router';
@@ -215,7 +215,7 @@ export default function Tracking() {
       </View>
 
       {/* Header */}
-      <SafeAreaView>
+      <SafeAreaView edges={['top']}>
         <View className="items-center justify-center pb-2 pt-2">
           <Logo width={160} height={30} />
         </View>

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Pressable, Alert, Linking } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Alert, Linking } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -121,7 +122,7 @@ export default function AccountsList({ userId, type, isMainAccount }: AccountsLi
       </View>
 
       {/* Header */}
-      <SafeAreaView>
+      <SafeAreaView edges={['top']}>
         <View className="flex-row items-center justify-between px-4 pb-3">
           <View className="flex-1 items-center pt-6">
             <Logo width={160} height={30} />

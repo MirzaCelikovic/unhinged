@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
-import { View, SafeAreaView } from 'react-native';
+import { View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Logo from '~/assets/logo_black.svg';
 
 function LogoHeader() {

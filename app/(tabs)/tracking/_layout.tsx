@@ -1,5 +1,6 @@
 import { Stack, useRouter } from 'expo-router';
-import { View, SafeAreaView, Pressable } from 'react-native';
+import { View, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { CircleChevronLeft } from 'lucide-react-native';
 import Logo from '~/assets/logo_black.svg';
 

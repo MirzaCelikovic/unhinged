@@ -6,8 +6,8 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Logo from '~/assets/logo_black.svg';
 import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext';
 import { useInstagram } from '~/lib/useInstagram';
@@ -207,7 +207,7 @@ export default function Index() {
       {homeState === 'connected' && (
         <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
           {/* Header - only shown when connected */}
-          <SafeAreaView>
+          <SafeAreaView edges={['top']}>
             <View className="items-center justify-center pb-2 pt-2">
               <Logo width={160} height={30} />
             </View>

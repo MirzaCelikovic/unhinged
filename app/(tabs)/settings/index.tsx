@@ -1,4 +1,5 @@
-import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Linking, Modal, SafeAreaView } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Linking, Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Logo from '~/assets/logo_black.svg';
 import { useState, useEffect, memo } from 'react';
 import * as Application from 'expo-application';
@@ -91,7 +92,7 @@ export default function Settings() {
       </View>
 
       {/* Header */}
-      <SafeAreaView>
+      <SafeAreaView edges={['top']}>
         <View className="items-center justify-center pb-2 pt-2">
           <Logo width={160} height={30} />
         </View>

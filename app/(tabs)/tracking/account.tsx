@@ -1,4 +1,5 @@
-import { View, Text, Alert, ScrollView, StyleSheet, SafeAreaView, Pressable, Switch } from 'react-native';
+import { View, Text, Alert, ScrollView, StyleSheet, Pressable, Switch } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react-native';
@@ -129,7 +130,7 @@ export default function TrackingAccount() {
       </View>
 
       {/* Header */}
-      <SafeAreaView>
+      <SafeAreaView edges={['top']}>
         <View className="flex-row items-center justify-between px-4 pb-3">
           <View className="flex-1 items-center pt-6">
             <Logo width={160} height={30} />

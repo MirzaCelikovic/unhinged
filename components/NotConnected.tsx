@@ -1,4 +1,5 @@
-import { View, Text, SafeAreaView, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Circles from '~/assets/circles.svg';
 import Instagram from '~/assets/instagram.svg';
 import Button from '~/components/Button';
