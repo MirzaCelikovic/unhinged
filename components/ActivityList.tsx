@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Platform } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { CircleChevronRight, Lock } from 'lucide-react-native';
 import { router, usePathname } from 'expo-router';
@@ -108,20 +109,28 @@ export default function ActivityList({ stats, userId, isMainAccount = false, act
             ) : (
               <>
                 <View className="relative overflow-hidden rounded-md">
-                  <Text className="px-2 font-roboto-bold text-lg text-gray-600">
-                    {fakeNumbers[index]}
-                  </Text>
-                  <BlurView
-                    intensity={12}
-                    tint="light"
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                    }}
-                  />
+                  {Platform.OS === 'android' ? (
+                    <Animated.Text className="px-2 font-roboto-bold text-lg text-gray-600" style={{ filter: 'blur(6px)' }}>
+                      {fakeNumbers[index]}
+                    </Animated.Text>
+                  ) : (
+                    <>
+                      <Text className="px-2 font-roboto-bold text-lg text-gray-600">
+                        {fakeNumbers[index]}
+                      </Text>
+                      <BlurView
+                        intensity={12}
+                        tint="light"
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                        }}
+                      />
+                    </>
+                  )}
                 </View>
                 <CircleChevronRight size={24} color="#9ca3af" />
               </>

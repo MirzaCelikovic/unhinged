@@ -1,4 +1,5 @@
-import { View, Text, Image, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, Image, Pressable, ActivityIndicator, Platform } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 
 interface AccountCardProps {
@@ -49,11 +50,15 @@ export default function AccountCard({
       {/* Profile picture */}
       <View className="relative overflow-hidden rounded-full">
         {profilePicUrl ? (
-          <Image source={{ uri: profilePicUrl }} className="h-12 w-12 rounded-full" />
+          blurred && Platform.OS === 'android' ? (
+            <Animated.Image source={{ uri: profilePicUrl }} className="h-12 w-12 rounded-full" style={{ filter: 'blur(6px)' }} />
+          ) : (
+            <Image source={{ uri: profilePicUrl }} className="h-12 w-12 rounded-full" />
+          )
         ) : (
           <View className="h-12 w-12 rounded-full bg-gray-200" />
         )}
-        {blurred && (
+        {blurred && Platform.OS !== 'android' && (
           <BlurView
             intensity={20}
             tint="light"
@@ -64,14 +69,25 @@ export default function AccountCard({
 
       {/* Username, full name, and label */}
       <View className="relative flex-1">
-        <Text className="font-roboto-medium text-base text-gray-900">@{username}</Text>
-        {fullName && (
-          <Text className="font-roboto-regular text-sm text-gray-500" numberOfLines={1}>{fullName}</Text>
+        {blurred && Platform.OS === 'android' ? (
+          <>
+            <Animated.Text className="font-roboto-medium text-base text-gray-900" style={{ filter: 'blur(6px)' }}>@{username}</Animated.Text>
+            {fullName && (
+              <Animated.Text className="font-roboto-regular text-sm text-gray-500" numberOfLines={1} style={{ filter: 'blur(6px)' }}>{fullName}</Animated.Text>
+            )}
+          </>
+        ) : (
+          <>
+            <Text className="font-roboto-medium text-base text-gray-900">@{username}</Text>
+            {fullName && (
+              <Text className="font-roboto-regular text-sm text-gray-500" numberOfLines={1}>{fullName}</Text>
+            )}
+          </>
         )}
         {label && (
           <Text className="font-roboto-regular text-sm text-gray-400">{label}</Text>
         )}
-        {blurred && (
+        {blurred && Platform.OS !== 'android' && (
           <BlurView
             intensity={12}
             tint="light"

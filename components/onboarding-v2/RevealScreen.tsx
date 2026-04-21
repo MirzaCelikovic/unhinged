@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, Image, ScrollView, Pressable } from 'react-native';
+import { View, Text, Image, ScrollView, Pressable, Platform } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -85,7 +85,10 @@ export default function RevealScreen({
 
   return (
     <View className="flex-1">
-      <ScrollView className="flex-1 px-4 pt-2" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView
+        className="flex-1 px-4 pt-2"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}>
         <Text className="mb-6 text-center font-roboto-extrablack text-3xl text-black">
           Here&apos;s what we found on{'\n'}@{username}
         </Text>
@@ -94,10 +97,7 @@ export default function RevealScreen({
         <View className="rounded-2xl bg-white p-4">
           <View className="flex-row items-center">
             {profilePicUrl ? (
-              <Image
-                source={{ uri: profilePicUrl }}
-                className="h-[80px] w-[80px] rounded-full"
-              />
+              <Image source={{ uri: profilePicUrl }} className="h-[80px] w-[80px] rounded-full" />
             ) : (
               <View className="h-[80px] w-[80px] items-center justify-center rounded-full bg-gray-200">
                 <UnhingedCircle width={50} height={50} />
@@ -141,23 +141,32 @@ export default function RevealScreen({
               key={index}
               onPress={handleRowPress}
               className={`flex-row items-center justify-between px-6 active:opacity-80 ${row.blurredValue ? 'py-3' : 'py-5'} ${index < INSIGHT_ROWS.length - 1 ? 'border-b border-gray-100' : ''}`}>
-              <Text className="font-roboto-medium text-base text-gray-900">
-                {row.label}
-              </Text>
+              <Text className="font-roboto-medium text-base text-gray-900">{row.label}</Text>
               <View className="flex-row items-center gap-2">
                 {row.blurredValue && (
                   <View className="relative overflow-hidden rounded-lg" style={{ paddingHorizontal: 8, paddingVertical: 6 }}>
-                    <Text className="font-roboto-bold text-lg text-gray-600">{row.blurredValue}</Text>
-                    <BlurView intensity={20} tint="light" style={{ position: 'absolute', top: -4, left: -4, right: -4, bottom: -4 }} />
+                    {Platform.OS === 'android' ? (
+                      <Animated.Text
+                        className="font-roboto-bold text-lg text-gray-600"
+                        style={{ filter: 'blur(6px)' }}>
+                        {row.blurredValue}
+                      </Animated.Text>
+                    ) : (
+                      <>
+                        <Text className="font-roboto-bold text-lg text-gray-600">{row.blurredValue}</Text>
+                        <BlurView
+                          intensity={20}
+                          tint="light"
+                          style={{ position: 'absolute', top: -4, left: -4, right: -4, bottom: -4 }}
+                        />
+                      </>
+                    )}
                   </View>
                 )}
-                {row.locked && (
-                  <Lock size={18} color="#9ca3af" />
-                )}
+                {row.locked && <Lock size={18} color="#9ca3af" />}
               </View>
             </Pressable>
           ))}
-
         </View>
 
         {/* Red flags row */}
@@ -178,7 +187,12 @@ export default function RevealScreen({
           <Button label="Show me everything" onPress={handleContinue} />
           {hasSeenPaywall && !isSubscribed && (
             <Animated.View entering={FadeIn.duration(400)}>
-              <Pressable onPress={() => { track(Events.REVEAL_MAYBE_LATER); onNext(); }} className="mt-3 py-2">
+              <Pressable
+                onPress={() => {
+                  track(Events.REVEAL_MAYBE_LATER);
+                  onNext();
+                }}
+                className="mt-3 py-2">
                 <Text className="text-center font-roboto-medium text-base text-black">
                   Maybe later
                 </Text>

@@ -102,16 +102,26 @@ export default function TrackSearch({ onNext, savedResult, onResultFetched }: Tr
             <View key={account.id} className="overflow-hidden rounded-2xl">
               <View className="flex-row items-center gap-3 bg-white p-4">
                 <View className="relative h-12 w-12 overflow-hidden rounded-full">
-                  <Image
-                    source={account.image}
-                    className="h-12 w-12 rounded-full"
-                    style={{ transform: [{ scaleX: -1 }] }}
-                  />
-                  <BlurView
-                    intensity={20}
-                    tint="light"
-                    style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                  />
+                  {Platform.OS === 'android' ? (
+                    <Animated.Image
+                      source={account.image}
+                      className="h-12 w-12 rounded-full"
+                      style={{ transform: [{ scaleX: -1 }], filter: 'blur(6px)' }}
+                    />
+                  ) : (
+                    <>
+                      <Image
+                        source={account.image}
+                        className="h-12 w-12 rounded-full"
+                        style={{ transform: [{ scaleX: -1 }] }}
+                      />
+                      <BlurView
+                        intensity={20}
+                        tint="light"
+                        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                      />
+                    </>
+                  )}
                 </View>
                 <View className="flex-1 justify-center">
                   <View className="mb-1 h-4 w-32 rounded bg-gray-300" />
