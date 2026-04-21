@@ -171,7 +171,7 @@ PODS:
     - ExpoModulesCore
   - ExpoFileSystem (19.0.17):
     - ExpoModulesCore
-  - ExpoFont (14.0.9):
+  - ExpoFont (14.0.11):
     - ExpoModulesCore
   - ExpoHaptics (15.0.8):
     - ExpoModulesCore
@@ -179,6 +179,8 @@ PODS:
     - ExpoModulesCore
     - RNScreens
   - ExpoKeepAwake (15.0.7):
+    - ExpoModulesCore
+  - ExpoLinearGradient (15.0.8):
     - ExpoModulesCore
   - ExpoLinking (8.0.8):
     - ExpoModulesCore
@@ -2311,6 +2313,7 @@ DEPENDENCIES:
   - ExpoHaptics (from `../node_modules/expo-haptics/ios`)
   - ExpoHead (from `../node_modules/expo-router/ios`)
   - ExpoKeepAwake (from `../node_modules/expo-keep-awake/ios`)
+  - ExpoLinearGradient (from `../node_modules/expo-linear-gradient/ios`)
   - ExpoLinking (from `../node_modules/expo-linking/ios`)
   - ExpoModulesCore (from `../node_modules/expo-modules-core`)
   - ExpoSecureStore (from `../node_modules/expo-secure-store/ios`)
@@ -2459,6 +2462,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-router/ios"
   ExpoKeepAwake:
     :path: "../node_modules/expo-keep-awake/ios"
+  ExpoLinearGradient:
+    :path: "../node_modules/expo-linear-gradient/ios"
   ExpoLinking:
     :path: "../node_modules/expo-linking/ios"
   ExpoModulesCore:
@@ -2655,10 +2660,11 @@ SPEC CHECKSUMS:
   ExpoBlur: 688c53d5d26575cbb6c72e7fbd4caef8d8cfadf6
   ExpoClipboard: 50fa3332136758be7ca2ea912bae585f74bb93c3
   ExpoFileSystem: 56f081328f5b48a6dcc8302eee51d4f2d9d0049b
-  ExpoFont: b881d43057dceb7b31ff767b24f612609e80f60f
+  ExpoFont: c625dbd97ed57e9089b172b2a7bb99003d074664
   ExpoHaptics: 7240781406f4563c3f4eb1e72864302a8c643fd0
   ExpoHead: aa5f5a8afaa9bd4969bfdd6d5b76681e2490fe5b
   ExpoKeepAwake: 3f5e3ac53627849174f3603271df8e08f174ed4a
+  ExpoLinearGradient: 814a21fc4056c3cf606e4f19e31e47074c5b5a86
   ExpoLinking: f5c171877e118e792cb9a77e5ade0b080d899b14
   ExpoModulesCore: 4daa3e24768f152a3b3d84259150fedb5013f561
   ExpoSecureStore: f44dee1354536bdb3d7fab8cc451ee737c41beca
