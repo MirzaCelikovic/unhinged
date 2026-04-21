@@ -235,6 +235,8 @@ PODS:
     - ExpoModulesCore
   - ExpoSymbols (55.0.7):
     - ExpoModulesCore
+  - ExpoSystemUI (55.0.15):
+    - ExpoModulesCore
   - ExpoTrackingTransparency (55.0.13):
     - ExpoModulesCore
   - FBAEMKit (18.0.3):
@@ -2521,6 +2523,7 @@ DEPENDENCIES:
   - ExpoSplashScreen (from `../node_modules/expo-splash-screen/ios`)
   - ExpoSQLite (from `../node_modules/expo-sqlite/ios`)
   - ExpoSymbols (from `../node_modules/expo-symbols/ios`)
+  - ExpoSystemUI (from `../node_modules/expo-system-ui/ios`)
   - ExpoTrackingTransparency (from `../node_modules/expo-tracking-transparency/ios`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
@@ -2701,6 +2704,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-sqlite/ios"
   ExpoSymbols:
     :path: "../node_modules/expo-symbols/ios"
+  ExpoSystemUI:
+    :path: "../node_modules/expo-system-ui/ios"
   ExpoTrackingTransparency:
     :path: "../node_modules/expo-tracking-transparency/ios"
   FBLazyVector:
@@ -2915,6 +2920,7 @@ SPEC CHECKSUMS:
   ExpoSplashScreen: 2369a893d4c2ffa6fd05a66c7bcc248e40b62457
   ExpoSQLite: 9989421186383e2229b8736ff58cea4ee8e21d8b
   ExpoSymbols: 9dfd60e35b2fafb284adefaefe1c6d757e331708
+  ExpoSystemUI: f4a4f3dd9f62f0d4e6799c57f600288fd861ce95
   ExpoTrackingTransparency: 287445639184c0f885ccff78f6e2b6d8414d58c4
   FBAEMKit: 2a6b529993713c185b02bc36f8c91129bf78dfb0
   FBLazyVector: 061f518bbd81677ed8a8317e2ae60b8779495808
