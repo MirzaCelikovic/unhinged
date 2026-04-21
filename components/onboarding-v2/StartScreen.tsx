@@ -30,7 +30,7 @@ export default function StartScreenV2({ onNext }: StartScreenV2Props) {
   return (
     <View className="flex-1">
       {/* Logo */}
-      <View className="items-center pt-2">
+      <View className="items-center pt-6">
         <Logo width={200} height={50} />
       </View>
 
