@@ -12,6 +12,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import '../global.css';
 import * as Sentry from '@sentry/react-native';
@@ -68,6 +69,7 @@ export default Sentry.wrap(function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FFE51F' }}>
+      <StatusBar style="dark" />
       <SQLiteProvider databaseName="unhinged.db" onInit={initializeDatabase}>
         <QueryClientProvider client={qc}>
           <RevenueCatProvider>
