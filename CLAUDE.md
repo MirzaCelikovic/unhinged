@@ -8,7 +8,7 @@ Unhinged is a React Native (Expo) app that allows users to privately track Insta
 
 ## Tech Stack
 
-- **Framework:** React Native with Expo SDK 54
+- **Framework:** React Native with Expo SDK 55
 - **Routing:** expo-router (file-based routing)
 - **Styling:** NativeWind (TailwindCSS for React Native)
 - **State Management:** React Context + TanStack Query (react-query)

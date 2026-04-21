@@ -1,9 +1,9 @@
-import Expo
+internal import Expo
 import React
 import ReactAppDependencyProvider
 
-@UIApplicationMain
-public class AppDelegate: ExpoAppDelegate {
+@main
+class AppDelegate: ExpoAppDelegate {
   let cioSdkHandler = CioSdkAppDelegateHandler()
 
   var window: UIWindow?
@@ -21,7 +21,6 @@ public class AppDelegate: ExpoAppDelegate {
 
     reactNativeDelegate = delegate
     reactNativeFactory = factory
-    bindReactNativeFactory(factory)
 
 #if os(iOS) || os(tvOS)
     window = UIWindow(frame: UIScreen.main.bounds)

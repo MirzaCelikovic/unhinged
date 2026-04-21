@@ -42,6 +42,14 @@
         }
       ],
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 150,
+          "backgroundColor": "#FFE51F"
+        }
+      ],
       "expo-secure-store",
       "expo-sqlite",
       [
@@ -88,17 +96,15 @@
           "project": "unhinged-app",
           "organization": "unhinged"
         }
-      ]
+      ],
+      "@sentry/react-native"
     ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#FFE51F"
-    },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "so.unhinged",
