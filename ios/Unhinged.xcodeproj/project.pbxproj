@@ -587,11 +587,11 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = so.unhinged;
-				PRODUCT_NAME = Unhinged;
+				PRODUCT_NAME = "Unhinged";
 				SWIFT_OBJC_BRIDGING_HEADER = "Unhinged/Unhinged-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1";
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Debug;
@@ -619,10 +619,10 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = so.unhinged;
-				PRODUCT_NAME = Unhinged;
+				PRODUCT_NAME = "Unhinged";
 				SWIFT_OBJC_BRIDGING_HEADER = "Unhinged/Unhinged-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1";
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Release;
@@ -632,7 +632,7 @@
 			baseConfigurationReference = 74403DD0840CBFFF30842C44 /* Pods-NotificationService.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = undefined;
+				DEVELOPMENT_TEAM = DUZR4LXSY7;
 				INFOPLIST_FILE = "NotificationService/NotificationService-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -645,7 +645,7 @@
 				PRODUCT_NAME = NotificationService;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 4.2;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1";
 			};
 			name = Release;
 		};
@@ -654,7 +654,7 @@
 			baseConfigurationReference = D8E6B61108189369C3652DE1 /* Pods-NotificationService.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = undefined;
+				DEVELOPMENT_TEAM = DUZR4LXSY7;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -671,7 +671,7 @@
 				PRODUCT_NAME = NotificationService;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 4.2;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1";
 			};
 			name = Debug;
 		};
