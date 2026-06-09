@@ -1,0 +1,58 @@
+diff --git a/node_modules/react-native-tiktok-business-sdk/ios/TikTokBusinessModule.swift b/node_modules/react-native-tiktok-business-sdk/ios/TikTokBusinessModule.swift
+index c67a427..6890680 100644
+--- a/node_modules/react-native-tiktok-business-sdk/ios/TikTokBusinessModule.swift
++++ b/node_modules/react-native-tiktok-business-sdk/ios/TikTokBusinessModule.swift
+@@ -263,6 +263,11 @@ class TikTokBusinessModule: NSObject, RCTBridgeModule {
+       if opts["disablePaymentTracking"] as? Bool == true {
+         config?.disablePaymentTracking()
+       }
++      if opts["disableSKAdNetworkSupport"] as? Bool == true {
++        // Let the dedicated react-native-skadnetwork module own SKAN conversion
++        // values so the two SDKs don't clobber each other's postbacks.
++        config?.disableSKAdNetworkSupport()
++      }
+     }
+ 
+     TikTokBusiness.initializeSdk(config) { success, error in
+diff --git a/node_modules/react-native-tiktok-business-sdk/lib/typescript/commonjs/src/index.d.ts b/node_modules/react-native-tiktok-business-sdk/lib/typescript/commonjs/src/index.d.ts
+index 59cf309..79a9d06 100644
+--- a/node_modules/react-native-tiktok-business-sdk/lib/typescript/commonjs/src/index.d.ts
++++ b/node_modules/react-native-tiktok-business-sdk/lib/typescript/commonjs/src/index.d.ts
+@@ -79,6 +79,7 @@ export interface TikTokSdkConfig {
+     disableLaunchTracking?: boolean;
+     disableRetentionTracking?: boolean;
+     disablePaymentTracking?: boolean;
++    disableSKAdNetworkSupport?: boolean;
+ }
+ /**
+  * Initializes the TikTok SDK.
+diff --git a/node_modules/react-native-tiktok-business-sdk/lib/typescript/module/src/index.d.ts b/node_modules/react-native-tiktok-business-sdk/lib/typescript/module/src/index.d.ts
+index 59cf309..79a9d06 100644
+--- a/node_modules/react-native-tiktok-business-sdk/lib/typescript/module/src/index.d.ts
++++ b/node_modules/react-native-tiktok-business-sdk/lib/typescript/module/src/index.d.ts
+@@ -79,6 +79,7 @@ export interface TikTokSdkConfig {
+     disableLaunchTracking?: boolean;
+     disableRetentionTracking?: boolean;
+     disablePaymentTracking?: boolean;
++    disableSKAdNetworkSupport?: boolean;
+ }
+ /**
+  * Initializes the TikTok SDK.
+diff --git a/node_modules/react-native-tiktok-business-sdk/src/index.tsx b/node_modules/react-native-tiktok-business-sdk/src/index.tsx
+index 72ef5da..ec55488 100644
+--- a/node_modules/react-native-tiktok-business-sdk/src/index.tsx
++++ b/node_modules/react-native-tiktok-business-sdk/src/index.tsx
+@@ -176,6 +176,13 @@ export interface TikTokSdkConfig {
+   disableLaunchTracking?: boolean;
+   disableRetentionTracking?: boolean;
+   disablePaymentTracking?: boolean;
++  /**
++   * Disables the TikTok SDK's built-in SKAdNetwork conversion-value handling.
++   * Set this when another module (e.g. react-native-skadnetwork) owns SKAN
++   * postbacks, to avoid both SDKs racing on updatePostbackConversionValue.
++   * iOS only.
++   */
++  disableSKAdNetworkSupport?: boolean;
+ }
+ 
+ /**

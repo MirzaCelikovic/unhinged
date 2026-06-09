@@ -27,3 +27,4 @@ build-*.ipa
 build-*.aab
 
 .env.local
+.mcp.json
