@@ -1,6 +1,6 @@
 {
   "name": "unhinged",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "scripts": {
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -10,6 +10,7 @@
     "prebuild:ios": "expo prebuild --platform ios",
     "build:ios": "./scripts/build-ios.sh",
     "submit:ios": "eas submit --platform ios --path",
+    "release:ios": "eas build --platform ios --profile production --non-interactive --auto-submit",
     "prebuild:android": "expo prebuild --platform android",
     "build:android": "./scripts/build-android.sh",
     "submit:android": "eas submit --platform android --path"
@@ -61,6 +62,7 @@
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@types/react": "~19.2.10",
+    "eas-cli": "^20.1.0",
     "eslint": "^9.25.1",
     "eslint-config-expo": "~55.0.0",
     "eslint-config-prettier": "^10.1.2",
