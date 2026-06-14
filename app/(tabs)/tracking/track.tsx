@@ -14,10 +14,7 @@ import { useAddTrackedInstagram } from '~/lib/useInstagram';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 import { fetchPublicProfile } from '~/lib/fetchPublicProfile';
 import { Instagram } from '~/lib/types';
-import {
-  FOLLOWERS_WARN_THRESHOLD,
-  FOLLOWING_WARN_THRESHOLD,
-} from '~/lib/constants';
+import { FOLLOWERS_WARN_THRESHOLD, FOLLOWING_WARN_THRESHOLD } from '~/lib/constants';
 
 type TrackStep = 'search' | 'confirm';
 
@@ -42,12 +39,14 @@ export default function TrackModal() {
   const [trackFollowing, setTrackFollowing] = useState(true);
   const [trackFollowers, setTrackFollowers] = useState(true);
 
-  // Auto-close modal once metadata is fetched for the added account
+  // Auto-close modal once metadata is fetched (or errored) for the added account
   useEffect(() => {
     if (!addedUserId) return;
 
     const trackedAccount = syncState.trackedAccounts.find((acc) => acc.userId === addedUserId);
-    if (trackedAccount?.metadata === 'complete') {
+    if (trackedAccount?.metadata === 'complete' || trackedAccount?.metadata === 'error') {
+      // Close on both complete and error — error means the sync will show an error
+      // state on the tracking screen, but we don't want the modal to hang.
       router.back();
     }
   }, [addedUserId, syncState.trackedAccounts]);
@@ -182,7 +181,7 @@ export default function TrackModal() {
   };
 
   return (
-    <View className="bg-background flex-1">
+    <View className="flex-1 bg-background">
       <View style={StyleSheet.absoluteFill} className="items-center justify-center">
         <Circles width={700} height={700} />
       </View>

@@ -112,6 +112,7 @@ interface WebViewMessage {
   targetUserId?: string;
   isFollowing?: boolean;
   isOutgoingRequest?: boolean;
+  listType?: 'following' | 'followers' | 'metadata';
 }
 
 interface User {
@@ -166,16 +167,87 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     Map<string, { resolve: (result: UserIdResult) => void; reject: (error: Error) => void }>
   >(new Map());
   const followPromisesRef = useRef<
-    Map<string, {
-      resolve: (result: FollowResult) => void;
-      reject: (error: Error) => void;
-      username: string;
-      profilePicUrl?: string | null;
-    }>
+    Map<
+      string,
+      {
+        resolve: (result: FollowResult) => void;
+        reject: (error: Error) => void;
+        username: string;
+        profilePicUrl?: string | null;
+      }
+    >
   >(new Map());
   const unfollowPromisesRef = useRef<
     Map<string, { resolve: (result: FollowResult) => void; reject: (error: Error) => void }>
   >(new Map());
+
+  // Watchdog: stall timeout (ms) with no incoming WebView message while isActive=true
+  const SYNC_STALL_TIMEOUT_MS = 90000;
+  const syncStallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Mirror of syncState for read access inside callbacks without closure staleness
+  const syncStateRef = useRef<SyncState>(syncState);
+  // Guards against late WebView messages arriving after the watchdog has settled a stalled sync
+  const stalledRef = useRef(false);
+
+  // Keep syncStateRef current so watchdog callbacks can read the latest state
+  useEffect(() => {
+    syncStateRef.current = syncState;
+  }, [syncState]);
+
+  // Watchdog: stop the stall timer
+  const clearStallTimer = () => {
+    if (syncStallTimerRef.current !== null) {
+      clearTimeout(syncStallTimerRef.current);
+      syncStallTimerRef.current = null;
+    }
+  };
+
+  // Watchdog: force-resolve a wedged sync by marking all still-'syncing' steps as 'error'
+  const handleSyncStall = () => {
+    console.warn(
+      '⚠️ Sync watchdog fired: no WebView activity for',
+      SYNC_STALL_TIMEOUT_MS,
+      'ms. Force-resolving stalled sync.'
+    );
+    fetchingUsersRef.current.clear();
+    stalledRef.current = true;
+    setSyncState((prev) => {
+      if (!prev.isActive) return prev;
+
+      const settleSteps = (acc: AccountSyncStatus): AccountSyncStatus => ({
+        ...acc,
+        metadata: acc.metadata === 'syncing' || acc.metadata === 'pending' ? 'error' : acc.metadata,
+        following:
+          acc.following === 'syncing' || acc.following === 'pending' ? 'error' : acc.following,
+        followers:
+          acc.followers === 'syncing' || acc.followers === 'pending' ? 'error' : acc.followers,
+      });
+
+      return {
+        isActive: false,
+        mainAccount: prev.mainAccount ? settleSteps(prev.mainAccount) : null,
+        trackedAccounts: prev.trackedAccounts.map(settleSteps),
+      };
+    });
+  };
+
+  // Watchdog: reset the inactivity timer (called on every incoming WebView message)
+  const resetStallTimer = () => {
+    if (!syncStateRef.current.isActive) return;
+    clearStallTimer();
+    syncStallTimerRef.current = setTimeout(handleSyncStall, SYNC_STALL_TIMEOUT_MS);
+  };
+
+  // Watchdog: clean up timer when isActive goes false or on unmount
+  useEffect(() => {
+    if (!syncState.isActive) {
+      clearStallTimer();
+    }
+  }, [syncState.isActive]);
+
+  useEffect(() => {
+    return () => clearStallTimer();
+  }, []);
 
   // Fetch following list for a user (internal helper)
   const fetchFollowing = (userIdToFetch: string) => {
@@ -192,7 +264,8 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     console.log('🔄 fetchFollowing:', userIdToFetch, '(method:', FOLLOWING_API_METHOD, ')');
     fetchingUsersRef.current.add(userIdToFetch);
 
-    const apiMethod = FOLLOWING_API_METHOD === 'graphql' ? 'fetchFollowingGraphQL' : 'fetchFollowing';
+    const apiMethod =
+      FOLLOWING_API_METHOD === 'graphql' ? 'fetchFollowingGraphQL' : 'fetchFollowing';
 
     apiWebViewRef.current.injectJavaScript(`(function(){
       console.log('📱 Injecting ${apiMethod} for userId:', '${userIdToFetch}');
@@ -223,7 +296,8 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     console.log('🔄 fetchFollowers:', userIdToFetch, '(method:', FOLLOWERS_API_METHOD, ')');
     fetchingUsersRef.current.add(`followers_${userIdToFetch}`);
 
-    const apiMethod = FOLLOWERS_API_METHOD === 'graphql' ? 'fetchFollowersGraphQL' : 'fetchFollowers';
+    const apiMethod =
+      FOLLOWERS_API_METHOD === 'graphql' ? 'fetchFollowersGraphQL' : 'fetchFollowers';
 
     apiWebViewRef.current.injectJavaScript(`(function(){
       console.log('📱 Injecting ${apiMethod} for userId:', '${userIdToFetch}');
@@ -324,6 +398,10 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     `);
   };
 
+  // A step is "settled" when it has reached a terminal state (complete or error).
+  // 'syncing' and 'pending' are non-terminal and keep isActive=true.
+  const isSettled = (s: SyncStepStatus) => s === 'complete' || s === 'error';
+
   // Helper to update a specific account's sync status
   const updateAccountSyncStatus = (
     targetUserId: string,
@@ -334,20 +412,17 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       // Check if it's the main account
       if (prev.mainAccount?.userId === targetUserId) {
         const updatedMain = { ...prev.mainAccount, [field]: status };
-        const allComplete =
-          updatedMain.metadata === 'complete' &&
-          updatedMain.following === 'complete' &&
-          updatedMain.followers === 'complete';
-        const allTrackedComplete = prev.trackedAccounts.every(
-          (acc) =>
-            acc.metadata === 'complete' &&
-            acc.following === 'complete' &&
-            acc.followers === 'complete'
+        const allSettled =
+          isSettled(updatedMain.metadata) &&
+          isSettled(updatedMain.following) &&
+          isSettled(updatedMain.followers);
+        const allTrackedSettled = prev.trackedAccounts.every(
+          (acc) => isSettled(acc.metadata) && isSettled(acc.following) && isSettled(acc.followers)
         );
         return {
           ...prev,
           mainAccount: updatedMain,
-          isActive: !(allComplete && allTrackedComplete),
+          isActive: !(allSettled && allTrackedSettled),
         };
       }
 
@@ -356,22 +431,19 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (trackedIndex !== -1) {
         const updatedTracked = [...prev.trackedAccounts];
         updatedTracked[trackedIndex] = { ...updatedTracked[trackedIndex], [field]: status };
-        // If mainAccount is null, consider it complete (not syncing)
-        const mainComplete =
+        // If mainAccount is null, consider it settled (not syncing)
+        const mainSettled =
           !prev.mainAccount ||
-          (prev.mainAccount.metadata === 'complete' &&
-            prev.mainAccount.following === 'complete' &&
-            prev.mainAccount.followers === 'complete');
-        const allTrackedComplete = updatedTracked.every(
-          (acc) =>
-            acc.metadata === 'complete' &&
-            acc.following === 'complete' &&
-            acc.followers === 'complete'
+          (isSettled(prev.mainAccount.metadata) &&
+            isSettled(prev.mainAccount.following) &&
+            isSettled(prev.mainAccount.followers));
+        const allTrackedSettled = updatedTracked.every(
+          (acc) => isSettled(acc.metadata) && isSettled(acc.following) && isSettled(acc.followers)
         );
         return {
           ...prev,
           trackedAccounts: updatedTracked,
-          isActive: !(mainComplete && allTrackedComplete),
+          isActive: !(mainSettled && allTrackedSettled),
         };
       }
 
@@ -458,6 +530,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       };
     });
 
+    stalledRef.current = false;
     setSyncState({
       isActive: true,
       mainAccount: mainAccountStatus,
@@ -477,7 +550,8 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // Start fetches for tracked accounts with staggered delays
     for (let i = 0; i < trackedInstagrams.length; i++) {
       // Add random delay between accounts to avoid burst requests
-      if (i > 0 || true) { // Always delay tracked accounts (main account already started)
+      if (i > 0 || true) {
+        // Always delay tracked accounts (main account already started)
         await new Promise((resolve) => setTimeout(resolve, 300 + Math.random() * 400));
       }
       const tracked = trackedInstagrams[i];
@@ -489,7 +563,11 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   // Sync a single tracked account (used when adding a new tracked account)
-  const syncTrackedAccount = (trackedUserId: string, trackedUsername: string, options?: SyncOptions) => {
+  const syncTrackedAccount = (
+    trackedUserId: string,
+    trackedUsername: string,
+    options?: SyncOptions
+  ) => {
     if (!isLoggedIn || !userId) {
       console.warn('⚠️ Cannot sync tracked account: not logged in');
       return;
@@ -497,7 +575,10 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const { skipFollowing = false, skipFollowers = false } = options || {};
 
-    console.log('🔄 Starting sync for tracked account:', trackedUsername, { skipFollowing, skipFollowers });
+    console.log('🔄 Starting sync for tracked account:', trackedUsername, {
+      skipFollowing,
+      skipFollowers,
+    });
 
     // Create sync status for the new tracked account
     const newTrackedStatus: AccountSyncStatus = {
@@ -510,6 +591,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       followersDisabled: skipFollowers,
     };
 
+    stalledRef.current = false;
     // Add to sync state (or update if already exists)
     setSyncState((prev) => {
       const existingIndex = prev.trackedAccounts.findIndex((acc) => acc.userId === trackedUserId);
@@ -561,7 +643,11 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   // Follow a user
-  const followUser = ({ targetUserId, targetUsername, targetProfilePicUrl }: FollowUserParams): Promise<FollowResult> => {
+  const followUser = ({
+    targetUserId,
+    targetUsername,
+    targetProfilePicUrl,
+  }: FollowUserParams): Promise<FollowResult> => {
     return new Promise((resolve, reject) => {
       if (!apiWebViewRef.current) {
         reject(new Error('API WebView not ready'));
@@ -652,6 +738,9 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       const data: WebViewMessage = JSON.parse(event.nativeEvent.data);
 
+      // Watchdog: every arriving message resets the stall timer
+      resetStallTimer();
+
       switch (data.type) {
         case 'LOGIN_SUCCESS':
           closeLoginModal();
@@ -666,6 +755,11 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             console.log('🔄 Different account detected, clearing all data');
             // Clear all local data for the old account
             const clearAndSetup = async () => {
+              // Clear any in-progress sync to prevent the watchdog from settling
+              // the new account's freshly-started steps after an account switch.
+              clearStallTimer();
+              setSyncState({ isActive: false, mainAccount: null, trackedAccounts: [] });
+              fetchingUsersRef.current.clear();
               await clearAllData(db);
               // Disconnect old account from backend
               if (account?.uuid) {
@@ -747,26 +841,59 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           break;
 
         case 'FOLLOWING_COMPLETE':
+          if (stalledRef.current) break;
           fetchingUsersRef.current.delete(data.userId!);
           handleFollowingComplete(data.userId!, data.users!);
           updateAccountSyncStatus(data.userId!, 'following', 'complete');
           break;
 
         case 'FOLLOWERS_COMPLETE':
+          if (stalledRef.current) break;
           fetchingUsersRef.current.delete(`followers_${data.userId!}`);
           handleFollowersComplete(data.userId!, data.users!);
           updateAccountSyncStatus(data.userId!, 'followers', 'complete');
           break;
 
         case 'FETCH_ERROR':
-          if (data.userId) {
-            fetchingUsersRef.current.delete(data.userId);
-            fetchingUsersRef.current.delete(`followers_${data.userId}`);
-            // Mark both as error since we don't know which one failed
-            updateAccountSyncStatus(data.userId, 'following', 'error');
-            updateAccountSyncStatus(data.userId, 'followers', 'error');
+          if (stalledRef.current) break;
+          if (data.listType === 'metadata') {
+            // Metadata failure: resolve username→userId using the ref (no state-setter hack needed)
+            const metaUsername = data.username;
+            if (metaUsername) {
+              const snap = syncStateRef.current;
+              let targetId: string | undefined;
+              const metaUsernameLower = metaUsername.toLowerCase();
+              // Note: if a tracked account has the same username as the main account, the
+              // main account match takes priority — this edge case is intentionally left as-is.
+              if (snap.mainAccount?.username.toLowerCase() === metaUsernameLower) {
+                targetId = snap.mainAccount.userId;
+              } else {
+                targetId = snap.trackedAccounts.find(
+                  (acc) => acc.username.toLowerCase() === metaUsernameLower
+                )?.userId;
+              }
+              if (targetId) {
+                updateAccountSyncStatus(targetId, 'metadata', 'error');
+              }
+            }
+            console.log('❌ Metadata fetch error for', metaUsername, ':', data.error);
+          } else if (data.userId) {
+            const lt = data.listType; // 'following' | 'followers' | undefined
+            if (lt === 'following') {
+              fetchingUsersRef.current.delete(data.userId);
+              updateAccountSyncStatus(data.userId, 'following', 'error');
+            } else if (lt === 'followers') {
+              fetchingUsersRef.current.delete(`followers_${data.userId}`);
+              updateAccountSyncStatus(data.userId, 'followers', 'error');
+            } else {
+              // listType absent (safety fallback) - mark both as before
+              fetchingUsersRef.current.delete(data.userId);
+              fetchingUsersRef.current.delete(`followers_${data.userId}`);
+              updateAccountSyncStatus(data.userId, 'following', 'error');
+              updateAccountSyncStatus(data.userId, 'followers', 'error');
+            }
+            console.log('❌ Error:', data.error);
           }
-          console.log('❌ Error:', data.error);
           break;
 
         case 'LOGOUT_ERROR':
@@ -797,6 +924,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           break;
 
         case 'ACCOUNT_METADATA_FETCHED':
+          if (stalledRef.current) break;
           if (data.userId && data.username) {
             const updateMetadata = async () => {
               try {
@@ -1043,6 +1171,75 @@ const instagramAPI = `
     sendMessage('DEBUG_LOG', { message: args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ') });
   }
 
+  // Helper: Fetch a single page with per-page retry (exponential backoff).
+  // Retries ONLY on network errors (fetch rejects) or HTTP 5xx responses.
+  // NEVER retries on 4xx (including 429/401/403) or non-ok non-5xx.
+  // Honours Retry-After header (integer seconds) on 5xx when present.
+  // Max 3 retries; base delays ~1s, 2s, 4s plus small random jitter.
+  async function fetchWithRetry(url, options) {
+    var REQUEST_TIMEOUT_MS = 30000;
+    var baseDelays = [1000, 2000, 4000];
+    var MAX_RETRIES = baseDelays.length;
+    var attempt = 0;
+
+    while (true) {
+      var response;
+      var networkError = null;
+      var controller = new AbortController();
+      var timeoutId = null;
+
+      try {
+        timeoutId = setTimeout(function() { controller.abort(); }, REQUEST_TIMEOUT_MS);
+        var fetchOptions = Object.assign({}, options, { signal: controller.signal });
+        response = await fetch(url, fetchOptions);
+      } catch (err) {
+        networkError = err;
+      } finally {
+        if (timeoutId !== null) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+      }
+
+      // Determine whether to retry
+      var shouldRetry = false;
+      var retryDelayMs = baseDelays[attempt] + Math.floor(Math.random() * 200);
+
+      if (networkError) {
+        // Network-level failure (includes AbortError from timeout) — always retryable
+        shouldRetry = true;
+      } else if (response.status >= 500 && response.status <= 599) {
+        // 5xx server error — retryable; honour Retry-After if present (capped to 30s)
+        shouldRetry = true;
+        var retryAfterHeader = response.headers.get('Retry-After');
+        if (retryAfterHeader) {
+          var parsed = parseInt(retryAfterHeader, 10);
+          if (!isNaN(parsed) && parsed > 0) {
+            retryDelayMs = Math.min(parsed, 30) * 1000;
+          }
+        }
+      }
+      // 4xx (including 429, 401, 403) and non-error non-ok responses: not retried
+
+      if (!shouldRetry) {
+        // Success or non-retryable failure — return (caller checks response.ok)
+        if (networkError) throw networkError;
+        return response;
+      }
+
+      attempt++;
+      if (attempt > MAX_RETRIES) {
+        // Exhausted retries
+        if (networkError) throw networkError;
+        return response;
+      }
+
+      debugLog('[Retry] attempt ' + attempt + ' of ' + MAX_RETRIES + ' after ' + retryDelayMs + 'ms (status: ' + (networkError ? 'network-error' : String(response.status)) + ')');
+      // Heartbeat before sleep so the RN watchdog timer keeps resetting across waits
+      await new Promise(function(resolve) { setTimeout(resolve, retryDelayMs); });
+    }
+  }
+
   // Create Instagram API namespace
   window.instagramAPI = {
     // Start polling for ds_user_id cookie
@@ -1162,16 +1359,21 @@ const instagramAPI = `
         let pageNum = 0;
 
         while (hasMore) {
+          pageNum++;
           let url = 'https://www.instagram.com/api/v1/friendships/' + userId + '/following/?count=50';
           if (maxId) url += '&max_id=' + maxId;
 
-          const response = await fetch(url, {
+          debugLog('[Following] Page ' + pageNum + ' - Fetching with maxId:', maxId || 'none');
+
+          const response = await fetchWithRetry(url, {
             credentials: 'include',
             headers: {
               'X-Requested-With': 'XMLHttpRequest',
               'X-IG-App-ID': '${INSTAGRAM_APP_ID}'
             }
           });
+
+          debugLog('[Following] Page ' + pageNum + ' - Response status:', response.status);
 
           if (!response.ok) {
             throw new Error('Failed to fetch following: ' + response.status);
@@ -1212,7 +1414,8 @@ const instagramAPI = `
       } catch (error) {
         sendMessage('FETCH_ERROR', {
           error: error.message,
-          userId: userId
+          userId: userId,
+          listType: 'following'
         });
       }
     },
@@ -1251,7 +1454,7 @@ const instagramAPI = `
 
           debugLog('📥 [Following-GraphQL] Page ' + pageNum + ' - Fetching with cursor:', endCursor || 'none');
 
-          const response = await fetch(url, {
+          const response = await fetchWithRetry(url, {
             credentials: 'include',
             headers: {
               'X-Requested-With': 'XMLHttpRequest'
@@ -1322,6 +1525,7 @@ const instagramAPI = `
         sendMessage('FETCH_ERROR', {
           error: error.message,
           userId: userId,
+          listType: 'following',
           method: 'graphql'
         });
       }
@@ -1344,7 +1548,7 @@ const instagramAPI = `
 
           debugLog('📥 [Followers] Page ' + pageNum + ' - Fetching with maxId:', maxId || 'none');
 
-          const response = await fetch(url, {
+          const response = await fetchWithRetry(url, {
             credentials: 'include',
             headers: {
               'X-Requested-With': 'XMLHttpRequest',
@@ -1405,7 +1609,8 @@ const instagramAPI = `
         debugLog('📥 [Followers] Error:', error.message);
         sendMessage('FETCH_ERROR', {
           error: error.message,
-          userId: userId
+          userId: userId,
+          listType: 'followers'
         });
       }
     },
@@ -1444,7 +1649,7 @@ const instagramAPI = `
 
           debugLog('📥 [Followers-GraphQL] Page ' + pageNum + ' - Fetching with cursor:', endCursor || 'none');
 
-          const response = await fetch(url, {
+          const response = await fetchWithRetry(url, {
             credentials: 'include',
             headers: {
               'X-Requested-With': 'XMLHttpRequest'
@@ -1515,6 +1720,7 @@ const instagramAPI = `
         sendMessage('FETCH_ERROR', {
           error: error.message,
           userId: userId,
+          listType: 'followers',
           method: 'graphql'
         });
       }
@@ -1600,6 +1806,11 @@ const instagramAPI = `
         }
       } catch (error) {
         console.error('❌ Failed to fetch account metadata:', error.message);
+        sendMessage('FETCH_ERROR', {
+          username: username,
+          listType: 'metadata',
+          error: error.message
+        });
       }
     },
 
