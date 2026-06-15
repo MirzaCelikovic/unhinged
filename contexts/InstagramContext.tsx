@@ -18,6 +18,9 @@ const LOGIN_CHECK_DELAY_MS = 500;
 const FETCH_FOLLOWING_DELAY_MS = 1000;
 // Circuit-breaker cooldown: how long syncing stays paused after pushback is detected
 const CIRCUIT_BREAKER_COOLDOWN_MS = 30 * 60 * 1000;
+// COM-26 Stage C — tunable: stagger between tracked account sync starts
+const INTER_ACCOUNT_START_DELAY_MS = 500;
+const INTER_ACCOUNT_START_JITTER_MS = 500;
 
 // Types
 interface UserIdResult {
@@ -247,6 +250,12 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         trackedAccounts: prev.trackedAccounts.map(settleSteps),
       };
     });
+    // Stop the WebView scheduler so stale in-flight fetches don't keep running after
+    // the watchdog has settled sync state. This bumps _gen so any pending task
+    // completions don't corrupt _inFlight of the next sync's _resetCircuitBreaker.
+    apiWebViewRef.current?.injectJavaScript(
+      'window.instagramAPI && window.instagramAPI._abortAllRequests && window.instagramAPI._abortAllRequests(); true;'
+    );
   };
 
   // Watchdog: reset the inactivity timer (called on every incoming WebView message)
@@ -669,13 +678,18 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (!mainSkipFollowing) fetchFollowing(userId);
     if (!mainSkipFollowers) fetchFollowers(userId);
 
-    // Start fetches for tracked accounts with staggered delays
+    // Start fetches for tracked accounts with staggered delays.
+    // Each account is staggered by 1500–2500 ms; even with 5 tracked accounts
+    // (~10 s total stagger) this stays well under the 90 s watchdog timeout.
     for (let i = 0; i < trackedInstagrams.length; i++) {
-      // Add random delay between accounts to avoid burst requests
-      if (i > 0 || true) {
-        // Always delay tracked accounts (main account already started)
-        await new Promise((resolve) => setTimeout(resolve, 300 + Math.random() * 400));
-      }
+      // Always delay tracked accounts (main account already started above).
+      // The global scheduler (cap=2) serialises concurrent fetches further.
+      await new Promise((resolve) =>
+        setTimeout(
+          resolve,
+          INTER_ACCOUNT_START_DELAY_MS + Math.random() * INTER_ACCOUNT_START_JITTER_MS
+        )
+      );
       const tracked = trackedInstagrams[i];
       const prefs = trackedPrefs.get(tracked.user_id);
       fetchMetadata(tracked.username);
@@ -1371,6 +1385,126 @@ const instagramAPI = `
   // Sync instrumentation metrics (reset at the start of each sync run)
   var _syncMetrics = { requestCount: 0, pushbackCount: 0, errorCount: 0, startedAt: 0 };
 
+  // ── COM-26 Stage C: Pacing config ─────────────────────────────────────────
+  // All values are tunable; change here and a fresh sync picks them up.
+  var PACING_CONFIG = {
+    MAX_CONCURRENT_REQUESTS: 2,          // COM-26 Stage C — tunable
+    MIN_GAP_BETWEEN_REQUESTS_MS: 200,    // COM-26 Stage C — tunable (regular-tuned)
+    REQUEST_JITTER_MS: 200,              // COM-26 Stage C — tunable (regular-tuned)
+    INTER_PAGE_DELAY_MIN_MS: 300,        // COM-26 Stage C — tunable (regular-tuned)
+    INTER_PAGE_DELAY_JITTER_MS: 300      // COM-26 Stage C — tunable (regular-tuned)
+  };
+
+  // ── COM-26 Stage C: Global request scheduler ───────────────────────────────
+  // Enforces MAX_CONCURRENT_REQUESTS cap + MIN_GAP_BETWEEN_REQUESTS_MS pacing.
+  var _queue = [];
+  var _inFlight = 0;
+  var _lastDispatchAt = 0;
+  var _timerArmed = false;
+  var _heartbeatTimer = null;
+  // Generation counter: bumped by _resetScheduler so stale in-flight completions
+  // (from a previous sync) never touch _inFlight of the new sync.
+  var _gen = 0;
+
+  // Watchdog heartbeat: emits DEBUG_LOG every ~25 s while work is pending so
+  // the RN stall-watchdog (90 s) keeps getting messages during slow paged syncs.
+  function _startHeartbeat() {
+    if (_heartbeatTimer !== null) return;
+    _heartbeatTimer = setInterval(function () {
+      if (_inFlight > 0 || _queue.length > 0) {
+        sendMessage('DEBUG_LOG', { message: '[Scheduler] heartbeat inFlight=' + _inFlight + ' queued=' + _queue.length });
+      } else {
+        clearInterval(_heartbeatTimer);
+        _heartbeatTimer = null;
+      }
+    }, 25000);
+  }
+
+  // Abort every tracked in-flight controller and clear the list.
+  function _abortInFlight() {
+    for (var i = 0; i < _inFlightControllers.length; i++) {
+      try { _inFlightControllers[i].abort(); } catch (e) {}
+    }
+    _inFlightControllers = [];
+  }
+
+  // Central scheduler reset: bump generation (stale closures won't touch _inFlight),
+  // abort in-flight fetches, drain the queue, and zero all scheduling state.
+  function _resetScheduler() {
+    _gen++;
+    _abortInFlight();
+    while (_queue.length > 0) {
+      var c = _queue.shift();
+      try { c.reject(new Error('scheduler_reset')); } catch (e) {}
+    }
+    _inFlight = 0;
+    _lastDispatchAt = 0;
+    _timerArmed = false;
+    if (_heartbeatTimer !== null) { clearInterval(_heartbeatTimer); _heartbeatTimer = null; }
+  }
+
+  // Single reentrant pump — enforces cap AND min-gap, arms exactly one re-check
+  // timer when the gap constraint prevents an immediate dispatch.
+  function _schedulerPump() {
+    if (_circuitBroken) {
+      // Reject-drain: clear queued tasks immediately so callers don't wait forever.
+      while (_queue.length > 0) {
+        var c = _queue.shift();
+        c.reject(new Error('circuit_breaker:' + _circuitBreakerReason));
+      }
+      return;
+    }
+    while (_queue.length > 0 && _inFlight < PACING_CONFIG.MAX_CONCURRENT_REQUESTS) {
+      var gap = PACING_CONFIG.MIN_GAP_BETWEEN_REQUESTS_MS + Math.floor(Math.random() * PACING_CONFIG.REQUEST_JITTER_MS);
+      var wait = (_lastDispatchAt + gap) - Date.now();
+      if (wait > 0) {
+        // Arm exactly one retry timer; subsequent enqueues will also call pump but
+        // the guard keeps only one timer alive at a time.
+        if (!_timerArmed) {
+          _timerArmed = true;
+          setTimeout(function () { _timerArmed = false; _schedulerPump(); }, wait);
+        }
+        return; // do not dispatch yet — timer will re-enter pump
+      }
+      var task = _queue.shift();
+      var taskGen = _gen;    // capture generation at dispatch time
+      _inFlight++;           // increment BEFORE any async work (must be synchronous)
+      _lastDispatchAt = Date.now();
+      task.run().then(
+        function (v) {
+          if (taskGen === _gen) { _inFlight = Math.max(0, _inFlight - 1); }
+          task.resolve(v);
+          // Fix 4: stop the heartbeat promptly once all work is done
+          if (_queue.length === 0 && _inFlight === 0 && _heartbeatTimer !== null) {
+            clearInterval(_heartbeatTimer);
+            _heartbeatTimer = null;
+          }
+          _schedulerPump();
+        },
+        function (e) {
+          if (taskGen === _gen) { _inFlight = Math.max(0, _inFlight - 1); }
+          task.reject(e);
+          // Fix 4: stop the heartbeat promptly once all work is done
+          if (_queue.length === 0 && _inFlight === 0 && _heartbeatTimer !== null) {
+            clearInterval(_heartbeatTimer);
+            _heartbeatTimer = null;
+          }
+          _schedulerPump();
+        }
+      );
+    }
+  }
+
+  // Enqueue a fetch thunk; returns a Promise that resolves/rejects with the
+  // result of runFn() once the scheduler allows it to proceed.
+  function _schedule(runFn) {
+    return new Promise(function (resolve, reject) {
+      _queue.push({ run: runFn, resolve: resolve, reject: reject });
+      _startHeartbeat();
+      _schedulerPump();
+    });
+  }
+
   // Circuit-breaker state: when tripped, all in-flight requests are aborted
   // and all paginators bail out so we stop hammering Instagram.
   var _circuitBroken = false;
@@ -1426,10 +1560,9 @@ const instagramAPI = `
     _circuitBroken = true;
     _circuitBreakerReason = reason;
     _syncMetrics.pushbackCount++;
-    for (var i = 0; i < _inFlightControllers.length; i++) {
-      try { _inFlightControllers[i].abort(); } catch (e) {}
-    }
-    _inFlightControllers = [];
+    _abortInFlight();
+    // Reject-drain any queued tasks so callers unblock immediately.
+    _schedulerPump();
     sendMessage('CIRCUIT_BREAKER_TRIPPED', { reason: reason });
   }
 
@@ -1438,6 +1571,11 @@ const instagramAPI = `
   // NEVER retries on 4xx (including 429/401/403) or non-ok non-5xx.
   // Honours Retry-After header (integer seconds) on 5xx when present.
   // Max 3 retries; base delays ~1s, 2s, 4s plus small random jitter.
+  //
+  // COM-26 Stage C: each per-attempt network call is routed through _schedule()
+  // so the global concurrency cap and min-gap pacing are enforced. The
+  // AbortController and timeout are created INSIDE the scheduled closure so the
+  // 30 s clock starts at dispatch time, not while the task is queued.
   async function fetchWithRetry(url, options) {
     var REQUEST_TIMEOUT_MS = 30000;
     var baseDelays = [1000, 2000, 4000];
@@ -1452,29 +1590,36 @@ const instagramAPI = `
 
       var response;
       var networkError = null;
-      var controller = new AbortController();
-      var timeoutId = null;
-
-      // Count every fetch attempt and register the controller so the circuit
-      // breaker can abort in-flight requests.
-      _syncMetrics.requestCount++;
-      _inFlightControllers.push(controller);
 
       try {
-        timeoutId = setTimeout(function() { controller.abort(); }, REQUEST_TIMEOUT_MS);
-        var fetchOptions = Object.assign({}, options, { signal: controller.signal });
-        response = await fetch(url, fetchOptions);
+        // Route through the global scheduler: cap=2, min-gap pacing.
+        // The controller is created inside the run closure so the timeout clock
+        // starts at actual dispatch time (not while the task sits in the queue).
+        // requestCount++ is here (at actual dispatch) so drain-rejected attempts
+        // (never sent) are not counted.
+        response = await _schedule(function () {
+          _syncMetrics.requestCount++;
+          var controller = new AbortController();
+          _inFlightControllers.push(controller);
+          var timeoutId = setTimeout(function () { controller.abort(); }, REQUEST_TIMEOUT_MS);
+          var fetchOptions = Object.assign({}, options, { signal: controller.signal });
+          return fetch(url, fetchOptions).then(
+            function (r) {
+              clearTimeout(timeoutId);
+              var idx = _inFlightControllers.indexOf(controller);
+              if (idx !== -1) { _inFlightControllers.splice(idx, 1); }
+              return r;
+            },
+            function (e) {
+              clearTimeout(timeoutId);
+              var idx = _inFlightControllers.indexOf(controller);
+              if (idx !== -1) { _inFlightControllers.splice(idx, 1); }
+              throw e;
+            }
+          );
+        });
       } catch (err) {
         networkError = err;
-      } finally {
-        if (timeoutId !== null) {
-          clearTimeout(timeoutId);
-          timeoutId = null;
-        }
-        var _ctrlIdx = _inFlightControllers.indexOf(controller);
-        if (_ctrlIdx !== -1) {
-          _inFlightControllers.splice(_ctrlIdx, 1);
-        }
       }
 
       // Determine whether to retry
@@ -1551,11 +1696,22 @@ const instagramAPI = `
       _syncMetrics = { requestCount: 0, pushbackCount: 0, errorCount: 0, startedAt: Date.now() };
     },
 
-    // Reset circuit-breaker state (called before a sync when cooldown has elapsed)
+    // Reset circuit-breaker state (called before a sync when cooldown has elapsed).
+    // Also resets the scheduler via _resetScheduler() so a fresh sync starts with
+    // a clean slate and stale in-flight tasks from a previous stall can't corrupt
+    // _inFlight of the new sync.
     _resetCircuitBreaker: function() {
       _circuitBroken = false;
       _circuitBreakerReason = null;
-      _inFlightControllers = [];
+      _resetScheduler();
+    },
+
+    // Abort all in-flight and queued requests and reset the scheduler state,
+    // WITHOUT touching the circuit-breaker flags. Used by the RN stall watchdog
+    // to stop a wedged sync from continuing to hammer Instagram after the watchdog
+    // has already settled the RN-side sync state.
+    _abortAllRequests: function() {
+      _resetScheduler();
     },
 
     // Start polling for ds_user_id cookie
@@ -1717,10 +1873,10 @@ const instagramAPI = `
           hasMore = data.has_more || false;
           maxId = data.next_max_id || null;
 
-          // Rate limiting - randomized delay between requests
+          // Inter-page delay — paced via config (COM-26 Stage C)
           if (hasMore) {
             await new Promise(function(resolve) {
-              setTimeout(resolve, 500 + Math.random() * 500);
+              setTimeout(resolve, PACING_CONFIG.INTER_PAGE_DELAY_MIN_MS + Math.floor(Math.random() * PACING_CONFIG.INTER_PAGE_DELAY_JITTER_MS));
             });
           }
         }
@@ -1829,10 +1985,10 @@ const instagramAPI = `
             debugLog('📥 [Following-GraphQL] No more pages. Final count:', allUsers.length, '| Expected:', totalCount);
           }
 
-          // Rate limiting - randomized delay between requests
+          // Inter-page delay — paced via config (COM-26 Stage C)
           if (hasNextPage) {
             await new Promise(function(resolve) {
-              setTimeout(resolve, 500 + Math.random() * 500);
+              setTimeout(resolve, PACING_CONFIG.INTER_PAGE_DELAY_MIN_MS + Math.floor(Math.random() * PACING_CONFIG.INTER_PAGE_DELAY_JITTER_MS));
             });
           }
         }
@@ -1920,10 +2076,10 @@ const instagramAPI = `
             debugLog('📥 [Followers] No more pages. Final count:', allUsers.length);
           }
 
-          // Rate limiting - randomized delay between requests
+          // Inter-page delay — paced via config (COM-26 Stage C)
           if (hasMore) {
             await new Promise(function(resolve) {
-              setTimeout(resolve, 500 + Math.random() * 500);
+              setTimeout(resolve, PACING_CONFIG.INTER_PAGE_DELAY_MIN_MS + Math.floor(Math.random() * PACING_CONFIG.INTER_PAGE_DELAY_JITTER_MS));
             });
           }
         }
@@ -2035,10 +2191,10 @@ const instagramAPI = `
             debugLog('📥 [Followers-GraphQL] No more pages. Final count:', allUsers.length, '| Expected:', totalCount);
           }
 
-          // Rate limiting - randomized delay between requests
+          // Inter-page delay — paced via config (COM-26 Stage C)
           if (hasNextPage) {
             await new Promise(function(resolve) {
-              setTimeout(resolve, 500 + Math.random() * 500);
+              setTimeout(resolve, PACING_CONFIG.INTER_PAGE_DELAY_MIN_MS + Math.floor(Math.random() * PACING_CONFIG.INTER_PAGE_DELAY_JITTER_MS));
             });
           }
         }
@@ -2103,16 +2259,38 @@ const instagramAPI = `
       }
     },
 
-    // Fetch account metadata by making API call
+    // Fetch account metadata by making API call.
+    // COM-26 Stage C: routed through _schedule() so the global cap=2 applies
+    // (1 req per account; minor scheduling delay is acceptable).
     fetchAccountMetadata: async function(username) {
       try {
         console.log('🌐 [WebView] Fetching metadata for:', username);
-        const response = await fetch('https://www.instagram.com/api/v1/users/web_profile_info/?username=' + username, {
-          credentials: 'include',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-IG-App-ID': '${INSTAGRAM_APP_ID}'
-          }
+        var REQUEST_TIMEOUT_MS = 30000;
+        const response = await _schedule(function () {
+          var controller = new AbortController();
+          _inFlightControllers.push(controller);
+          var timeoutId = setTimeout(function () { controller.abort(); }, REQUEST_TIMEOUT_MS);
+          return fetch('https://www.instagram.com/api/v1/users/web_profile_info/?username=' + username, {
+            credentials: 'include',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-IG-App-ID': '${INSTAGRAM_APP_ID}'
+            },
+            signal: controller.signal
+          }).then(
+            function (r) {
+              clearTimeout(timeoutId);
+              var idx = _inFlightControllers.indexOf(controller);
+              if (idx !== -1) { _inFlightControllers.splice(idx, 1); }
+              return r;
+            },
+            function (e) {
+              clearTimeout(timeoutId);
+              var idx = _inFlightControllers.indexOf(controller);
+              if (idx !== -1) { _inFlightControllers.splice(idx, 1); }
+              throw e;
+            }
+          );
         });
 
         console.log('🌐 [WebView] Response status:', response.status);
