@@ -101,7 +101,7 @@ function TrackedAccountItem({ account, syncStatus }: TrackedAccountItemProps) {
 
 export default function Tracking() {
   const { trackedInstagrams, isLoading, account } = useAccountContext();
-  const { isLoggedIn, showLogin, syncState, userId, sync } = useInstagramContext();
+  const { isLoggedIn, showLogin, syncState, userId, sync, isCoolingDown } = useInstagramContext();
   const { data: stats, hasNewActivity } = useFollowerStats(userId, account?.latest_activity_date);
   const { isSubscribed, presentPaywall } = useRevenueCat();
   const { track } = useAnalytics();
@@ -226,7 +226,19 @@ export default function Tracking() {
         <View>
           {/* New activity banner */}
           {hasNewActivity ? (
-            <NewActivityBanner isSyncing={syncState.isActive} onRefresh={sync} />
+            <NewActivityBanner
+              isSyncing={syncState.isActive}
+              onRefresh={() => {
+                if (isCoolingDown) {
+                  Alert.alert(
+                    'Paused',
+                    'Syncing is paused for a bit to protect your account. Please try again later.'
+                  );
+                  return;
+                }
+                sync();
+              }}
+            />
           ) : null}
           <View className="gap-3">
             {trackedInstagrams.map((instagram) => (

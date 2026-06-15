@@ -1,4 +1,4 @@
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useState, useEffect } from 'react';
@@ -23,7 +23,7 @@ export default function TrackModal() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [addedUserId, setAddedUserId] = useState<string | null>(null);
-  const { fetchUserId, syncTrackedAccount, syncState } = useInstagramContext();
+  const { fetchUserId, syncTrackedAccount, syncState, isCoolingDown } = useInstagramContext();
   const { account } = useAccountContext();
   const addTrackedInstagram = useAddTrackedInstagram();
   const { track } = useAnalytics();
@@ -155,6 +155,18 @@ export default function TrackModal() {
           now,
         ]
       );
+
+      // If the circuit-breaker cooldown is active, skip the sync and close the
+      // modal — the account is already registered in the backend/DB and will sync
+      // on the next manual refresh once the cooldown expires.
+      if (isCoolingDown) {
+        Alert.alert(
+          'Paused',
+          'Syncing is paused for a bit to protect your account. Please try again later.'
+        );
+        router.back();
+        return;
+      }
 
       // Store userId to watch for metadata completion
       setAddedUserId(foundUserId);

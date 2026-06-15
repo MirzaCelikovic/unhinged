@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
-import { View, Modal, Text, Pressable } from 'react-native';
+import { View, Modal, Text, Pressable, Alert } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useQueryClient } from '@tanstack/react-query';
@@ -16,6 +16,8 @@ const INSTAGRAM_APP_ID = '936619743392459';
 const COOKIE_POLL_INTERVAL_MS = 1000;
 const LOGIN_CHECK_DELAY_MS = 500;
 const FETCH_FOLLOWING_DELAY_MS = 1000;
+// Circuit-breaker cooldown: how long syncing stays paused after pushback is detected
+const CIRCUIT_BREAKER_COOLDOWN_MS = 30 * 60 * 1000;
 
 // Types
 interface UserIdResult {
@@ -70,6 +72,7 @@ interface InstagramContextType {
   userId: string | null;
   isLoadingUserId: boolean;
   syncState: SyncState;
+  isCoolingDown: boolean;
   showLogin: () => void;
   reconnect: () => void;
   disconnect: () => void;
@@ -93,7 +96,9 @@ interface WebViewMessage {
     | 'ACCOUNT_METADATA_FETCHED'
     | 'DEBUG_LOG'
     | 'FOLLOW_USER_RESULT'
-    | 'UNFOLLOW_USER_RESULT';
+    | 'UNFOLLOW_USER_RESULT'
+    | 'SYNC_METRICS'
+    | 'CIRCUIT_BREAKER_TRIPPED';
   userId?: string;
   username?: string;
   success?: boolean;
@@ -113,6 +118,13 @@ interface WebViewMessage {
   isFollowing?: boolean;
   isOutgoingRequest?: boolean;
   listType?: 'following' | 'followers' | 'metadata';
+  pageNum?: number;
+  userCount?: number;
+  durationMs?: number;
+  requestCount?: number;
+  pushbackCount?: number;
+  errorCount?: number;
+  reason?: string;
 }
 
 interface User {
@@ -155,6 +167,8 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     trackedAccounts: [],
   });
   const [apiWebViewReady, setApiWebViewReady] = useState(false);
+  // Circuit-breaker cooldown: while in cooldown, syncing is paused to protect the account
+  const [isCoolingDown, setIsCoolingDown] = useState(false);
 
   // Refs
   const loginWebViewRef = useRef<WebView>(null);
@@ -188,6 +202,10 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const syncStateRef = useRef<SyncState>(syncState);
   // Guards against late WebView messages arriving after the watchdog has settled a stalled sync
   const stalledRef = useRef(false);
+  // Timestamp (ms epoch) until which syncing is blocked after a circuit-breaker trip
+  const circuitBreakerCooldownRef = useRef<number>(0);
+  // Timer that flips isCoolingDown back to false when the cooldown window elapses
+  const cooldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keep syncStateRef current so watchdog callbacks can read the latest state
   useEffect(() => {
@@ -248,6 +266,99 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     return () => clearStallTimer();
   }, []);
+
+  // Clean up the cooldown timer on unmount
+  useEffect(() => {
+    return () => {
+      if (cooldownTimerRef.current !== null) {
+        clearTimeout(cooldownTimerRef.current);
+        cooldownTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  // On mount (once the stored userId is available), restore any persisted
+  // circuit-breaker cooldown so we keep syncing paused across app restarts.
+  useEffect(() => {
+    if (isLoadingUserId || !userId) return;
+
+    let cancelled = false;
+    const restoreCooldown = async () => {
+      try {
+        const row = await db.getFirstAsync<{ circuit_breaker_cooldown_until: string | null }>(
+          'SELECT circuit_breaker_cooldown_until FROM sync_state WHERE instagram_user_id = ?',
+          [userId]
+        );
+        if (cancelled) return;
+        const until = row?.circuit_breaker_cooldown_until
+          ? new Date(row.circuit_breaker_cooldown_until).getTime()
+          : 0;
+        const remaining = until - Date.now();
+        if (remaining > 0) {
+          circuitBreakerCooldownRef.current = until;
+          setIsCoolingDown(true);
+          if (cooldownTimerRef.current !== null) {
+            clearTimeout(cooldownTimerRef.current);
+          }
+          cooldownTimerRef.current = setTimeout(() => {
+            circuitBreakerCooldownRef.current = 0;
+            setIsCoolingDown(false);
+            cooldownTimerRef.current = null;
+          }, remaining);
+        }
+      } catch (error) {
+        console.error('Failed to read circuit-breaker cooldown:', error);
+      }
+    };
+    restoreCooldown();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoadingUserId, userId]);
+
+  // Clear the cooldown after a fully-successful sync (every step 'complete', zero
+  // 'error'). Deliberately does NOT clear on watchdog/circuit-breaker/partial-error
+  // settles, which leave at least one step in 'error'.
+  useEffect(() => {
+    if (syncState.isActive) return;
+
+    const stepsComplete = (acc: AccountSyncStatus) =>
+      acc.metadata === 'complete' &&
+      acc.following === 'complete' &&
+      acc.followers === 'complete';
+
+    // Require a main account that completed; an empty/null state is a
+    // logout/reset, not a successful sync.
+    if (!syncState.mainAccount || !stepsComplete(syncState.mainAccount)) return;
+    if (!syncState.trackedAccounts.every(stepsComplete)) return;
+
+    // Nothing to do if there's no active cooldown (use the ref to avoid stale closure)
+    if (circuitBreakerCooldownRef.current === 0) return;
+
+    circuitBreakerCooldownRef.current = 0;
+    setIsCoolingDown(false);
+    if (cooldownTimerRef.current !== null) {
+      clearTimeout(cooldownTimerRef.current);
+      cooldownTimerRef.current = null;
+    }
+
+    if (userId) {
+      const mainAccountUserId = userId;
+      const clearCooldown = async () => {
+        try {
+          const now = new Date().toISOString();
+          await db.runAsync(
+            'UPDATE sync_state SET circuit_breaker_cooldown_until = NULL, date_updated = ? WHERE instagram_user_id = ?',
+            [now, mainAccountUserId]
+          );
+        } catch (error) {
+          console.error('Failed to clear circuit-breaker cooldown:', error);
+        }
+      };
+      clearCooldown();
+    }
+  }, [syncState]);
 
   // Fetch following list for a user (internal helper)
   const fetchFollowing = (userIdToFetch: string) => {
@@ -462,6 +573,12 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
 
+    // Skip if a circuit-breaker cooldown is still active
+    if (Date.now() < circuitBreakerCooldownRef.current) {
+      console.log('⏭️ Sync blocked: circuit-breaker cooldown active');
+      return;
+    }
+
     if (!isLoggedIn || !userId) {
       console.warn('⚠️ Cannot sync: not logged in', { isLoggedIn, userId });
       return;
@@ -542,6 +659,11 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       await new Promise((resolve) => setTimeout(resolve, FAKE_SYNC_DELAY_MS));
     }
 
+    // Reset circuit-breaker + instrumentation before kicking off fetches
+    apiWebViewRef.current?.injectJavaScript(
+      'window.instagramAPI._resetCircuitBreaker(); window.instagramAPI.resetSyncMetrics(); true;'
+    );
+
     // Start all fetches in parallel for main account
     fetchMetadata(account.instagram_username);
     if (!mainSkipFollowing) fetchFollowing(userId);
@@ -570,6 +692,12 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   ) => {
     if (!isLoggedIn || !userId) {
       console.warn('⚠️ Cannot sync tracked account: not logged in');
+      return;
+    }
+
+    // Skip if a circuit-breaker cooldown is still active
+    if (Date.now() < circuitBreakerCooldownRef.current) {
+      console.log('⏭️ Sync blocked: circuit-breaker cooldown active');
       return;
     }
 
@@ -606,6 +734,15 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         trackedAccounts: updatedTrackedAccounts,
       };
     });
+
+    // Only reset circuit-breaker + instrumentation when no full sync is already
+    // running. Injecting resets mid-sync would zero the main account's in-progress
+    // metrics and could clear a breaker that just tripped.
+    if (!syncState.isActive) {
+      apiWebViewRef.current?.injectJavaScript(
+        'window.instagramAPI._resetCircuitBreaker(); window.instagramAPI.resetSyncMetrics(); true;'
+      );
+    }
 
     // Start fetches for this tracked account (skip disabled ones)
     fetchMetadata(trackedUsername);
@@ -854,6 +991,82 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           updateAccountSyncStatus(data.userId!, 'followers', 'complete');
           break;
 
+        case 'SYNC_METRICS':
+          if (stalledRef.current) break;
+          console.log('[SyncMetrics]', JSON.stringify(data));
+          break;
+
+        case 'CIRCUIT_BREAKER_TRIPPED':
+          if (stalledRef.current) break;
+          console.warn('⚠️ Circuit breaker tripped:', data.reason);
+
+          // Force-settle the sync the same way the stall watchdog does:
+          // mark every still-syncing/pending step as 'error' and stop the sync.
+          fetchingUsersRef.current.clear();
+          stalledRef.current = true;
+          clearStallTimer();
+          setSyncState((prev) => {
+            if (!prev.isActive) return prev;
+
+            const settleSteps = (acc: AccountSyncStatus): AccountSyncStatus => ({
+              ...acc,
+              metadata:
+                acc.metadata === 'syncing' || acc.metadata === 'pending' ? 'error' : acc.metadata,
+              following:
+                acc.following === 'syncing' || acc.following === 'pending' ? 'error' : acc.following,
+              followers:
+                acc.followers === 'syncing' || acc.followers === 'pending' ? 'error' : acc.followers,
+            });
+
+            return {
+              isActive: false,
+              mainAccount: prev.mainAccount ? settleSteps(prev.mainAccount) : null,
+              trackedAccounts: prev.trackedAccounts.map(settleSteps),
+            };
+          });
+
+          // Start the cooldown window and persist it for the main account
+          {
+            const until = Date.now() + CIRCUIT_BREAKER_COOLDOWN_MS;
+            circuitBreakerCooldownRef.current = until;
+            setIsCoolingDown(true);
+            if (cooldownTimerRef.current !== null) {
+              clearTimeout(cooldownTimerRef.current);
+            }
+            cooldownTimerRef.current = setTimeout(() => {
+              circuitBreakerCooldownRef.current = 0;
+              setIsCoolingDown(false);
+              cooldownTimerRef.current = null;
+            }, CIRCUIT_BREAKER_COOLDOWN_MS);
+
+            if (userId) {
+              const cooldownIso = new Date(until).toISOString();
+              const mainAccountUserId = userId;
+              const persistCooldown = async () => {
+                try {
+                  const now = new Date().toISOString();
+                  await db.runAsync(
+                    `INSERT INTO sync_state (instagram_user_id, circuit_breaker_cooldown_until, date_created, date_updated)
+                     VALUES (?, ?, ?, ?)
+                     ON CONFLICT(instagram_user_id) DO UPDATE SET
+                       circuit_breaker_cooldown_until = ?,
+                       date_updated = ?`,
+                    [mainAccountUserId, cooldownIso, now, now, cooldownIso, now]
+                  );
+                } catch (error) {
+                  console.error('Failed to persist circuit-breaker cooldown:', error);
+                }
+              };
+              persistCooldown();
+            }
+          }
+
+          Alert.alert(
+            'Instagram needs a break',
+            'To protect your account, syncing is paused for about 30 minutes. Please try again later.'
+          );
+          break;
+
         case 'FETCH_ERROR':
           if (stalledRef.current) break;
           if (data.listType === 'metadata') {
@@ -1096,6 +1309,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     userId,
     isLoadingUserId,
     syncState,
+    isCoolingDown,
     showLogin,
     reconnect,
     disconnect: handleDisconnect,
@@ -1154,6 +1368,26 @@ const instagramAPI = `
   let loginDetected = false;
   let cookieCheckInterval = null;
 
+  // Sync instrumentation metrics (reset at the start of each sync run)
+  var _syncMetrics = { requestCount: 0, pushbackCount: 0, errorCount: 0, startedAt: 0 };
+
+  // Circuit-breaker state: when tripped, all in-flight requests are aborted
+  // and all paginators bail out so we stop hammering Instagram.
+  var _circuitBroken = false;
+  var _circuitBreakerReason = null;
+  var _inFlightControllers = [];
+
+  // Helper: detect pushback signals in a parsed JSON response body
+  function _checkPushbackBody(data) {
+    return !!(data && (
+      data.message === 'checkpoint_required' ||
+      data.message === 'require_login' ||
+      data.spam === true ||
+      data.checkpoint_url ||
+      (data.status === 'fail' && typeof data.message === 'string' && (data.message.indexOf('spam') !== -1 || data.message.indexOf('suspicious') !== -1))
+    ));
+  }
+
   // Helper: Get cookie value by name
   function getCookie(name) {
     const value = '; ' + document.cookie;
@@ -1171,6 +1405,34 @@ const instagramAPI = `
     sendMessage('DEBUG_LOG', { message: args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ') });
   }
 
+  // Helper: Post sync metrics to React Native (per completed list)
+  function _postSyncMetrics(userId, listType, pageNum, userCount, durationMs) {
+    sendMessage('SYNC_METRICS', {
+      userId: userId,
+      listType: listType,
+      pageNum: pageNum,
+      userCount: userCount,
+      durationMs: durationMs,
+      requestCount: _syncMetrics.requestCount,
+      pushbackCount: _syncMetrics.pushbackCount,
+      errorCount: _syncMetrics.errorCount
+    });
+  }
+
+  // Helper: Trip the circuit breaker — abort all in-flight requests and signal RN.
+  // Idempotent: only the first trip fires the message and aborts.
+  function _triggerCircuitBreaker(reason) {
+    if (_circuitBroken) return;
+    _circuitBroken = true;
+    _circuitBreakerReason = reason;
+    _syncMetrics.pushbackCount++;
+    for (var i = 0; i < _inFlightControllers.length; i++) {
+      try { _inFlightControllers[i].abort(); } catch (e) {}
+    }
+    _inFlightControllers = [];
+    sendMessage('CIRCUIT_BREAKER_TRIPPED', { reason: reason });
+  }
+
   // Helper: Fetch a single page with per-page retry (exponential backoff).
   // Retries ONLY on network errors (fetch rejects) or HTTP 5xx responses.
   // NEVER retries on 4xx (including 429/401/403) or non-ok non-5xx.
@@ -1183,10 +1445,20 @@ const instagramAPI = `
     var attempt = 0;
 
     while (true) {
+      // Circuit breaker tripped — stop retrying and bail out immediately
+      if (_circuitBroken) {
+        throw new Error('circuit_breaker:' + _circuitBreakerReason);
+      }
+
       var response;
       var networkError = null;
       var controller = new AbortController();
       var timeoutId = null;
+
+      // Count every fetch attempt and register the controller so the circuit
+      // breaker can abort in-flight requests.
+      _syncMetrics.requestCount++;
+      _inFlightControllers.push(controller);
 
       try {
         timeoutId = setTimeout(function() { controller.abort(); }, REQUEST_TIMEOUT_MS);
@@ -1198,6 +1470,10 @@ const instagramAPI = `
         if (timeoutId !== null) {
           clearTimeout(timeoutId);
           timeoutId = null;
+        }
+        var _ctrlIdx = _inFlightControllers.indexOf(controller);
+        if (_ctrlIdx !== -1) {
+          _inFlightControllers.splice(_ctrlIdx, 1);
         }
       }
 
@@ -1223,14 +1499,42 @@ const instagramAPI = `
 
       if (!shouldRetry) {
         // Success or non-retryable failure — return (caller checks response.ok)
-        if (networkError) throw networkError;
+        if (networkError) {
+          _syncMetrics.errorCount++;
+          throw networkError;
+        }
+
+        // Pushback detection (only on non-retryable responses, so 5xx still retries above).
+        // HTTP 429 rate limit
+        if (response.status === 429) {
+          _triggerCircuitBreaker('http_429');
+          _syncMetrics.errorCount++;
+          throw new Error('pushback_429');
+        }
+        // Redirect to a challenge / re-login page
+        if (response.url && (response.url.indexOf('/challenge') !== -1 || response.url.indexOf('/accounts/login') !== -1)) {
+          _triggerCircuitBreaker('challenge_redirect');
+          _syncMetrics.errorCount++;
+          throw new Error('pushback_challenge');
+        }
+        // Non-JSON body on an ok response (e.g. served an HTML interstitial)
+        var ct = response.headers.get('content-type') || '';
+        if (response.ok && ct.indexOf('application/json') === -1) {
+          _triggerCircuitBreaker('non_json_' + response.status);
+          _syncMetrics.errorCount++;
+          throw new Error('pushback_non_json');
+        }
+
         return response;
       }
 
       attempt++;
       if (attempt > MAX_RETRIES) {
         // Exhausted retries
-        if (networkError) throw networkError;
+        if (networkError) {
+          _syncMetrics.errorCount++;
+          throw networkError;
+        }
         return response;
       }
 
@@ -1242,6 +1546,18 @@ const instagramAPI = `
 
   // Create Instagram API namespace
   window.instagramAPI = {
+    // Reset sync instrumentation metrics at the start of a sync run
+    resetSyncMetrics: function() {
+      _syncMetrics = { requestCount: 0, pushbackCount: 0, errorCount: 0, startedAt: Date.now() };
+    },
+
+    // Reset circuit-breaker state (called before a sync when cooldown has elapsed)
+    _resetCircuitBreaker: function() {
+      _circuitBroken = false;
+      _circuitBreakerReason = null;
+      _inFlightControllers = [];
+    },
+
     // Start polling for ds_user_id cookie
     startLoginPolling: function() {
       if (cookieCheckInterval) return;
@@ -1353,12 +1669,14 @@ const instagramAPI = `
     // Fetch following list (REST API)
     fetchFollowing: async function(userId, isMainUser) {
       try {
+        var _start = Date.now();
         let allUsers = [];
         let hasMore = true;
         let maxId = null;
         let pageNum = 0;
 
         while (hasMore) {
+          if (_circuitBroken) { return; }
           pageNum++;
           let url = 'https://www.instagram.com/api/v1/friendships/' + userId + '/following/?count=50';
           if (maxId) url += '&max_id=' + maxId;
@@ -1380,6 +1698,8 @@ const instagramAPI = `
           }
 
           const data = await response.json();
+
+          if (_checkPushbackBody(data)) { _triggerCircuitBreaker('body_signal'); return; }
 
           if (data.users && data.users.length > 0) {
             allUsers = allUsers.concat(
@@ -1405,6 +1725,7 @@ const instagramAPI = `
           }
         }
 
+        _postSyncMetrics(userId, 'following', pageNum, allUsers.length, Date.now() - _start);
         sendMessage('FOLLOWING_COMPLETE', {
           users: allUsers,
           totalCount: allUsers.length,
@@ -1423,6 +1744,7 @@ const instagramAPI = `
     // Fetch following list using GraphQL API
     fetchFollowingGraphQL: async function(userId, isMainUser) {
       try {
+        var _start = Date.now();
         let allUsers = [];
         let hasNextPage = true;
         let endCursor = null;
@@ -1432,6 +1754,7 @@ const instagramAPI = `
         debugLog('📥 [Following-GraphQL] Starting fetch for userId:', userId);
 
         while (hasNextPage) {
+          if (_circuitBroken) { return; }
           pageNum++;
 
           const variables = {
@@ -1457,7 +1780,8 @@ const instagramAPI = `
           const response = await fetchWithRetry(url, {
             credentials: 'include',
             headers: {
-              'X-Requested-With': 'XMLHttpRequest'
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-IG-App-ID': '${INSTAGRAM_APP_ID}'
             }
           });
 
@@ -1468,6 +1792,8 @@ const instagramAPI = `
           }
 
           const data = await response.json();
+
+          if (_checkPushbackBody(data)) { _triggerCircuitBreaker('body_signal'); return; }
 
           if (data.status !== 'ok' || !data.data || !data.data.user) {
             throw new Error('Invalid GraphQL response or user not found');
@@ -1513,6 +1839,7 @@ const instagramAPI = `
 
         debugLog('📥 [Following-GraphQL] Complete! Total fetched:', allUsers.length, 'for userId:', userId);
 
+        _postSyncMetrics(userId, 'following', pageNum, allUsers.length, Date.now() - _start);
         sendMessage('FOLLOWING_COMPLETE', {
           users: allUsers,
           totalCount: allUsers.length,
@@ -1534,6 +1861,7 @@ const instagramAPI = `
     // Fetch followers list
     fetchFollowers: async function(userId, isMainUser) {
       try {
+        var _start = Date.now();
         let allUsers = [];
         let hasMore = true;
         let maxId = null;
@@ -1542,6 +1870,7 @@ const instagramAPI = `
         debugLog('📥 [Followers] Starting fetch for userId:', userId);
 
         while (hasMore) {
+          if (_circuitBroken) { return; }
           pageNum++;
           let url = 'https://www.instagram.com/api/v1/friendships/' + userId + '/followers/?count=50&search_surface=follow_list_page';
           if (maxId) url += '&max_id=' + maxId;
@@ -1563,6 +1892,8 @@ const instagramAPI = `
           }
 
           const data = await response.json();
+
+          if (_checkPushbackBody(data)) { _triggerCircuitBreaker('body_signal'); return; }
 
           const usersInPage = data.users ? data.users.length : 0;
           debugLog('📥 [Followers] Page ' + pageNum + ' - Users in page:', usersInPage, '| has_more:', data.has_more, '| next_max_id:', data.next_max_id || 'none');
@@ -1599,6 +1930,7 @@ const instagramAPI = `
 
         debugLog('📥 [Followers] Complete! Total fetched:', allUsers.length, 'for userId:', userId);
 
+        _postSyncMetrics(userId, 'followers', pageNum, allUsers.length, Date.now() - _start);
         sendMessage('FOLLOWERS_COMPLETE', {
           users: allUsers,
           totalCount: allUsers.length,
@@ -1618,6 +1950,7 @@ const instagramAPI = `
     // Fetch followers list using GraphQL API (alternative implementation for benchmarking)
     fetchFollowersGraphQL: async function(userId, isMainUser) {
       try {
+        var _start = Date.now();
         let allUsers = [];
         let hasNextPage = true;
         let endCursor = null;
@@ -1627,6 +1960,7 @@ const instagramAPI = `
         debugLog('📥 [Followers-GraphQL] Starting fetch for userId:', userId);
 
         while (hasNextPage) {
+          if (_circuitBroken) { return; }
           pageNum++;
 
           const variables = {
@@ -1652,7 +1986,8 @@ const instagramAPI = `
           const response = await fetchWithRetry(url, {
             credentials: 'include',
             headers: {
-              'X-Requested-With': 'XMLHttpRequest'
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-IG-App-ID': '${INSTAGRAM_APP_ID}'
             }
           });
 
@@ -1663,6 +1998,8 @@ const instagramAPI = `
           }
 
           const data = await response.json();
+
+          if (_checkPushbackBody(data)) { _triggerCircuitBreaker('body_signal'); return; }
 
           if (data.status !== 'ok' || !data.data || !data.data.user) {
             throw new Error('Invalid GraphQL response or user not found');
@@ -1708,6 +2045,7 @@ const instagramAPI = `
 
         debugLog('📥 [Followers-GraphQL] Complete! Total fetched:', allUsers.length, 'for userId:', userId);
 
+        _postSyncMetrics(userId, 'followers', pageNum, allUsers.length, Date.now() - _start);
         sendMessage('FOLLOWERS_COMPLETE', {
           users: allUsers,
           totalCount: allUsers.length,
