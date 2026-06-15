@@ -36,7 +36,7 @@ import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 type HomeState = 'notConnected' | 'initialSync' | 'connected';
 
 export default function Index() {
-  const { isLoggedIn, syncState, showLogin, sync, syncTrackedAccount, userId } = useInstagramContext();
+  const { isLoggedIn, syncState, showLogin, sync, syncTrackedAccount, userId, isCoolingDown } = useInstagramContext();
   const { account } = useAccountContext();
   const { data: instagram } = useInstagram(userId);
   const { data: stats, hasNewActivity } = useFollowerStats(userId, account?.latest_activity_date);
@@ -164,6 +164,15 @@ export default function Index() {
   }));
 
   const handleRefresh = () => {
+    // Block refresh while the circuit-breaker cooldown is active
+    if (isCoolingDown) {
+      Alert.alert(
+        'Paused',
+        'Syncing is paused for a bit to protect your account. Please try again later.'
+      );
+      return;
+    }
+
     Alert.alert(
       'Refresh',
       'To avoid overwhelming Instagram with too many automated requests (which could make your account look like a bot), we recommend refreshing once a day or when we notify you of a follower count change.',

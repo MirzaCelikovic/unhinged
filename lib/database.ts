@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 
-const CURRENT_DB_VERSION = 2;
+const CURRENT_DB_VERSION = 3;
 
 // Helper to check if a column exists on a table
 const hasColumn = async (db: SQLite.SQLiteDatabase, table: string, column: string): Promise<boolean> => {
@@ -104,6 +104,14 @@ const migrations: { [version: number]: (db: SQLite.SQLiteDatabase) => Promise<vo
         SELECT user_id FROM instagrams WHERE followers_count >= 3000
       )
     `);
+  },
+
+  3: async (db: SQLite.SQLiteDatabase) => {
+    if (!(await hasColumn(db, 'sync_state', 'circuit_breaker_cooldown_until'))) {
+      await db.execAsync(
+        `ALTER TABLE sync_state ADD COLUMN circuit_breaker_cooldown_until TEXT`
+      );
+    }
   },
 };
 
