@@ -137,6 +137,16 @@ interface User {
   profile_pic_url?: string | null;
 }
 
+// Helpers
+const bucketSize = (n?: number): string => {
+  const v = n ?? 0;
+  if (v < 1000) return '<1k';
+  if (v < 3000) return '1-3k';
+  if (v < 10000) return '3-10k';
+  if (v < 50000) return '10-50k';
+  return '50k+';
+};
+
 // Context
 const InstagramContext = createContext<InstagramContextType | undefined>(undefined);
 
@@ -1008,11 +1018,21 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         case 'SYNC_METRICS':
           if (stalledRef.current) break;
           console.log('[SyncMetrics]', JSON.stringify(data));
+          analytics.track(Events.SYNC_METRICS_REPORTED, {
+            listType: data.listType,
+            sizeBucket: bucketSize(data.userCount),
+            pages: data.pageNum,
+            requests: data.requestCount,
+            durationMs: data.durationMs,
+            pushbackCount: data.pushbackCount,
+            errorCount: data.errorCount,
+          });
           break;
 
         case 'CIRCUIT_BREAKER_TRIPPED':
           if (stalledRef.current) break;
           console.warn('⚠️ Circuit breaker tripped:', data.reason);
+          analytics.track(Events.SYNC_PUSHBACK_DETECTED, { reason: data.reason });
 
           // Force-settle the sync the same way the stall watchdog does:
           // mark every still-syncing/pending step as 'error' and stop the sync.

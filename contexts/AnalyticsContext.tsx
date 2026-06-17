@@ -46,6 +46,8 @@ export const Events = {
   PAYWALL_VIEWED: 'Paywall Viewed',
   PAYWALL_CLOSED: 'Paywall Closed',
   PURCHASE: 'Purchase',
+  SYNC_METRICS_REPORTED: 'Sync Metrics Reported',
+  SYNC_PUSHBACK_DETECTED: 'Sync Pushback Detected',
 } as const;
 
 // TikTok / SKAdNetwork attribution is dispatched from this same chokepoint so it
