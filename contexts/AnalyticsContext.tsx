@@ -6,6 +6,12 @@ import { CustomerIO } from 'customerio-reactnative';
 import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import { AppEventsLogger, Settings } from 'react-native-fbsdk-next';
 import Purchases from 'react-native-purchases';
+import { initTikTokSdk, logTikTokPurchase, logTikTokSignup } from '~/lib/tiktokEvents';
+import {
+  trackInstallIfNeeded,
+  trackPurchaseIfNeeded,
+  trackSignupIfNeeded,
+} from '~/lib/skadNetwork';
 
 export const Events = {
   START_SCREEN_VIEWED: 'Start Screen Viewed',
@@ -42,11 +48,29 @@ export const Events = {
   PURCHASE: 'Purchase',
 } as const;
 
+// TikTok / SKAdNetwork attribution is dispatched from this same chokepoint so it
+// fires at exactly the same moments as the corresponding Amplitude events.
+// (iOS-only; all underlying calls early-return on other platforms.)
+const dispatchAttribution = (event: string, properties?: Record<string, any>) => {
+  switch (event) {
+    case Events.INSTAGRAM_CONNECTED:
+      logTikTokSignup(); // TikTok 'Registration'
+      trackSignupIfNeeded(); // SKAN signup postback (fineValue 2), deduped per install
+      break;
+    case Events.PURCHASE:
+      logTikTokPurchase(properties?.product); // TikTok 'Purchase' content event
+      // SKAN purchase postback (fineValue 4), deduped per product id
+      trackPurchaseIfNeeded(String(properties?.product ?? 'purchase'));
+      break;
+  }
+};
+
 // Standalone functions that can be called without hooks (to avoid circular deps)
 export const analytics = {
   track: (event: string, properties?: Record<string, any>) => {
     amplitude.track(event, properties);
     CustomerIO.track(event, properties);
+    dispatchAttribution(event, properties);
   },
   identify: (userId: string) => {
     amplitude.setUserId(userId);
@@ -110,6 +134,16 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
         console.log('Meta + RevenueCat attribution initialized');
       } catch (e) {
         console.log('Meta/RevenueCat attribution init failed:', e);
+      }
+
+      // Initialize TikTok SDK + fire the one-time SKAN install postback.
+      // The install postback registers the install with SKAdNetwork and opens
+      // the conversion window — it must fire for signup/purchase to attribute.
+      try {
+        await initTikTokSdk();
+        trackInstallIfNeeded(); // SKAN install postback (fineValue 1), deduped per install
+      } catch (e) {
+        console.log('TikTok/SKAN init failed:', e);
       }
 
       // Initialize Amplitude

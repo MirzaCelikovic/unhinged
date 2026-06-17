@@ -57,6 +57,9 @@ target 'Unhinged' do
 # --- CustomerIO Host App START ---
   pod 'customerio-reactnative/apn', :path => '../node_modules/customerio-reactnative'
 # --- CustomerIO Host App END ---
+
+  # Required for the TikTok Business SDK to compile with Swift (modular headers)
+  pod 'TikTokBusinessSDK', :modular_headers => true
   post_install do |installer|
     react_native_post_install(
       installer,
