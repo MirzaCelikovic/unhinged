@@ -28,3 +28,6 @@ build-*.aab
 
 .env.local
 .mcp.json
+
+# Temporary investigation / scratch notes (Claude)
+.investigations/
