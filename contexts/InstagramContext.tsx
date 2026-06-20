@@ -147,6 +147,19 @@ const bucketSize = (n?: number): string => {
   return '50k+';
 };
 
+// Classify a FETCH_ERROR message into a coarse reason for telemetry. The point is
+// to make the failures the circuit breaker does NOT trip on measurable — chiefly
+// an HTTP 400 with a {"spam":true} body, which Instagram serves to flagged
+// accounts and which is otherwise invisible (no metrics, no pushback event).
+// Status / coarse category only — no usernames, IDs, or response bodies.
+const classifyFetchError = (message?: string): string => {
+  const m = (message ?? '').toLowerCase();
+  const status = m.match(/\b([1-5]\d{2})\b/)?.[1];
+  if (status) return `http_${status}`;
+  if (m.includes('network') || m.includes('timeout') || m.includes('abort')) return 'network';
+  return 'other';
+};
+
 // Context
 const InstagramContext = createContext<InstagramContextType | undefined>(undefined);
 
@@ -343,9 +356,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (syncState.isActive) return;
 
     const stepsComplete = (acc: AccountSyncStatus) =>
-      acc.metadata === 'complete' &&
-      acc.following === 'complete' &&
-      acc.followers === 'complete';
+      acc.metadata === 'complete' && acc.following === 'complete' && acc.followers === 'complete';
 
     // Require a main account that completed; an empty/null state is a
     // logout/reset, not a successful sync.
@@ -1047,9 +1058,13 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               metadata:
                 acc.metadata === 'syncing' || acc.metadata === 'pending' ? 'error' : acc.metadata,
               following:
-                acc.following === 'syncing' || acc.following === 'pending' ? 'error' : acc.following,
+                acc.following === 'syncing' || acc.following === 'pending'
+                  ? 'error'
+                  : acc.following,
               followers:
-                acc.followers === 'syncing' || acc.followers === 'pending' ? 'error' : acc.followers,
+                acc.followers === 'syncing' || acc.followers === 'pending'
+                  ? 'error'
+                  : acc.followers,
             });
 
             return {
@@ -1103,6 +1118,14 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
         case 'FETCH_ERROR':
           if (stalledRef.current) break;
+          // Telemetry: surface every fetch failure — including the HTTP 400
+          // {"spam":true} pushback that does NOT trip the circuit breaker — so the
+          // flagged-account failure rate becomes measurable. listType + coarse
+          // reason only, no PII.
+          analytics.track(Events.SYNC_FETCH_ERROR, {
+            listType: data.listType ?? 'unknown',
+            reason: classifyFetchError(data.error),
+          });
           if (data.listType === 'metadata') {
             // Metadata failure: resolve username→userId using the ref (no state-setter hack needed)
             const metaUsername = data.username;
