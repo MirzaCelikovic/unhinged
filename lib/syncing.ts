@@ -63,16 +63,18 @@ export const syncFollowingList = async (
   // Find unfollows (existed before but not in current list)
   const unfollows = existing.filter((e) => !currentIds.has(e.followed_user_id));
 
-  // Insert new follows
+  // Insert new follows (COM-24 #10: reset is_baseline + re-date first_seen_at on re-follow)
   for (const user of newFollows) {
     await db.runAsync(
       `INSERT INTO followings (tracked_account_id, followed_user_id, is_baseline, first_seen_at, last_seen_at, date_created, date_updated)
        VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(tracked_account_id, followed_user_id) DO UPDATE SET
+         is_baseline = 0,
+         first_seen_at = ?,
          last_seen_at = ?,
          ended_at = NULL,
          date_updated = ?`,
-      [trackedAccountId, user.id, isBaseline ? 1 : 0, now, now, now, now, now, now]
+      [trackedAccountId, user.id, isBaseline ? 1 : 0, now, now, now, now, now, now, now]
     );
   }
 
@@ -157,16 +159,18 @@ export const syncFollowersList = async (
   // Find lost followers (existed before but not in current list)
   const lostFollowers = existing.filter((e) => !currentIds.has(e.follower_user_id));
 
-  // Insert new followers
+  // Insert new followers (COM-24 #10: reset is_baseline + re-date first_seen_at on re-follow)
   for (const user of newFollowers) {
     await db.runAsync(
       `INSERT INTO followers (tracked_account_id, follower_user_id, is_baseline, first_seen_at, last_seen_at, date_created, date_updated)
        VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(tracked_account_id, follower_user_id) DO UPDATE SET
+         is_baseline = 0,
+         first_seen_at = ?,
          last_seen_at = ?,
          ended_at = NULL,
          date_updated = ?`,
-      [trackedAccountId, user.id, isBaseline ? 1 : 0, now, now, now, now, now, now]
+      [trackedAccountId, user.id, isBaseline ? 1 : 0, now, now, now, now, now, now, now]
     );
   }
 
@@ -305,15 +309,17 @@ export const addFollowing = async (
     [targetUserId, targetUsername, null, null, targetProfilePicUrl || null, null, null, null, now, now, targetUsername, targetProfilePicUrl, now]
   );
 
-  // Add or reactivate the following relationship
+  // Add or reactivate the following relationship (COM-24 #10: reset is_baseline + re-date first_seen_at on re-follow)
   await db.runAsync(
     `INSERT INTO followings (tracked_account_id, followed_user_id, is_baseline, first_seen_at, last_seen_at, date_created, date_updated)
      VALUES (?, ?, 0, ?, ?, ?, ?)
      ON CONFLICT(tracked_account_id, followed_user_id) DO UPDATE SET
+       is_baseline = 0,
+       first_seen_at = ?,
        last_seen_at = ?,
        ended_at = NULL,
        date_updated = ?`,
-    [mainUserId, targetUserId, now, now, now, now, now, now]
+    [mainUserId, targetUserId, now, now, now, now, now, now, now]
   );
 
   console.log(`Added following: ${mainUserId} -> ${targetUserId} (@${targetUsername})`);

@@ -106,7 +106,6 @@ interface WebViewMessage {
   username?: string;
   success?: boolean;
   users?: Array<{ id: string; username: string }>;
-  isMainUser?: boolean;
   error?: string;
   biography?: string | null;
   profilePicUrl?: string | null;
@@ -408,10 +407,11 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const apiMethod =
       FOLLOWING_API_METHOD === 'graphql' ? 'fetchFollowingGraphQL' : 'fetchFollowing';
 
+    // COM-25 #8: use JSON.stringify so quotes/backslashes in values can't break injected JS
     apiWebViewRef.current.injectJavaScript(`(function(){
-      console.log('📱 Injecting ${apiMethod} for userId:', '${userIdToFetch}');
+      console.log('📱 Injecting ${apiMethod} for userId:', ${JSON.stringify(userIdToFetch)});
       if (window.instagramAPI?.${apiMethod}) {
-        window.instagramAPI.${apiMethod}('${userIdToFetch}');
+        window.instagramAPI.${apiMethod}(${JSON.stringify(userIdToFetch)});
       } else {
         console.error('❌ window.instagramAPI.${apiMethod} not available');
       }
@@ -440,10 +440,11 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const apiMethod =
       FOLLOWERS_API_METHOD === 'graphql' ? 'fetchFollowersGraphQL' : 'fetchFollowers';
 
+    // COM-25 #8: use JSON.stringify so quotes/backslashes in values can't break injected JS
     apiWebViewRef.current.injectJavaScript(`(function(){
-      console.log('📱 Injecting ${apiMethod} for userId:', '${userIdToFetch}');
+      console.log('📱 Injecting ${apiMethod} for userId:', ${JSON.stringify(userIdToFetch)});
       if (window.instagramAPI?.${apiMethod}) {
-        window.instagramAPI.${apiMethod}('${userIdToFetch}');
+        window.instagramAPI.${apiMethod}(${JSON.stringify(userIdToFetch)});
       } else {
         console.error('❌ window.instagramAPI.${apiMethod} not available');
       }
@@ -459,10 +460,11 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     console.log('🔄 fetchMetadata:', username);
 
+    // COM-25 #8: use JSON.stringify so quotes/backslashes in values can't break injected JS
     apiWebViewRef.current.injectJavaScript(`(function(){
-      console.log('📱 Injecting fetchAccountMetadata for username:', '${username}');
+      console.log('📱 Injecting fetchAccountMetadata for username:', ${JSON.stringify(username)});
       if (window.instagramAPI?.fetchAccountMetadata) {
-        window.instagramAPI.fetchAccountMetadata('${username}');
+        window.instagramAPI.fetchAccountMetadata(${JSON.stringify(username)});
       } else {
         console.error('❌ window.instagramAPI.fetchAccountMetadata not available');
       }
@@ -532,9 +534,10 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const checkLoginStatus = (userIdToCheck: string) => {
     if (!apiWebViewRef.current) return;
 
+    // COM-25 #8: use JSON.stringify so quotes/backslashes in values can't break injected JS
     injectJS(`
       if (window.instagramAPI?.checkLoginStatus) {
-        window.instagramAPI.checkLoginStatus('${userIdToCheck}');
+        window.instagramAPI.checkLoginStatus(${JSON.stringify(userIdToCheck)});
       }
     `);
   };
@@ -593,9 +596,6 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   // Sync all accounts (main user + tracked accounts)
-  // TODO: Remove this fake delay - for testing sync UI only
-  const FAKE_SYNC_DELAY_MS = 0;
-
   const sync = async () => {
     // Skip if already syncing
     if (syncState.isActive) {
@@ -683,11 +683,6 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       mainAccount: mainAccountStatus,
       trackedAccounts: trackedAccountStatuses,
     });
-
-    // TODO: Remove this fake delay - for testing sync UI only
-    if (FAKE_SYNC_DELAY_MS > 0) {
-      await new Promise((resolve) => setTimeout(resolve, FAKE_SYNC_DELAY_MS));
-    }
 
     // Reset circuit-breaker + instrumentation before kicking off fetches
     apiWebViewRef.current?.injectJavaScript(
@@ -789,9 +784,10 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const handleDisconnect = () => {
     if (!apiWebViewRef.current || !userId) return;
 
+    // COM-25 #8: use JSON.stringify so quotes/backslashes in values can't break injected JS
     injectJS(`
       if (window.instagramAPI?.logout) {
-        window.instagramAPI.logout('${userId}');
+        window.instagramAPI.logout(${JSON.stringify(userId)});
       }
     `);
   };
@@ -806,9 +802,10 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       userIdFetchPromisesRef.current.set(username, { resolve, reject });
 
+      // COM-25 #8: use JSON.stringify so quotes/backslashes in values can't break injected JS
       injectJS(`
         if (window.instagramAPI?.fetchUserId) {
-          window.instagramAPI.fetchUserId('${username}');
+          window.instagramAPI.fetchUserId(${JSON.stringify(username)});
         }
       `);
     });
@@ -833,9 +830,10 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         profilePicUrl: targetProfilePicUrl,
       });
 
+      // COM-25 #8: use JSON.stringify so quotes/backslashes in values can't break injected JS
       injectJS(`
         if (window.instagramAPI?.followUser) {
-          window.instagramAPI.followUser('${targetUserId}');
+          window.instagramAPI.followUser(${JSON.stringify(targetUserId)});
         }
       `);
     });
@@ -851,9 +849,10 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       unfollowPromisesRef.current.set(targetUserId, { resolve, reject });
 
+      // COM-25 #8: use JSON.stringify so quotes/backslashes in values can't break injected JS
       injectJS(`
         if (window.instagramAPI?.unfollowUser) {
-          window.instagramAPI.unfollowUser('${targetUserId}');
+          window.instagramAPI.unfollowUser(${JSON.stringify(targetUserId)});
         }
       `);
     });
@@ -1868,7 +1867,7 @@ const instagramAPI = `
     },
 
     // Fetch following list (REST API)
-    fetchFollowing: async function(userId, isMainUser) {
+    fetchFollowing: async function(userId) {
       try {
         var _start = Date.now();
         let allUsers = [];
@@ -1930,8 +1929,7 @@ const instagramAPI = `
         sendMessage('FOLLOWING_COMPLETE', {
           users: allUsers,
           totalCount: allUsers.length,
-          userId: userId,
-          isMainUser: isMainUser || false
+          userId: userId
         });
       } catch (error) {
         sendMessage('FETCH_ERROR', {
@@ -1943,7 +1941,7 @@ const instagramAPI = `
     },
 
     // Fetch following list using GraphQL API
-    fetchFollowingGraphQL: async function(userId, isMainUser) {
+    fetchFollowingGraphQL: async function(userId) {
       try {
         var _start = Date.now();
         let allUsers = [];
@@ -2045,7 +2043,6 @@ const instagramAPI = `
           users: allUsers,
           totalCount: allUsers.length,
           userId: userId,
-          isMainUser: isMainUser || false,
           method: 'graphql'
         });
       } catch (error) {
@@ -2060,7 +2057,7 @@ const instagramAPI = `
     },
 
     // Fetch followers list
-    fetchFollowers: async function(userId, isMainUser) {
+    fetchFollowers: async function(userId) {
       try {
         var _start = Date.now();
         let allUsers = [];
@@ -2135,8 +2132,7 @@ const instagramAPI = `
         sendMessage('FOLLOWERS_COMPLETE', {
           users: allUsers,
           totalCount: allUsers.length,
-          userId: userId,
-          isMainUser: isMainUser || false
+          userId: userId
         });
       } catch (error) {
         debugLog('📥 [Followers] Error:', error.message);
@@ -2149,7 +2145,7 @@ const instagramAPI = `
     },
 
     // Fetch followers list using GraphQL API (alternative implementation for benchmarking)
-    fetchFollowersGraphQL: async function(userId, isMainUser) {
+    fetchFollowersGraphQL: async function(userId) {
       try {
         var _start = Date.now();
         let allUsers = [];
@@ -2251,7 +2247,6 @@ const instagramAPI = `
           users: allUsers,
           totalCount: allUsers.length,
           userId: userId,
-          isMainUser: isMainUser || false,
           method: 'graphql'
         });
       } catch (error) {
@@ -2406,8 +2401,8 @@ const instagramAPI = `
         const data = await response.json();
         debugLog('👤 [Follow] Response data:', JSON.stringify(data));
 
-        // Response contains friendship_status with following: true if successful
-        const isFollowing = data.friendship_status?.following || data.friendship_status?.outgoing_request || false;
+        // COM-24 #6: only treat confirmed follow as isFollowing; outgoing_request = private account pending approval
+        const isFollowing = data.friendship_status?.following || false;
         const isPrivate = data.friendship_status?.is_private || false;
 
         sendMessage('FOLLOW_USER_RESULT', {

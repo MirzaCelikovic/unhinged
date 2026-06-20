@@ -171,7 +171,7 @@ npm run submit:ios      # Submit to App Store
 
 ## Important Notes
 
-1. **Rate Limiting:** GraphQL API methods have a 1s delay between pagination requests (REST methods have no delay). Currently configured to use GraphQL. Users are warned about refreshing too frequently. **TODO:** Investigate if 1s delay is really necessary - seems excessive.
+1. **Rate Limiting:** Both REST and GraphQL fetchers use the same randomized ~300–600ms inter-page delay (via the in-WebView `PACING_CONFIG`, COM-26), plus a global request scheduler (max 2 concurrent requests, minimum gap between requests). Currently configured to use GraphQL. Users are warned about refreshing too frequently.
 
 2. **Session Management:** Instagram sessions expire. The app detects this and shows a reconnect prompt.
 
