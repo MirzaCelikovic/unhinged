@@ -1682,13 +1682,15 @@ const instagramAPI = `
           _syncMetrics.errorCount++;
           throw new Error('pushback_challenge');
         }
-        // Non-JSON body on an ok response (e.g. served an HTML interstitial)
-        var ct = response.headers.get('content-type') || '';
-        if (response.ok && ct.indexOf('application/json') === -1) {
-          _triggerCircuitBreaker('non_json_' + response.status);
-          _syncMetrics.errorCount++;
-          throw new Error('pushback_non_json');
-        }
+        // NOTE (hotfix): a non-application/json content-type is NOT pushback.
+        // Instagram routinely returns valid JSON with content-types like
+        // text/javascript or text/html, and the header says nothing about whether
+        // we are actually being blocked. Real pushback is HTTP 429, a /challenge
+        // redirect, or genuine checkpoint/spam signals in the PARSED body
+        // (_checkPushbackBody). Letting the response through lets the caller's
+        // response.json() parse valid bodies normally; a genuinely unparseable body
+        // (e.g. an HTML login page) surfaces as an ordinary fetch error / session
+        // reconnect — never a 30-minute account lockout.
 
         return response;
       }
