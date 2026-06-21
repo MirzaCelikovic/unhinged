@@ -203,8 +203,9 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const justLoggedInRef = useRef(false);
   const pendingFetchUserIdRef = useRef<string | null>(null);
   const pendingLoginCheckRef = useRef<string | null>(null);
+  // COM-22: Map value types include `timer` so the cleanup path can always clearTimeout
   const userIdFetchPromisesRef = useRef<
-    Map<string, { resolve: (result: UserIdResult) => void; reject: (error: Error) => void }>
+    Map<string, { resolve: (result: UserIdResult) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>
   >(new Map());
   const followPromisesRef = useRef<
     Map<
@@ -214,15 +215,18 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         reject: (error: Error) => void;
         username: string;
         profilePicUrl?: string | null;
+        timer: ReturnType<typeof setTimeout>;
       }
     >
   >(new Map());
   const unfollowPromisesRef = useRef<
-    Map<string, { resolve: (result: FollowResult) => void; reject: (error: Error) => void }>
+    Map<string, { resolve: (result: FollowResult) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>
   >(new Map());
 
   // Watchdog: stall timeout (ms) with no incoming WebView message while isActive=true
   const SYNC_STALL_TIMEOUT_MS = 90000;
+  // COM-22: Hard cap so fetchUserId / followUser / unfollowUser can never hang forever
+  const WEBVIEW_CALL_TIMEOUT_MS = 30000;
   const syncStallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Mirror of syncState for read access inside callbacks without closure staleness
   const syncStateRef = useRef<SyncState>(syncState);
@@ -804,7 +808,23 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return;
       }
 
-      userIdFetchPromisesRef.current.set(username, { resolve, reject });
+      // COM-22: supersede any in-flight request for the same username
+      const existing = userIdFetchPromisesRef.current.get(username);
+      if (existing) {
+        clearTimeout(existing.timer);
+        existing.reject(new Error('Superseded by a newer request'));
+      }
+
+      // COM-22: arm a timeout so the promise never hangs forever
+      const timer = setTimeout(() => {
+        const pending = userIdFetchPromisesRef.current.get(username);
+        if (pending) {
+          userIdFetchPromisesRef.current.delete(username);
+          pending.reject(new Error('Instagram request timed out'));
+        }
+      }, WEBVIEW_CALL_TIMEOUT_MS);
+
+      userIdFetchPromisesRef.current.set(username, { resolve, reject, timer });
 
       injectJS(`
         if (window.instagramAPI?.fetchUserId) {
@@ -826,11 +846,28 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return;
       }
 
+      // COM-22: supersede any in-flight request for the same targetUserId
+      const existing = followPromisesRef.current.get(targetUserId);
+      if (existing) {
+        clearTimeout(existing.timer);
+        existing.reject(new Error('Superseded by a newer request'));
+      }
+
+      // COM-22: arm a timeout so the promise never hangs forever
+      const timer = setTimeout(() => {
+        const pending = followPromisesRef.current.get(targetUserId);
+        if (pending) {
+          followPromisesRef.current.delete(targetUserId);
+          pending.reject(new Error('Instagram request timed out'));
+        }
+      }, WEBVIEW_CALL_TIMEOUT_MS);
+
       followPromisesRef.current.set(targetUserId, {
         resolve,
         reject,
         username: targetUsername,
         profilePicUrl: targetProfilePicUrl,
+        timer,
       });
 
       injectJS(`
@@ -849,7 +886,23 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return;
       }
 
-      unfollowPromisesRef.current.set(targetUserId, { resolve, reject });
+      // COM-22: supersede any in-flight request for the same targetUserId
+      const existing = unfollowPromisesRef.current.get(targetUserId);
+      if (existing) {
+        clearTimeout(existing.timer);
+        existing.reject(new Error('Superseded by a newer request'));
+      }
+
+      // COM-22: arm a timeout so the promise never hangs forever
+      const timer = setTimeout(() => {
+        const pending = unfollowPromisesRef.current.get(targetUserId);
+        if (pending) {
+          unfollowPromisesRef.current.delete(targetUserId);
+          pending.reject(new Error('Instagram request timed out'));
+        }
+      }, WEBVIEW_CALL_TIMEOUT_MS);
+
+      unfollowPromisesRef.current.set(targetUserId, { resolve, reject, timer });
 
       injectJS(`
         if (window.instagramAPI?.unfollowUser) {
@@ -1174,6 +1227,8 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           if (data.username && data.userId) {
             const promise = userIdFetchPromisesRef.current.get(data.username);
             if (promise) {
+              // COM-22: disarm the RN-side timeout before settling
+              clearTimeout(promise.timer);
               promise.resolve({
                 userId: data.userId,
                 isPrivate: data.isPrivate || false,
@@ -1187,6 +1242,8 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           } else if (data.username && data.error) {
             const promise = userIdFetchPromisesRef.current.get(data.username);
             if (promise) {
+              // COM-22: disarm the RN-side timeout before settling
+              clearTimeout(promise.timer);
               promise.reject(new Error(data.error));
               userIdFetchPromisesRef.current.delete(data.username);
             }
@@ -1252,6 +1309,8 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           if (data.targetUserId) {
             const promiseData = followPromisesRef.current.get(data.targetUserId);
             if (promiseData) {
+              // COM-22: disarm the RN-side timeout before settling
+              clearTimeout(promiseData.timer);
               if (data.success && data.isFollowing && userId) {
                 // Update local database - only if actually following (not just a request to private account)
                 const updateDb = async () => {
@@ -1287,6 +1346,8 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           if (data.targetUserId) {
             const promise = unfollowPromisesRef.current.get(data.targetUserId);
             if (promise) {
+              // COM-22: disarm the RN-side timeout before settling
+              clearTimeout(promise.timer);
               if (data.success && userId) {
                 // Update local database
                 const updateDb = async () => {
@@ -2268,13 +2329,23 @@ const instagramAPI = `
     // Fetch user ID by username
     fetchUserId: async function(username) {
       try {
-        const response = await fetch('https://www.instagram.com/api/v1/users/web_profile_info/?username=' + username, {
-          credentials: 'include',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-IG-App-ID': '${INSTAGRAM_APP_ID}'
-          }
-        });
+        // COM-22: abort the fetch if it stalls, so the error path fires and RN rejects
+        var REQUEST_TIMEOUT_MS = 30000;
+        var controller = new AbortController();
+        var abortTimer = setTimeout(function() { controller.abort(); }, REQUEST_TIMEOUT_MS);
+        var response;
+        try {
+          response = await fetch('https://www.instagram.com/api/v1/users/web_profile_info/?username=' + username, {
+            credentials: 'include',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-IG-App-ID': '${INSTAGRAM_APP_ID}'
+            },
+            signal: controller.signal
+          });
+        } finally {
+          clearTimeout(abortTimer);
+        }
 
         if (!response.ok) {
           throw new Error('Failed to fetch user profile: ' + response.status);
@@ -2386,16 +2457,26 @@ const instagramAPI = `
           throw new Error('CSRF token not found');
         }
 
-        const response = await fetch('https://www.instagram.com/api/v1/friendships/create/' + targetUserId + '/', {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-IG-App-ID': '${INSTAGRAM_APP_ID}',
-            'X-CSRFToken': csrfToken,
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
-        });
+        // COM-22: abort the fetch if it stalls, so the error path fires and RN rejects
+        var REQUEST_TIMEOUT_MS = 30000;
+        var controller = new AbortController();
+        var abortTimer = setTimeout(function() { controller.abort(); }, REQUEST_TIMEOUT_MS);
+        var response;
+        try {
+          response = await fetch('https://www.instagram.com/api/v1/friendships/create/' + targetUserId + '/', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-IG-App-ID': '${INSTAGRAM_APP_ID}',
+              'X-CSRFToken': csrfToken,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            signal: controller.signal
+          });
+        } finally {
+          clearTimeout(abortTimer);
+        }
 
         debugLog('👤 [Follow] Response status:', response.status);
 
@@ -2438,16 +2519,26 @@ const instagramAPI = `
           throw new Error('CSRF token not found');
         }
 
-        const response = await fetch('https://www.instagram.com/api/v1/friendships/destroy/' + targetUserId + '/', {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-IG-App-ID': '${INSTAGRAM_APP_ID}',
-            'X-CSRFToken': csrfToken,
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
-        });
+        // COM-22: abort the fetch if it stalls, so the error path fires and RN rejects
+        var REQUEST_TIMEOUT_MS = 30000;
+        var controller = new AbortController();
+        var abortTimer = setTimeout(function() { controller.abort(); }, REQUEST_TIMEOUT_MS);
+        var response;
+        try {
+          response = await fetch('https://www.instagram.com/api/v1/friendships/destroy/' + targetUserId + '/', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-IG-App-ID': '${INSTAGRAM_APP_ID}',
+              'X-CSRFToken': csrfToken,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            signal: controller.signal
+          });
+        } finally {
+          clearTimeout(abortTimer);
+        }
 
         debugLog('👤 [Unfollow] Response status:', response.status);
 
