@@ -51,20 +51,41 @@ The integration uses **two independent React Native packages working in tandem**
 }
 ```
 
-- The TikTok SDK version, the patch filename (§7.3), and the Podfile.lock pin below **must
-  all agree on the same version**. `patch-package` keys patches by the *exact* installed
-  version: a `^1.6.2` install with a `+1.6.2`-named patch applies; mismatched versions make
-  the patch silently NOT apply, the `disableSKAdNetworkSupport` option is ignored, and
-  TikTok's own SKAN turns back on (the failure §11 warns about). Pin `1.6.2`.
+- **Use `^1.6.2` — this is exactly what the reference app ships** (its `package.json` uses
+  `"react-native-tiktok-business-sdk": "^1.6.2"` and the patch is named `+1.6.2`). `patch-package`
+  keys patches by the **resolved** installed version, not the range: with the patch named
+  `react-native-tiktok-business-sdk+1.6.2.patch` (§7.3), npm resolving `^1.6.2` to `1.6.2` applies
+  it cleanly. The only failure mode is npm resolving `^1.6.2` to a *newer* `1.6.x` than the patch
+  name — then the patch silently does NOT apply, the `disableSKAdNetworkSupport` option is ignored,
+  and TikTok's own SKAN turns back on (the failure §11 warns about). Guard against that by
+  **verifying the patch applied** after install (§8), not by removing the caret. If you do bump the
+  version, regenerate the patch and rename it to the new resolved version.
 - `expo-tracking-transparency` is required for the **ATT prompt** (App Tracking Transparency). Without `granted`, both TikTok and SKAN attribution are severely limited.
 - `react-native-mmkv` (v3, Nitro/JSI, New-Architecture only) is used to dedupe (so install / signup / a given product-id is never reported twice).
-- **RevenueCat is the host app's purchase layer and is NOT part of this skill.** The reference
-  app already ships `react-native-purchases` + `react-native-purchases-ui` and dispatches a
-  `Purchase` analytics event from its RevenueCat flow (§6.3). If your target app does **not**
-  already use RevenueCat, install `react-native-purchases react-native-purchases-ui` and an
-  entitlement/API-key config separately, OR fire the chokepoint `Purchase` event (§6.0) from
-  whatever purchase layer you do use. This skill only needs *some* purchase moment to call
-  `logTikTokPurchase` + `trackPurchaseIfNeeded`.
+
+### RevenueCat is app-provided (not installed by this skill)
+
+**RevenueCat is the host app's pre-existing purchase layer and is NOT part of this skill.** The
+reference app already ships `react-native-purchases` + `react-native-purchases-ui`, configures RC
+itself, and dispatches a `Purchase` analytics event from its RevenueCat flow (§6.3).
+
+The **only contract this skill needs** from the purchase layer is: *some* purchase moment that
+yields a **stable per-purchase id** (the same string on a later restore), which you pass to
+`logTikTokPurchase(id)` + `trackPurchaseIfNeeded(id)` (§6.0/§6.3).
+
+Reference-app values (illustrative — these are the host app's concern, not the skill's):
+
+```ts
+// contexts/RevenueCatContext.tsx (reference app — pre-existing, shown for context)
+import Purchases from 'react-native-purchases';     // react-native-purchases ^9.x in the ref app
+const REVENUECAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_APPL!; // (_GOOG on Android)
+export const ENTITLEMENT_ID = 'Unhinged Subscription';                       // app-specific
+await Purchases.configure({ apiKey: REVENUECAT_API_KEY });
+```
+
+If your target app does **not** already use RevenueCat: install + configure it (or any purchase
+layer) **separately**, then fire the chokepoint `Purchase` event (§6.0) from whatever purchase
+layer you use. The skill itself only needs the purchase id described above.
 
 ### CocoaPods
 
@@ -145,11 +166,17 @@ EXPO_PUBLIC_TIKTOK_APP_ID=7566251265915895815
 EXPO_PUBLIC_TIKTOK_ACCESS_TOKEN=<token>
 ```
 
-> **The numeric values above are the REFERENCE app's IDs — placeholders. You MUST replace
+> **The numeric values above are EXAMPLE / reference-style IDs — placeholders. You MUST replace
 > `EXPO_PUBLIC_APP_ID` with the target app's own App Store numeric ID and
 > `EXPO_PUBLIC_TIKTOK_APP_ID` with the target app's own TikTok App ID** (from that app's TikTok
-> Events Manager). Shipping the reference values silently mis-attributes every event to the wrong
+> Events Manager). Shipping the example values silently mis-attributes every event to the wrong
 > app. `EXPO_PUBLIC_TIKTOK_ACCESS_TOKEN` is always app-specific and has no default.
+>
+> **The init guard (§5.1) is a *falsy* check — it catches *missing* env vars, NOT *placeholder*
+> ones.** A truthy-but-wrong value (e.g. an example ID or `"REPLACE_ME"`) passes the guard, init
+> proceeds with garbage credentials, and every event is mis-attributed. The guard cannot protect
+> you here — *you* must put the real IDs in `.env` before a Release build. (This matches the
+> reference app, whose guard is exactly `if (!appId || !tiktokAppId || !accessToken) return;`.)
 
 These three map **positionally** onto the init call (§5/§6.1):
 `initializeSdk(appId, tiktokAppId, accessToken, debug, options)`. Names can be renamed, but if
@@ -184,6 +211,9 @@ only** — `babel-preset-expo` (Expo SDK ≥ 50) reads `tsconfig` `paths` native
 }
 ```
 
+> The `~/*` entry is **additive** — if the app already has a `paths` block (the reference app also
+> has `"@/*": ["src/*"]`), add `"~/*": ["./*"]` alongside the existing aliases, don't replace them.
+
 (Alternatively, use plain relative imports — `../lib/...` — and skip the alias entirely.)
 
 ### 5.1 `lib/tiktokEvents.ts` (TikTok Events Manager wrappers)
@@ -206,6 +236,7 @@ export const initTikTokSdk = async (): Promise<void> => {
   const appId = process.env.EXPO_PUBLIC_APP_ID;
   const tiktokAppId = process.env.EXPO_PUBLIC_TIKTOK_APP_ID;
   const accessToken = process.env.EXPO_PUBLIC_TIKTOK_ACCESS_TOKEN;
+  // Falsy check only — catches MISSING vars, not placeholder/wrong values (§4).
   if (!appId || !tiktokAppId || !accessToken) {
     console.warn('TikTok SDK: missing EXPO_PUBLIC_* credentials — skipping init');
     return;
@@ -457,22 +488,42 @@ The functions in §5 are the skill's surface. Everything below is supplied by th
 must already exist (or be wired by the integrator); the skill does **not** define them:
 
 - The **auth/signup** moment and the **purchase** moment (and the product id passed to it).
-- **RevenueCat** paywall presentation and purchase results (the reference app's purchase layer).
-- The **app's own analytics event names** and where they are dispatched.
+- **RevenueCat** paywall presentation and purchase results (the reference app's purchase layer, §2).
+- The **app's own analytics event names** (the `Events` map) and where they are dispatched
+  (`analytics.track`).
 
-The reference app does NOT use per-screen hooks. It funnels everything through one analytics
-chokepoint, so attribution fires at exactly the same moments as its analytics events. **This is
-the complete, primary wiring — there is no separate purchase-polling path or app-start safety
-net in the reference app** (§6.3 explains the purchase moment in full):
+The reference app does NOT use per-screen hooks. It funnels everything through its **existing**
+analytics dispatcher (`contexts/AnalyticsContext.tsx`) so attribution fires at exactly the same
+moments as its analytics events. **The skill plugs two calls into that dispatcher; it does not own
+it.**
+
+**Minimal contract this skill needs from your analytics layer:**
+
+1. An **`Events` map** of the app's own event name → wire-value strings. *This is entirely
+   app-owned.* The reference app's map has ~35 entries with human-readable Title-Case values, e.g.
+   `PURCHASE: 'Purchase'`, `INSTAGRAM_CONNECTED: 'Instagram Connected'`. Use whatever your app
+   already has — invent values only if the app has none yet.
+2. A **signup/connect event** the app fires once a user has signed up/connected. In the reference
+   app this is `Events.INSTAGRAM_CONNECTED` (the app's signup-equivalent moment) — substitute your
+   app's real signup event.
+3. A **purchase event** that carries a **stable `product` string** in its properties. In the
+   reference app this is `Events.PURCHASE` with `{ product: entitlement.productIdentifier }`.
+4. An **`analytics.track(event, properties)`** entry point. *Its body is app-owned* — the reference
+   app's fans out to Amplitude + Customer.io and then calls the attribution chokepoint below.
+
+Wire the skill by adding a `dispatchAttribution` switch and calling it from `analytics.track`:
 
 ```ts
-// contexts/AnalyticsContext.tsx (reference pattern)
+// contexts/AnalyticsContext.tsx (reference pattern — the Events map + track body are YOUR app's)
 import { initTikTokSdk, logTikTokPurchase, logTikTokSignup } from '~/lib/tiktokEvents';
 import { trackInstallIfNeeded, trackPurchaseIfNeeded, trackSignupIfNeeded } from '~/lib/skadNetwork';
 
+// `Events` is the app's existing event map (app-owned values). Reference example:
+//   export const Events = { ..., INSTAGRAM_CONNECTED: 'Instagram Connected', PURCHASE: 'Purchase' } as const;
+
 const dispatchAttribution = (event: string, properties?: Record<string, any>) => {
   switch (event) {
-    case Events.SIGNUP_OR_CONNECT:                 // your app's signup/connect event
+    case Events.INSTAGRAM_CONNECTED:               // your app's signup/connect event
       logTikTokSignup();        // TikTok 'Registration'
       trackSignupIfNeeded();    // SKAN signup postback (fineValue 2), deduped per install
       break;
@@ -484,17 +535,17 @@ const dispatchAttribution = (event: string, properties?: Record<string, any>) =>
   }
 };
 
-// in your track(...) wrapper, after sending to your analytics provider:
+// in your existing track(...) wrapper, after sending to your analytics provider(s):
 export const analytics = {
   track: (event: string, properties?: Record<string, any>) => {
-    // ...send to your analytics provider(s) here...
+    // ...the app's own fan-out (reference: amplitude.track + CustomerIO.track) goes here...
     dispatchAttribution(event, properties);
   },
 };
 ```
 
 > **Dedupe key = the same `product` value, end to end.** The chokepoint dedupes the SKAN
-> purchase postback by `properties?.product`. Whatever fires `Events.PURCHASE` MUST pass the
+> purchase postback by `properties?.product`. Whatever fires the purchase event MUST pass the
 > same product identifier every time for one purchase (the reference app passes
 > `entitlement.productIdentifier` from RevenueCat — see §6.3), so the per-id dedupe in
 > `trackPurchaseIfNeeded` works. Do **not** dispatch the same purchase through two paths with
@@ -551,6 +602,12 @@ useEffect(() => {
 }, []);
 ```
 
+> **Shared init effect.** If the app has other ATT-dependent SDKs, they live in this same effect
+> between the ATT result and the TikTok init. The reference app, for example, initializes the Meta
+> SDK (`Settings.setAdvertiserTrackingEnabled(status === 'granted')`) and RevenueCat attribution
+> (`Purchases.collectDeviceIdentifiers()` etc.) after ATT and before `initTikTokSdk()`, then
+> initializes Amplitude after. Keep TikTok/SKAN after ATT regardless of what else shares the effect.
+
 ### 6.2 Signup
 
 Call **both** trackers immediately after signup succeeds (the chokepoint in §6.0 does this on
@@ -567,18 +624,19 @@ trackSignupIfNeeded();  // SKAN postback fineValue 2, deduped per install
 
 ### 6.3 Purchase flow
 
-Purchases come from RevenueCat. **This is exactly how the reference app does it** — it is the
-RevenueCat paywall handler, and it dispatches a single `Purchase` analytics event that flows
-through the §6.0 chokepoint. There is **no polling loop, no backend `fetchSubscriptions`, and no
-app-start safety net** in the reference app.
+Purchases come from RevenueCat (**app-provided** — see §2). **This is exactly how the reference app
+does it** — it is the RevenueCat paywall handler, and it dispatches a single `Purchase` analytics
+event that flows through the §6.0 chokepoint. There is **no polling loop, no backend
+`fetchSubscriptions`, and no app-start safety net** in the reference app. The skill needs only the
+single dispatch carrying a stable `product` id.
 
 ```tsx
-// contexts/RevenueCatContext.tsx (reference pattern), inside the paywall handler
+// contexts/RevenueCatContext.tsx (reference pattern — RevenueCat itself is app-provided)
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import Purchases from 'react-native-purchases';
 import { analytics, Events } from '~/contexts/AnalyticsContext';
 
-const ENTITLEMENT_ID = 'Your Entitlement'; // your RevenueCat entitlement id
+const ENTITLEMENT_ID = 'Unhinged Subscription'; // the reference app's entitlement id (app-specific)
 
 const result = await RevenueCatUI.presentPaywall();
 switch (result) {
@@ -600,6 +658,9 @@ switch (result) {
 }
 ```
 
+- `Purchases.configure(...)`, the API-key env var, and the entitlement id are the **host app's**
+  responsibility (§2). The reference app configures RC itself with
+  `EXPO_PUBLIC_REVENUECAT_API_KEY_APPL` and entitlement `'Unhinged Subscription'`.
 - The product id passed (`entitlement.productIdentifier`) is the dedupe key (§6.0). It is the
   same value on a later restore, so the second dispatch is suppressed by
   `hasSkanTrackedSubscription`.
@@ -661,7 +722,8 @@ These files live inside the npm packages; you don't touch them, but understandin
 ### 7.3 The patch — `patches/react-native-tiktok-business-sdk+1.6.2.patch`
 
 Copy this file verbatim into `patches/`. It adds the `disableSKAdNetworkSupport` option to the
-native bridge and to the TS types. It applies clean against `react-native-tiktok-business-sdk@1.6.2`.
+native bridge and to the TS types. It applies clean against `react-native-tiktok-business-sdk@1.6.2`
+(the version `^1.6.2` resolves to in the reference app).
 
 ```diff
 diff --git a/node_modules/react-native-tiktok-business-sdk/ios/TikTokBusinessModule.swift b/node_modules/react-native-tiktok-business-sdk/ios/TikTokBusinessModule.swift
@@ -729,19 +791,19 @@ index 72ef5da..ec55488 100644
 ## 8. Required setup checklist (for the target app)
 
 - [ ] `npm install react-native-tiktok-business-sdk@^1.6.2 react-native-skadnetwork expo-tracking-transparency react-native-mmkv`
-- [ ] Configure the `~/` path alias in `tsconfig.json` (`baseUrl: "."` + `"~/*": ["./*"]`) — no babel plugin needed (§5.0), OR use relative imports
+- [ ] Configure the `~/` path alias in `tsconfig.json` (`baseUrl: "."` + `"~/*": ["./*"]`, additive to existing `paths`) — no babel plugin needed (§5.0), OR use relative imports
 - [ ] Add `pod 'TikTokBusinessSDK', :modular_headers => true` in `ios/Podfile` inside the main target
 - [ ] iOS deployment target ≥ 15.1 (TikTok SDK requirement; SKAN works ≥ 14 with the fallback chain)
-- [ ] Apply the SKAN-disable patch: `npm i -D patch-package`, add `"postinstall": "patch-package"`, save §7.3 as `patches/react-native-tiktok-business-sdk+1.6.2.patch`, then `npm install` (adds the `disableSKAdNetworkSupport` option). **Verify it applies clean — a version mismatch makes it silently no-op.**
+- [ ] Apply the SKAN-disable patch: `npm i -D patch-package`, add `"postinstall": "patch-package"`, save §7.3 as `patches/react-native-tiktok-business-sdk+1.6.2.patch`, then `npm install`. **Verify the patch applied against the *resolved* version** (patch-package logs `Applied ...`); if npm resolved `^1.6.2` to a newer `1.6.x` than the patch name, the patch silently no-ops — regenerate/rename it to the resolved version.
 - [ ] `cd ios && pod install`
 - [ ] Pass `{ disableSKAdNetworkSupport: true }` to `TikTokBusiness.initializeSdk(...)` at init (§5.1/§6.1)
 - [ ] `Info.plist`: add `NSUserTrackingUsageDescription` copy
 - [ ] `Info.plist`: add `SKAdNetworkItems` with both TikTok identifiers (`v9wttpbfk9.skadnetwork`, `n38lu8286q.skadnetwork`)
-- [ ] `.env`: add `EXPO_PUBLIC_APP_ID`, `EXPO_PUBLIC_TIKTOK_APP_ID`, `EXPO_PUBLIC_TIKTOK_ACCESS_TOKEN` — **using the TARGET app's own IDs, not the §4 example values** (never commit the token value)
+- [ ] `.env`: add `EXPO_PUBLIC_APP_ID`, `EXPO_PUBLIC_TIKTOK_APP_ID`, `EXPO_PUBLIC_TIKTOK_ACCESS_TOKEN` — **using the TARGET app's own REAL IDs, not the §4 example values** (the falsy init guard does NOT catch placeholders; never commit the token value)
 - [ ] Add `lib/tiktokEvents.ts` (§5.1), `lib/skadNetwork.ts` (§5.2), and the storage helpers (§5.3)
 - [ ] At root, after ATT (guarded against StrictMode double-invoke): `await initTikTokSdk()` then `trackInstallIfNeeded()` (§6.1)
-- [ ] On signup: `logTikTokSignup()` + `trackSignupIfNeeded()` (§6.2 / §6.0)
-- [ ] On purchase (RevenueCat paywall handler): dispatch `Events.PURCHASE` with `{ product: entitlement.productIdentifier }` so the chokepoint fires `logTikTokPurchase(product)` + `trackPurchaseIfNeeded(product)` (§6.3 / §6.0)
+- [ ] Wire the §6.0 chokepoint into the app's existing `analytics.track`: a signup/connect event → `logTikTokSignup()` + `trackSignupIfNeeded()`; a purchase event carrying a stable `product` → `logTikTokPurchase(product)` + `trackPurchaseIfNeeded(product)`
+- [ ] On purchase (RevenueCat paywall handler — **RevenueCat is app-provided, §2**): dispatch the purchase event with `{ product: entitlement.productIdentifier }` (§6.3 / §6.0)
 - [ ] (OPTIONAL) Add the app-start "safety net" effect (§6.3b) only if catching off-device purchases
 - [ ] In TikTok Events Manager → SKAN setup, configure a conversion-value schema mapping fine value `1`→install, `2`→signup, `4`→purchase (§9)
 
@@ -775,15 +837,22 @@ Mirror this in TikTok's SKAN configuration UI so the postbacks decode correctly:
 
 ## 11. Gotchas
 
-- **Version must be consistent.** npm `^1.6.2`, patch `+1.6.2`, Podfile.lock `TikTokBusiness 1.6.2` (→ `TikTokBusinessSDK 1.6.1`). `patch-package` keys patches by exact installed version; any mismatch makes the patch silently no-op, the `disableSKAdNetworkSupport` flag is ignored, and TikTok's SKAN turns back on.
+- **Version: use `^1.6.2` (matches the reference app).** The reference `package.json` ships
+  `react-native-tiktok-business-sdk: "^1.6.2"`, the patch is `+1.6.2`, and Podfile.lock pins
+  `TikTokBusiness 1.6.2` (→ `TikTokBusinessSDK 1.6.1`). `patch-package` keys patches by the
+  **resolved** installed version: `^1.6.2` resolving to `1.6.2` applies the `+1.6.2` patch cleanly.
+  The only risk is npm resolving the caret to a *newer* `1.6.x` than the patch name — then the patch
+  silently no-ops, `disableSKAdNetworkSupport` is ignored, and TikTok's SKAN turns back on. Guard by
+  verifying the patch applied (§8), not by hand-pinning.
 - **Keep `disableSKAdNetworkSupport: true`** in `initializeSdk` options. Removing it (or a failed patch) lets the TikTok SDK write SKAN conversion values too, and two pipelines racing on `updatePostbackConversionValue` silently lose conversion data.
 - **`Purchase` is a content event** (`trackContentEvent`/`TikTokContentEventName.PURCHASE`), not `trackEvent(TikTokEventName.PURCHASE)`. Passing properties as the 2nd arg of `trackEvent` mis-slots them into `eventId`.
 - **One dedupe id per purchase.** The chokepoint dedupes SKAN purchase by the `product` id; if you also wire the optional safety net (§6.3b), keep its id consistent or you risk a double SKAN purchase postback.
 - **The `~/` alias must be configured** (tsconfig `baseUrl` + `paths`) or the app won't bundle (§5.0). Do not add `babel-plugin-module-resolver` — `babel-preset-expo` already honours tsconfig paths.
-- **Swap the §4 example IDs.** `EXPO_PUBLIC_APP_ID` / `EXPO_PUBLIC_TIKTOK_APP_ID` in §4 are the reference app's values; using them ships conversions to the wrong app.
+- **Real IDs, not the §4 examples.** `EXPO_PUBLIC_APP_ID` / `EXPO_PUBLIC_TIKTOK_APP_ID` in §4 are example values; using them ships conversions to the wrong app. The init guard is a **falsy check** — it skips init only when a var is *missing/empty*, so a truthy placeholder (example ID, `"REPLACE_ME"`) passes the guard and silently mis-attributes. Put the target app's real IDs in `.env` before any Release build.
 - **The "install" event MUST fire** — it calls `updatePostbackConversionValue` for the first time, registering the install with SKAN. Skip it and downstream signup/purchase postbacks won't attribute.
 - **ATT must be requested** (once — guard the init effect). Without `granted`, TikTok server-event matching and SKAN accuracy drop (SKAN postbacks still fire, they just match less well).
 - **`SKAdNetworkItems` is build-time only.** Adding TikTok's identifiers after shipping requires a new build & resubmit.
+- **RevenueCat is app-provided.** This skill does not install or configure it (§2/§6.3). It only needs a purchase moment that yields a stable per-purchase id. If the target app has no purchase layer, add one separately.
 - **Android is not implemented.** All wrappers early-return on non-iOS. SKAN is iOS-only by design.
 - **MMKV dedupe is per-device-install only.** On reinstall, install/signup/purchase fire again (correct for SKAN — Apple treats reinstalls as new installs).
 - **The credential labelled "access token"** by TikTok behaves as an App Secret — keep it out of source control even though it is read via an `EXPO_PUBLIC_*` var (which bakes it into the bundle at build time).
