@@ -7,6 +7,7 @@ import Animated, {
   withTiming,
   useSharedValue,
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { CircleChevronLeft } from 'lucide-react-native';
 import ChoiceQuestion from '~/components/onboarding/ChoiceQuestion';
 import TrackSearch from '~/components/onboarding-v2/TrackSearch';
@@ -60,7 +61,9 @@ interface StartStep {
 
 type Step = StartStep | ChoiceStep | MultiSelectStep | TrackStep | AnalyzingStep | RevealStep;
 
-const STEPS: Step[] = [
+type TFn = (key: string) => string;
+
+const buildSteps = (t: TFn): Step[] => [
   {
     id: 'start',
     type: 'start',
@@ -68,30 +71,30 @@ const STEPS: Step[] = [
   {
     id: 'who',
     type: 'choice',
-    question: "Who\u2019s got you feeling\nthis way?",
+    question: t('who.question'),
     choices: [
-      { id: 'boyfriend', label: 'My boyfriend' },
-      { id: 'girlfriend', label: 'My girlfriend' },
-      { id: 'ex', label: 'My ex' },
-      { id: 'talking_to', label: "Someone I\u2019m talking to" },
-      { id: 'friend', label: "A \u2018friend\u2019 I don\u2019t really trust" },
-      { id: 'someone_else', label: 'Someone else' },
+      { id: 'boyfriend', label: t('who.choices.boyfriend') },
+      { id: 'girlfriend', label: t('who.choices.girlfriend') },
+      { id: 'ex', label: t('who.choices.ex') },
+      { id: 'talking_to', label: t('who.choices.talkingTo') },
+      { id: 'friend', label: t('who.choices.friend') },
+      { id: 'someone_else', label: t('who.choices.someoneElse') },
     ],
   },
   {
     id: 'alarm_bells',
     type: 'multiselect',
-    question: "What\u2019s been setting off\nalarm bells?",
-    subtitle: "Check everything that sounds familiar.\nNo one sees this but you.",
+    question: t('alarmBells.question'),
+    subtitle: t('alarmBells.subtitle'),
     choices: [
-      { id: 'phone', label: 'On their phone way more than usual' },
-      { id: 'hides_screen', label: 'Hides screen when I walk up' },
-      { id: 'thirst_traps', label: "Liking random girls\u2019/guys\u2019 thirst traps" },
-      { id: 'fitness_models', label: 'Following new fitness models' },
-      { id: 'weird_hours', label: 'Active on IG at weird hours' },
-      { id: 'new_followers', label: "New followers I\u2019ve never heard of" },
-      { id: 'weird_notifications', label: 'Getting weird notifications' },
-      { id: 'changed_password', label: 'Changed their password' },
+      { id: 'phone', label: t('alarmBells.choices.phone') },
+      { id: 'hides_screen', label: t('alarmBells.choices.hidesScreen') },
+      { id: 'thirst_traps', label: t('alarmBells.choices.thirstTraps') },
+      { id: 'fitness_models', label: t('alarmBells.choices.fitnessModels') },
+      { id: 'weird_hours', label: t('alarmBells.choices.weirdHours') },
+      { id: 'new_followers', label: t('alarmBells.choices.newFollowers') },
+      { id: 'weird_notifications', label: t('alarmBells.choices.weirdNotifications') },
+      { id: 'changed_password', label: t('alarmBells.choices.changedPassword') },
     ],
   },
   {
@@ -109,10 +112,13 @@ const STEPS: Step[] = [
 ];
 
 export default function OnboardingV2({ onComplete }: OnboardingV2Props) {
+  const { t } = useTranslation('onboardingV2');
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [trackProfile, setTrackProfile] = useState<Instagram | null>(null);
   const { track } = useAnalytics();
+
+  const STEPS = buildSteps(t);
 
   // Progress bar excludes the start step (step 0)
   const stepsWithProgress = STEPS.length - 1;

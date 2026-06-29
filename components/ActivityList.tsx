@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, Pressable, Platform } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
@@ -22,6 +23,7 @@ interface ActivityListProps {
 }
 
 export default function ActivityList({ stats, userId, isMainAccount = false, activityCounts }: ActivityListProps) {
+  const { t } = useTranslation('home');
   const pathname = usePathname();
   const tab = pathname.includes('/tracking') ? 'tracking' : 'home';
   const { isSubscribed, presentPaywall } = useRevenueCat();
@@ -92,7 +94,7 @@ export default function ActivityList({ stats, userId, isMainAccount = false, act
           onPress={() => handlePress(item)}>
           <View className="flex-row items-center gap-3">
             <Text className="font-roboto-medium text-base text-gray-900">
-              {getAccountListLabel(item.type, isMainAccount)}
+              {t(getAccountListLabel(item.type, isMainAccount))}
             </Text>
             {hasUnreadIndicator(item.type) && (
               <View className="h-3 w-3 rounded-full bg-error" />

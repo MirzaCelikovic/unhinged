@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, Pressable, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import { X } from 'lucide-react-native';
 import Circles from '~/assets/circles.svg';
@@ -9,6 +10,7 @@ import { useAccountContext } from '~/contexts/AccountContext';
 
 export default function NotificationsModal() {
   const { account, updateAccountSettings } = useAccountContext();
+  const { t } = useTranslation('settings');
 
   // Local state for optimistic updates
   const [localSettings, setLocalSettings] = useState({
@@ -59,11 +61,11 @@ export default function NotificationsModal() {
       <View className="flex-1 p-4">
         {/* Notifications Section */}
         <View className="mt-4">
-          <Text className="mb-3 font-roboto-bold text-lg text-black">Notifications</Text>
+          <Text className="mb-3 font-roboto-bold text-lg text-black">{t('section.notifications')}</Text>
           <View className="overflow-hidden rounded-2xl bg-white">
             <View className="flex-row items-center justify-between border-b border-gray-100 p-4">
               <Text className="flex-1 font-roboto-medium text-base text-gray-900">
-                When someone you track has new activity
+                {t('notifications.tracked')}
               </Text>
               <Switch
                 value={localSettings.notification_tracked}
@@ -74,7 +76,7 @@ export default function NotificationsModal() {
             </View>
             <View className="flex-row items-center justify-between border-b border-gray-100 p-4">
               <Text className="flex-1 font-roboto-medium text-base text-gray-900">
-                When your account has new activity
+                {t('notifications.account')}
               </Text>
               <Switch
                 value={localSettings.notification_account}
@@ -85,7 +87,7 @@ export default function NotificationsModal() {
             </View>
             <View className="flex-row items-center justify-between p-4">
               <Text className="flex-1 font-roboto-medium text-base text-gray-900">
-                Product updates and campaigns
+                {t('notifications.marketing')}
               </Text>
               <Switch
                 value={localSettings.notification_marketing}

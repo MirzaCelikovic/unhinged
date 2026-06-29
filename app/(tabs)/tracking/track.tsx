@@ -2,6 +2,7 @@ import { View, StyleSheet, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, CircleChevronLeft } from 'lucide-react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import Circles from '~/assets/circles.svg';
@@ -19,6 +20,7 @@ import { FOLLOWERS_WARN_THRESHOLD, FOLLOWING_WARN_THRESHOLD } from '~/lib/consta
 type TrackStep = 'search' | 'confirm';
 
 export default function TrackModal() {
+  const { t } = useTranslation('tracking');
   const [step, setStep] = useState<TrackStep>('search');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -56,12 +58,12 @@ export default function TrackModal() {
 
     const trimmedUsername = inputUsername.trim();
     if (!trimmedUsername) {
-      setError('Invalid username');
+      setError(t('search.errors.invalidUsername'));
       return;
     }
 
     if (!account?.uuid) {
-      setError('Account not ready');
+      setError(t('search.errors.accountNotReady'));
       return;
     }
 
@@ -75,14 +77,14 @@ export default function TrackModal() {
       // Check if account is accessible
       if (result.isPrivate && !result.followedByViewer) {
         console.log('❌ Account is private and not followed');
-        setError('You are not following this account');
+        setError(t('search.errors.notFollowing'));
         return;
       }
 
       // Check if account is verified
       if (result.isVerified) {
         console.log('❌ Account is verified');
-        setError('Verified accounts are not supported due to Instagram restrictions');
+        setError(t('search.errors.verifiedNotSupported'));
         return;
       }
 
@@ -112,9 +114,9 @@ export default function TrackModal() {
     } catch (err) {
       console.log('❌ Error:', err);
       if (err instanceof Error && err.message.includes('not found')) {
-        setError('Account not found');
+        setError(t('search.errors.accountNotFound'));
       } else {
-        setError('Failed to look up account');
+        setError(t('search.errors.lookupFailed'));
       }
     } finally {
       setIsLoading(false);
@@ -160,10 +162,7 @@ export default function TrackModal() {
       // modal — the account is already registered in the backend/DB and will sync
       // on the next manual refresh once the cooldown expires.
       if (isCoolingDown) {
-        Alert.alert(
-          'Paused',
-          'Syncing is paused for a bit to protect your account. Please try again later.'
-        );
+        Alert.alert(t('paused.title'), t('paused.message'));
         router.back();
         return;
       }
@@ -178,7 +177,7 @@ export default function TrackModal() {
       });
     } catch (err) {
       console.log('❌ Error:', err);
-      setError('Failed to add tracked account');
+      setError(t('search.errors.addFailed'));
     } finally {
       setIsLoading(false);
     }

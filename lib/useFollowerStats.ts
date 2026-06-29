@@ -14,17 +14,20 @@ export type AccountListType =
   | 'allFollowers'
   | 'allFollowing';
 
+// i18n keys (resolved via t() at each call site, namespace 'home'); the English
+// copy lives in lib/i18n/locales/en/home.json under `accountList.*`.
 export const ACCOUNT_LIST_LABELS: Record<AccountListType, { main: string; tracked: string }> = {
-  addedFollowing: { main: 'You recently followed', tracked: 'They recently followed' },
-  removedFollowing: { main: 'You recently unfollowed', tracked: 'They recently unfollowed' },
-  gainedFollowers: { main: 'Recently followed you', tracked: 'Recently followed by' },
-  lostFollowers: { main: 'Recently unfollowed you', tracked: 'Recently unfollowed them' },
-  notFollowedBack: { main: "You aren't following back", tracked: 'They are not following back' },
-  notFollowingBack: { main: 'Not following you back', tracked: 'Not following them back' },
-  allFollowers: { main: 'Followers', tracked: 'Followers' },
-  allFollowing: { main: 'Following', tracked: 'Following' },
+  addedFollowing: { main: 'accountList.addedFollowing.main', tracked: 'accountList.addedFollowing.tracked' },
+  removedFollowing: { main: 'accountList.removedFollowing.main', tracked: 'accountList.removedFollowing.tracked' },
+  gainedFollowers: { main: 'accountList.gainedFollowers.main', tracked: 'accountList.gainedFollowers.tracked' },
+  lostFollowers: { main: 'accountList.lostFollowers.main', tracked: 'accountList.lostFollowers.tracked' },
+  notFollowedBack: { main: 'accountList.notFollowedBack.main', tracked: 'accountList.notFollowedBack.tracked' },
+  notFollowingBack: { main: 'accountList.notFollowingBack.main', tracked: 'accountList.notFollowingBack.tracked' },
+  allFollowers: { main: 'accountList.allFollowers.main', tracked: 'accountList.allFollowers.tracked' },
+  allFollowing: { main: 'accountList.allFollowing.main', tracked: 'accountList.allFollowing.tracked' },
 };
 
+// Returns the i18n key for the label; resolve with `t(key)` (namespace 'home').
 export const getAccountListLabel = (type: AccountListType, isMainAccount: boolean): string => {
   return isMainAccount ? ACCOUNT_LIST_LABELS[type].main : ACCOUNT_LIST_LABELS[type].tracked;
 };

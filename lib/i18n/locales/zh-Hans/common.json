@@ -1,0 +1,11 @@
+{
+  "activityBanner.newActivity": "发现新的 Instagram 动态",
+  "activityBanner.refresh": "刷新",
+  "notConnected.headline": "离真相只差一步连接。",
+  "notConnected.subtitle": "连接 Instagram，开始暗中观察，而不被察觉。",
+  "notConnected.connectCta": "连接 Instagram",
+  "sessionExpired.title": "会话已过期",
+  "sessionExpired.body": "你的 Instagram 会话已过期。重新连接以同步新动态并继续追踪关注者。",
+  "sessionExpired.reconnectCta": "重新连接 Instagram",
+  "sessionExpired.maybeLater": "以后再说"
+}

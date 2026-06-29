@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Modal, Text, Pressable, Alert } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -173,6 +174,9 @@ export const useInstagram = () => {
 
 // Provider
 export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // i18n
+  const { t } = useTranslation('instagram');
+
   // Database
   const db = useSQLiteContext();
   const queryClient = useQueryClient();
@@ -1110,10 +1114,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             }
           }
 
-          Alert.alert(
-            'Instagram needs a break',
-            'To protect your account, syncing is paused for about 30 minutes. Please try again later.'
-          );
+          Alert.alert(t('cooldown.title'), t('cooldown.message'));
           break;
 
         case 'FETCH_ERROR':
@@ -1386,9 +1387,9 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         <Modal visible={showLoginModal} animationType="slide" presentationStyle="pageSheet">
           <View className="flex-1 bg-white">
             <View className="flex-row items-center justify-between border-b border-gray-200 p-4">
-              <Text className="text-lg font-semibold">Connect Instagram</Text>
+              <Text className="text-lg font-semibold">{t('login.title')}</Text>
               <Pressable className="px-4 py-2 active:opacity-70" onPress={closeLoginModal}>
-                <Text className="text-base font-medium text-blue-500">Cancel</Text>
+                <Text className="text-base font-medium text-blue-500">{t('login.cancel')}</Text>
               </Pressable>
             </View>
             <WebView

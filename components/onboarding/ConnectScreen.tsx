@@ -1,4 +1,5 @@
 import { View, Text, Pressable } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { LockKeyhole, Shield, FolderCheck, EyeOff } from 'lucide-react-native';
 import IgGradient from '~/assets/ig_gradient.svg';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
@@ -9,16 +10,17 @@ interface ConnectScreenProps {
 }
 
 export default function ConnectScreen({ onConnect, onSkip }: ConnectScreenProps) {
+  const { t } = useTranslation('onboarding');
   const { track } = useAnalytics();
   return (
     <View className="flex-1 px-4">
       <Text className="text-center font-roboto-extrablack text-4xl tracking-tighter">
-        They'll never know you're watching
+        {t('connect.title')}
       </Text>
       <View className="mt-3 flex-row items-center justify-center">
         <LockKeyhole size={16} color="#000000" />
         <Text className="font-roboto ml-2 text-center text-base text-black">
-          Your data is fully secure
+          {t('connect.secureLabel')}
         </Text>
       </View>
 
@@ -26,9 +28,9 @@ export default function ConnectScreen({ onConnect, onSkip }: ConnectScreenProps)
         <View className="mb-8 flex-row">
           <Shield size={28} color="#000000" />
           <View className="ml-4 flex-1">
-            <Text className="font-roboto-bold text-lg">Bank Level Security</Text>
+            <Text className="font-roboto-bold text-lg">{t('connect.bankSecurity.title')}</Text>
             <Text className="font-roboto mt-1 text-base text-black">
-              Protected Sync. Log into Instagram. Your connection is secured with bank-grade encryption.
+              {t('connect.bankSecurity.body')}
             </Text>
           </View>
         </View>
@@ -36,9 +38,9 @@ export default function ConnectScreen({ onConnect, onSkip }: ConnectScreenProps)
         <View className="mb-8 flex-row">
           <FolderCheck size={28} color="#000000" />
           <View className="ml-4 flex-1">
-            <Text className="font-roboto-bold text-lg">Secure and Local</Text>
+            <Text className="font-roboto-bold text-lg">{t('connect.secureLocal.title')}</Text>
             <Text className="font-roboto mt-1 text-base text-black">
-              Private, by design. Your data resides securely on your device, giving you total control. We simply don't have the keys to see it.
+              {t('connect.secureLocal.body')}
             </Text>
           </View>
         </View>
@@ -46,9 +48,9 @@ export default function ConnectScreen({ onConnect, onSkip }: ConnectScreenProps)
         <View className="flex-row">
           <EyeOff size={28} color="#000000" />
           <View className="ml-4 flex-1">
-            <Text className="font-roboto-bold text-lg">Discreet & Private</Text>
+            <Text className="font-roboto-bold text-lg">{t('connect.discreet.title')}</Text>
             <Text className="font-roboto mt-1 text-base text-black">
-              Nobody knows you're using Unhinged. Your activity on Unhinged remains known only to you.
+              {t('connect.discreet.body')}
             </Text>
           </View>
         </View>
@@ -58,14 +60,14 @@ export default function ConnectScreen({ onConnect, onSkip }: ConnectScreenProps)
         <Pressable onPress={onConnect} className="w-full overflow-hidden rounded-3xl active:opacity-80">
           <View className="items-center justify-center">
             <IgGradient width="100%" height={56} preserveAspectRatio="none" />
-            <Text className="absolute font-roboto-medium text-lg text-white">Connect Instagram</Text>
+            <Text className="absolute font-roboto-medium text-lg text-white">{t('connect.cta')}</Text>
           </View>
         </Pressable>
         <Pressable className="mt-4 py-3" onPress={() => {
           track(Events.INSTAGRAM_CONNECTED_ONBOARDING, { connected: false });
           onSkip();
         }}>
-          <Text className="text-center font-roboto-medium text-base text-black">Skip</Text>
+          <Text className="text-center font-roboto-medium text-base text-black">{t('common.skip')}</Text>
         </Pressable>
       </View>
     </View>

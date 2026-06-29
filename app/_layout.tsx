@@ -15,6 +15,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import '../global.css';
+import '~/lib/i18n'; // side-effect: initialize i18next + device-locale/RTL before first render
 import * as Sentry from '@sentry/react-native';
 
 Sentry.init({

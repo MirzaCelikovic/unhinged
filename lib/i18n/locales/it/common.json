@@ -1,0 +1,11 @@
+{
+  "activityBanner.newActivity": "Nuova attività su Instagram",
+  "activityBanner.refresh": "Aggiorna",
+  "notConnected.headline": "A una connessione dalla verità.",
+  "notConnected.subtitle": "Connetti Instagram per iniziare a osservare senza essere osservato.",
+  "notConnected.connectCta": "Connetti Instagram",
+  "sessionExpired.title": "Sessione scaduta",
+  "sessionExpired.body": "La tua sessione di Instagram è scaduta. Riconnettiti per sincronizzare le nuove attività e continuare a monitorare i follower.",
+  "sessionExpired.reconnectCta": "Riconnetti Instagram",
+  "sessionExpired.maybeLater": "Forse più tardi"
+}

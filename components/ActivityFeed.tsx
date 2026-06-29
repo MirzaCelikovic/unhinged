@@ -1,4 +1,6 @@
 import { View, Linking } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useQuery } from '@tanstack/react-query';
 import AccountCard from './AccountCard';
@@ -187,7 +189,7 @@ const fetchActivityFeed = async (db: any, trackedAccountId: string): Promise<Fee
   return events.slice(0, 10);
 };
 
-const formatRelativeTime = (timestamp: string): string => {
+const formatRelativeTime = (timestamp: string, t: TFunction): string => {
   const now = new Date();
   const date = new Date(timestamp);
   const diffMs = now.getTime() - date.getTime();
@@ -195,23 +197,23 @@ const formatRelativeTime = (timestamp: string): string => {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffMins < 1) return t('feed.time.justNow');
+  if (diffMins < 60) return t('feed.time.minutesAgo', { n: diffMins });
+  if (diffHours < 24) return t('feed.time.hoursAgo', { n: diffHours });
+  if (diffDays < 7) return t('feed.time.daysAgo', { n: diffDays });
   return date.toLocaleDateString();
 };
 
-const getEventLabel = (type: FeedEvent['type']): string => {
+const getEventLabel = (type: FeedEvent['type'], t: TFunction): string => {
   switch (type) {
     case 'new_follower':
-      return 'started following them';
+      return t('feed.event.startedFollowingThem');
     case 'lost_follower':
-      return 'unfollowed them';
+      return t('feed.event.unfollowedThem');
     case 'started_following':
-      return 'they started following';
+      return t('feed.event.theyStartedFollowing');
     case 'stopped_following':
-      return 'they unfollowed';
+      return t('feed.event.theyUnfollowed');
   }
 };
 
@@ -226,6 +228,7 @@ export default function ActivityFeed({
   trackedUsername,
   trackedProfilePicUrl,
 }: ActivityFeedProps) {
+  const { t } = useTranslation('tracking');
   const db = useSQLiteContext();
   const { isSubscribed, presentPaywall } = useRevenueCat();
 
@@ -277,8 +280,8 @@ export default function ActivityFeed({
           key={event.id}
           username={event.username}
           profilePicUrl={event.profilePicUrl}
-          label={getEventLabel(event.type)}
-          timestamp={formatRelativeTime(event.timestamp)}
+          label={getEventLabel(event.type, t)}
+          timestamp={formatRelativeTime(event.timestamp, t)}
           isRow
           isLastRow={!hasTrackingStart && index === displayEvents.length - 1}
           onPress={() => handleEventPress(event.username)}
@@ -291,9 +294,10 @@ export default function ActivityFeed({
         <AccountCard
           username={trackedUsername || 'username'}
           profilePicUrl={trackedProfilePicUrl}
-          label="you started tracking"
+          label={t('feed.youStartedTracking')}
           timestamp={formatRelativeTime(
-            trackingStartDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+            trackingStartDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+            t
           )}
           isRow
           isLastRow

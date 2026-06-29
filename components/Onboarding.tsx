@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Pressable } from 'react-native';
 import Animated, {
   FadeIn,
@@ -91,14 +92,14 @@ const STEPS: Step[] = [
   {
     id: 'source',
     type: 'choice',
-    question: 'How did you find us?',
+    question: 'source.question',
     choices: [
-      { id: 'friends', label: 'Friends' },
-      { id: 'tiktok', label: 'TikTok' },
-      { id: 'instagram', label: 'Instagram' },
-      { id: 'facebook', label: 'Facebook' },
-      { id: 'google', label: 'Google' },
-      { id: 'other', label: 'Other' },
+      { id: 'friends', label: 'source.choices.friends' },
+      { id: 'tiktok', label: 'source.choices.tiktok' },
+      { id: 'instagram', label: 'source.choices.instagram' },
+      { id: 'facebook', label: 'source.choices.facebook' },
+      { id: 'google', label: 'source.choices.google' },
+      { id: 'other', label: 'source.choices.other' },
     ],
   },
   {
@@ -108,13 +109,13 @@ const STEPS: Step[] = [
   {
     id: 'help_with',
     type: 'choice',
-    question: 'What can Unhinged help you with?',
+    question: 'helpWith.question',
     choices: [
-      { id: 'track', label: 'Track users privately' },
-      { id: 'not_following_back', label: "See who's not following you back" },
-      { id: 'stories', label: 'View stories anonymously' },
-      { id: 'red_flags', label: 'Generate red flag reports' },
-      { id: 'wrapped', label: 'See your IG wrapped' },
+      { id: 'track', label: 'helpWith.choices.track' },
+      { id: 'not_following_back', label: 'helpWith.choices.notFollowingBack' },
+      { id: 'stories', label: 'helpWith.choices.stories' },
+      { id: 'red_flags', label: 'helpWith.choices.redFlags' },
+      { id: 'wrapped', label: 'helpWith.choices.wrapped' },
     ],
   },
   {
@@ -152,6 +153,7 @@ const STEPS: Step[] = [
 ];
 
 export default function Onboarding({ onComplete }: OnboardingProps) {
+  const { t } = useTranslation('onboarding');
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [instagramResult, setInstagramResult] = useState<Instagram | null>(null);
@@ -251,8 +253,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           {step.type === 'start' && <StartScreen onNext={handleNext} />}
           {step.type === 'choice' && (
             <ChoiceQuestion
-              question={(step as ChoiceStep).question}
-              choices={(step as ChoiceStep).choices}
+              question={t((step as ChoiceStep).question)}
+              choices={(step as ChoiceStep).choices.map((choice) => ({
+                id: choice.id,
+                label: t(choice.label),
+              }))}
               onSelect={handleSelect}
             />
           )}

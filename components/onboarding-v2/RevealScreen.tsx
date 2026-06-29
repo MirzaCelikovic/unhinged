@@ -4,6 +4,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Lock } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import Button from '~/components/Button';
 import UnhingedCircle from '~/assets/unhinged_circle.svg';
 import { useRevenueCat } from '~/contexts/RevenueCatContext';
@@ -19,13 +20,6 @@ interface RevealScreenProps {
   followersCount?: number;
   onNext: () => void;
 }
-
-const INSIGHT_ROWS = [
-  { label: 'New followers this week', blurredValue: '24', locked: true },
-  { label: 'Last activity', blurredValue: '3 hours ago', locked: true },
-  { label: 'Accounts flagged as unusual', blurredValue: '18', locked: true },
-  { label: 'Most active late at night', locked: false },
-];
 
 const formatCount = (count: number): string => {
   if (count >= 1_000_000) {
@@ -47,9 +41,17 @@ export default function RevealScreen({
   followersCount,
   onNext,
 }: RevealScreenProps) {
+  const { t } = useTranslation('onboardingV2');
   const { isSubscribed, presentPaywall, skipLaunchPaywall } = useRevenueCat();
   const { track } = useAnalytics();
   const [hasSeenPaywall, setHasSeenPaywall] = useState(false);
+
+  const INSIGHT_ROWS = [
+    { label: t('reveal.insights.newFollowers'), blurredValue: '24', locked: true },
+    { label: t('reveal.insights.lastActivity'), blurredValue: t('reveal.insights.lastActivityValue'), locked: true },
+    { label: t('reveal.insights.flagged'), blurredValue: '18', locked: true },
+    { label: t('reveal.insights.lateNight'), locked: false },
+  ];
 
   useEffect(() => {
     track(Events.REVEAL_VIEWED);
@@ -90,7 +92,7 @@ export default function RevealScreen({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}>
         <Text className="mb-6 text-center font-roboto-extrablack text-3xl text-black">
-          Here&apos;s what we found on{'\n'}@{username}
+          {t('reveal.headline', { username })}
         </Text>
 
         {/* Instagram card */}
@@ -108,19 +110,19 @@ export default function RevealScreen({
               {mediaCount !== null && mediaCount !== undefined && (
                 <View className="items-center">
                   <Text className="font-roboto-bold text-2xl">{formatCount(mediaCount)}</Text>
-                  <Text className="font-roboto text-sm text-gray-500">posts</Text>
+                  <Text className="font-roboto text-sm text-gray-500">{t('reveal.stats.posts')}</Text>
                 </View>
               )}
               {followingCount !== undefined && (
                 <View className="items-center">
                   <Text className="font-roboto-bold text-2xl">{formatCount(followingCount)}</Text>
-                  <Text className="font-roboto text-sm text-gray-500">following</Text>
+                  <Text className="font-roboto text-sm text-gray-500">{t('reveal.stats.following')}</Text>
                 </View>
               )}
               {followersCount !== undefined && (
                 <View className="items-center">
                   <Text className="font-roboto-bold text-2xl">{formatCount(followersCount)}</Text>
-                  <Text className="font-roboto text-sm text-gray-500">followers</Text>
+                  <Text className="font-roboto text-sm text-gray-500">{t('reveal.stats.followers')}</Text>
                 </View>
               )}
             </View>
@@ -175,7 +177,7 @@ export default function RevealScreen({
           className="mt-3 items-center rounded-2xl px-6 py-5 active:opacity-80"
           style={{ backgroundColor: 'rgba(255, 0, 0, 0.3)' }}>
           <Text className="font-roboto-extrablack text-base" style={{ color: '#FF0000' }}>
-            RED FLAGS FOUND
+            {t('redFlagsFound')}
           </Text>
         </Pressable>
       </ScrollView>
@@ -184,7 +186,7 @@ export default function RevealScreen({
         <LinearGradient
           colors={['#FFE51F00', '#FFE51FCC']}
           style={{ paddingHorizontal: 16, paddingBottom: 32, paddingTop: 48 }}>
-          <Button label="Show me everything" onPress={handleContinue} />
+          <Button label={t('reveal.cta')} onPress={handleContinue} />
           {hasSeenPaywall && !isSubscribed && (
             <Animated.View entering={FadeIn.duration(400)}>
               <Pressable
@@ -194,7 +196,7 @@ export default function RevealScreen({
                 }}
                 className="mt-3 py-2">
                 <Text className="text-center font-roboto-medium text-base text-black">
-                  Maybe later
+                  {t('reveal.maybeLater')}
                 </Text>
               </Pressable>
             </Animated.View>

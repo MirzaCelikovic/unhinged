@@ -3,13 +3,6 @@ import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Logo from '~/assets/logo_black.svg';
 
-const TITLES = {
-  notFollowingBack: 'Not Following You Back',
-  notFollowingYouBack: "You're Not Following Back",
-  recentlyUnfollowed: 'Recently Unfollowed You',
-  recentlyFollowed: 'Recently Followed You',
-};
-
 function LogoHeader() {
   return (
     <SafeAreaView>

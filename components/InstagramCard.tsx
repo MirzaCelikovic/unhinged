@@ -1,4 +1,5 @@
 import { View, Text, Image, Pressable } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { router, usePathname } from 'expo-router';
 import { Instagram } from '~/lib/types';
 import { useRevenueCat } from '~/contexts/RevenueCatContext';
@@ -19,6 +20,7 @@ interface InstagramCardProps {
 }
 
 export default function InstagramCard({ account, isMainAccount = false }: InstagramCardProps) {
+  const { t } = useTranslation('home');
   const pathname = usePathname();
   const tab = pathname.includes('/tracking') ? 'tracking' : 'home';
   const { isSubscribed, presentPaywall } = useRevenueCat();
@@ -62,7 +64,7 @@ export default function InstagramCard({ account, isMainAccount = false }: Instag
           {account.media_count !== null && account.media_count !== undefined && (
             <View className="items-center">
               <Text className="font-roboto-bold text-2xl">{formatCount(account.media_count)}</Text>
-              <Text className="font-roboto-regular text-sm text-gray-500">posts</Text>
+              <Text className="font-roboto-regular text-sm text-gray-500">{t('stats.posts')}</Text>
             </View>
           )}
 
@@ -72,7 +74,7 @@ export default function InstagramCard({ account, isMainAccount = false }: Instag
               <Text className="font-roboto-bold text-2xl">
                 {formatCount(account.followers_count)}
               </Text>
-              <Text className="font-roboto-regular text-sm text-gray-500">followers</Text>
+              <Text className="font-roboto-regular text-sm text-gray-500">{t('stats.followers')}</Text>
             </Pressable>
           )}
 
@@ -82,7 +84,7 @@ export default function InstagramCard({ account, isMainAccount = false }: Instag
               <Text className="font-roboto-bold text-2xl">
                 {formatCount(account.following_count)}
               </Text>
-              <Text className="font-roboto-regular text-sm text-gray-500">following</Text>
+              <Text className="font-roboto-regular text-sm text-gray-500">{t('stats.following')}</Text>
             </Pressable>
           )}
         </View>

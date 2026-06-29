@@ -9,34 +9,15 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Circle, CircleCheck } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { useTranslation, Trans } from 'react-i18next';
 import Button from '~/components/Button';
 import Spinner from '~/components/Spinner';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
-const CHECKLIST = [
-  'Pulling 90 days of public activity.',
-  'Mapping their follow / followed-by graph',
-  'Cross checking late-night behaviour',
-  'Matching against warning signs you picked up on',
-  'Validating patterns and gathering insights',
-];
-
-const REVIEWS = [
-  {
-    image: require('~/assets/profile_1.jpg'),
-    quote: "My GF said she wasn\u2019t on IG anymore. Unhinged showed me she followed 14 new guys in a week.",
-    name: 'Jake M',
-  },
-  {
-    image: require('~/assets/profile_2.jpg'),
-    quote: "I had a gut feeling and Unhinged confirmed everything I was scared of.",
-    name: 'Taylor S',
-  },
-  {
-    image: require('~/assets/profile_0.jpg'),
-    quote: "Found out my bf was liking this fitness girl\u2019s stuff at 2am every night.",
-    name: 'Jess K',
-  },
+const REVIEW_IMAGES = [
+  require('~/assets/profile_1.jpg'),
+  require('~/assets/profile_2.jpg'),
+  require('~/assets/profile_0.jpg'),
 ];
 
 const STARS = '\u2B50\u2B50\u2B50\u2B50\u2B50';
@@ -47,7 +28,34 @@ interface AnalyzingScreenProps {
 }
 
 export default function AnalyzingScreen({ username, onNext }: AnalyzingScreenProps) {
+  const { t } = useTranslation('onboardingV2');
   const { track } = useAnalytics();
+
+  const CHECKLIST = [
+    t('analyzing.checklist.activity'),
+    t('analyzing.checklist.graph'),
+    t('analyzing.checklist.lateNight'),
+    t('analyzing.checklist.warningSigns'),
+    t('analyzing.checklist.patterns'),
+  ];
+
+  const REVIEWS = [
+    {
+      image: REVIEW_IMAGES[0],
+      quote: t('analyzing.reviews.jake.quote'),
+      name: t('analyzing.reviews.jake.name'),
+    },
+    {
+      image: REVIEW_IMAGES[1],
+      quote: t('analyzing.reviews.taylor.quote'),
+      name: t('analyzing.reviews.taylor.name'),
+    },
+    {
+      image: REVIEW_IMAGES[2],
+      quote: t('analyzing.reviews.jess.quote'),
+      name: t('analyzing.reviews.jess.name'),
+    },
+  ];
   const mountedRef = useRef(true);
   const [completedItems, setCompletedItems] = useState<number>(0);
   const [redFlagsState, setRedFlagsState] = useState<'hidden' | 'spinning' | 'found'>('hidden');
@@ -133,9 +141,12 @@ export default function AnalyzingScreen({ username, onNext }: AnalyzingScreenPro
       <View className="flex-1 px-6 pt-2">
         {/* Headline */}
         <Text className="text-center font-roboto-extrablack text-3xl text-black">
-          Analyzing{' '}
-          <Text className="font-roboto-extrablack">@{username}</Text>
-          {' ...'}
+          <Trans
+            i18nKey="analyzing.headline"
+            ns="onboardingV2"
+            values={{ username }}
+            components={{ user: <Text className="font-roboto-extrablack" /> }}
+          />
         </Text>
 
         {/* Progress bar */}
@@ -173,7 +184,7 @@ export default function AnalyzingScreen({ username, onNext }: AnalyzingScreenPro
                 <Spinner size={24} color="#000000" />
               ) : (
                 <Text className="font-roboto-extrablack text-lg tracking-wider" style={{ color: '#FF0000' }}>
-                  RED FLAGS FOUND
+                  {t('redFlagsFound')}
                 </Text>
               )}
             </Animated.View>
@@ -185,7 +196,7 @@ export default function AnalyzingScreen({ username, onNext }: AnalyzingScreenPro
       <View className="px-4 pb-8">
         {analysisComplete && (
           <Animated.View entering={FadeIn.duration(500)}>
-            <Button label="Continue" onPress={onNext} />
+            <Button label={t('common.continue')} onPress={onNext} />
           </Animated.View>
         )}
         {!analysisComplete && (

@@ -1,0 +1,11 @@
+{
+  "activityBanner.newActivity": "تم رصد نشاط جديد على Instagram",
+  "activityBanner.refresh": "تحديث",
+  "notConnected.headline": "خطوة واحدة تفصلك عن الحقيقة.",
+  "notConnected.subtitle": "اربط Instagram لتبدأ المراقبة دون أن يراقبك أحد.",
+  "notConnected.connectCta": "ربط Instagram",
+  "sessionExpired.title": "انتهت الجلسة",
+  "sessionExpired.body": "انتهت صلاحية جلستك على Instagram. أعِد الربط لمزامنة النشاط الجديد ومواصلة تتبّع المتابِعين.",
+  "sessionExpired.reconnectCta": "إعادة ربط Instagram",
+  "sessionExpired.maybeLater": "ربما لاحقًا"
+}

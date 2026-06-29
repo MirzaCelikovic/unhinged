@@ -1,0 +1,11 @@
+{
+  "activityBanner.newActivity": "Instagramの新しいアクティビティが見つかりました",
+  "activityBanner.refresh": "更新",
+  "notConnected.headline": "真実まで、あと1つの接続。",
+  "notConnected.subtitle": "Instagramを接続して、見られることなく見守りましょう。",
+  "notConnected.connectCta": "Instagramを接続",
+  "sessionExpired.title": "セッションの有効期限が切れました",
+  "sessionExpired.body": "Instagramのセッションの有効期限が切れました。再接続して新しいアクティビティを同期し、フォロワーの追跡を続けましょう。",
+  "sessionExpired.reconnectCta": "Instagramを再接続",
+  "sessionExpired.maybeLater": "あとで"
+}

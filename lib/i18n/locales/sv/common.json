@@ -1,0 +1,11 @@
+{
+  "activityBanner.newActivity": "Ny Instagram-aktivitet hittad",
+  "activityBanner.refresh": "Uppdatera",
+  "notConnected.headline": "Ett klick från sanningen.",
+  "notConnected.subtitle": "Anslut Instagram och börja bevaka utan att bli bevakad.",
+  "notConnected.connectCta": "Anslut Instagram",
+  "sessionExpired.title": "Sessionen har gått ut",
+  "sessionExpired.body": "Din Instagram-session har gått ut. Återanslut för att synka ny aktivitet och fortsätta spåra följare.",
+  "sessionExpired.reconnectCta": "Återanslut Instagram",
+  "sessionExpired.maybeLater": "Kanske senare"
+}
