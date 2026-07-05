@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "paths": {
+      "@hinged/flag-sdk": ["./types/hinged-flag-sdk"]
+    }
+  },
+  "include": ["lib/hinged-flags.ts", "types/hinged-flag-sdk.d.ts"]
+}

@@ -13,13 +13,18 @@
     "prebuild:android": "expo prebuild --platform android",
     "build:android": "./scripts/build-android.sh",
     "submit:android": "eas submit --platform android --path",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "build": "tsc -p tsconfig.build.json",
+    "test": "jest"
   },
   "dependencies": {
     "@amplitude/analytics-react-native": "^1.5.32",
     "@amplitude/experiment-js-client": "^1.21.0",
     "@amplitude/plugin-session-replay-react-native": "^0.4.5",
     "@gorhom/bottom-sheet": "^5.2.8",
+    "@hinged/flag-sdk": "^1.0.0",
+    "@openfeature/core": "^1.11.0",
+    "@openfeature/server-sdk": "^1.22.0",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@sentry/react-native": "~7.11.0",
     "@shopify/flash-list": "2.0.2",
@@ -64,15 +69,18 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.2.10",
     "eslint": "^9.25.1",
     "eslint-config-expo": "~55.0.0",
     "eslint-config-prettier": "^10.1.2",
+    "jest": "^30.4.2",
     "patch-package": "^8.0.1",
     "prettier": "^3.2.5",
     "prettier-plugin-tailwindcss": "^0.5.14",
     "react-native-svg-transformer": "^1.5.2",
     "tailwindcss": "^3.4.18",
+    "ts-jest": "^29.4.11",
     "typescript": "~5.9.2"
   },
   "overrides": {

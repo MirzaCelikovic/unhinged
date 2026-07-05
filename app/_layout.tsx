@@ -6,6 +6,7 @@ import { AnalyticsProvider } from '~/contexts/AnalyticsContext';
 import { InstagramProvider } from '~/contexts/InstagramContext';
 import { RevenueCatProvider } from '~/contexts/RevenueCatContext';
 import { initializeDatabase } from '~/lib/database';
+import { initHingedFlags } from '~/lib/hinged-flags';
 import { CustomerIO, CioRegion } from 'customerio-reactnative';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -61,6 +62,10 @@ export default Sentry.wrap(function RootLayout() {
       cdpApiKey,
       region: CioRegion.EU,
     });
+
+    // Initialize the Hinged feature-flag provider once at startup. Fails open:
+    // never throws, so a missing/invalid SDK key falls back to flag defaults.
+    void initHingedFlags();
   }, []);
 
   if (!fontsLoaded) {
