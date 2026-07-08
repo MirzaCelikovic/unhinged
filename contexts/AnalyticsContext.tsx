@@ -32,6 +32,7 @@ export const Events = {
   COMPARISON_COMPLETED: 'Comparison Completed',
   WHO_COMPLETED: 'Who Completed',
   ALARM_BELLS_COMPLETED: 'Alarm Bells Completed',
+  AGE_SELECTED: 'Age Selected',
   ANALYZING_COMPLETED: 'Analyzing Completed',
   REVEAL_VIEWED: 'Reveal Viewed',
   REVEAL_PAYWALL_TRIGGERED: 'Reveal Paywall Triggered',

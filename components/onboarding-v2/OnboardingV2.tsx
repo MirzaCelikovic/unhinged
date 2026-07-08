@@ -17,6 +17,7 @@ import RevealScreen from '~/components/onboarding-v2/RevealScreen';
 import Logo from '~/assets/logo_black.svg';
 import { Instagram } from '~/lib/types';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
+import { setAgeGroup, AgeGroup } from '~/lib/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface OnboardingV2Props {
@@ -76,6 +77,16 @@ const STEPS: Step[] = [
       { id: 'talking_to', label: "Someone I\u2019m talking to" },
       { id: 'friend', label: "A \u2018friend\u2019 I don\u2019t really trust" },
       { id: 'someone_else', label: 'Someone else' },
+    ],
+  },
+  {
+    id: 'age',
+    type: 'choice',
+    question: 'How old are you?',
+    choices: [
+      { id: '18_24', label: '18–24' },
+      { id: '25_34', label: '25–34' },
+      { id: '35_plus', label: '35+' },
     ],
   },
   {
@@ -145,6 +156,12 @@ export default function OnboardingV2({ onComplete }: OnboardingV2Props) {
   const handleSelect = (choiceId: string) => {
     if (step.id === 'who') {
       track(Events.WHO_COMPLETED, { who: choiceId });
+    }
+    if (step.id === 'age') {
+      // Persist synchronously so the paywall can read it to pick the
+      // age-specific RevenueCat offering (COM-6).
+      setAgeGroup(choiceId as AgeGroup);
+      track(Events.AGE_SELECTED, { age_group: choiceId, source: 'onboarding' });
     }
     setAnswers({ ...answers, [step.id]: choiceId });
     handleNext();

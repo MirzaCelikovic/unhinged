@@ -24,6 +24,7 @@ import { Instagram } from '~/lib/types';
 import { useInstagram } from '~/contexts/InstagramContext';
 import { useAccountContext } from '~/contexts/AccountContext';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
+import { setAgeGroup, AgeGroup } from '~/lib/storage';
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -99,6 +100,16 @@ const STEPS: Step[] = [
       { id: 'facebook', label: 'Facebook' },
       { id: 'google', label: 'Google' },
       { id: 'other', label: 'Other' },
+    ],
+  },
+  {
+    id: 'age',
+    type: 'choice',
+    question: 'How old are you?',
+    choices: [
+      { id: '18_24', label: '18–24' },
+      { id: '25_34', label: '25–34' },
+      { id: '35_plus', label: '35+' },
     ],
   },
   {
@@ -205,6 +216,12 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     // Track HCWH completion when help_with step is completed
     if (step.id === 'help_with') {
       track(Events.HCWH_COMPLETED, { answer: choiceId.toLowerCase() });
+    }
+    if (step.id === 'age') {
+      // Persist synchronously so the paywall can read it to pick the
+      // age-specific RevenueCat offering (COM-6).
+      setAgeGroup(choiceId as AgeGroup);
+      track(Events.AGE_SELECTED, { age_group: choiceId, source: 'onboarding' });
     }
     setAnswers({ ...answers, [step.id]: choiceId });
     handleNext();

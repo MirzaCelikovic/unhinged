@@ -10,6 +10,7 @@ const KEYS = {
   SKAN_INSTALL_TRACKED: 'skan_install_tracked',
   SKAN_SIGNUP_TRACKED: 'skan_signup_tracked',
   TRACKED_SUBSCRIPTION_CONVERSIONS: 'tracked_subscription_conversions',
+  AGE_GROUP: 'age_group',
 } as const;
 
 // --- SKAN install dedupe ---
@@ -44,6 +45,19 @@ export const addSkanTrackedSubscription = (subscriptionId: string) => {
 };
 export const hasSkanTrackedSubscription = (subscriptionId: string): boolean => {
   return getSkanTrackedSubscriptions().includes(subscriptionId);
+};
+
+// --- Age group (COM-6: customized pricing per age group) ---
+// Captured once during onboarding and read synchronously when presenting the
+// paywall, to select the age-specific RevenueCat offering. MMKV (not
+// AsyncStorage) is used precisely because the paywall read must be synchronous.
+export type AgeGroup = '18_24' | '25_34' | '35_plus';
+
+export const getAgeGroup = (): AgeGroup | null => {
+  return (storage.getString(KEYS.AGE_GROUP) as AgeGroup | undefined) ?? null;
+};
+export const setAgeGroup = (ageGroup: AgeGroup) => {
+  storage.set(KEYS.AGE_GROUP, ageGroup);
 };
 
 // --- Cross-SDK purchase dedupe (safety-net check) ---

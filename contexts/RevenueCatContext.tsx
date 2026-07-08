@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import Purchases, { CustomerInfo, PurchasesOffering, LOG_LEVEL } from 'react-native-purchases';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { analytics, Events } from '~/contexts/AnalyticsContext';
+import { getAgeGroup, AgeGroup } from '~/lib/storage';
 
 // RevenueCat API Key from environment (platform-specific)
 const REVENUECAT_API_KEY = Platform.OS === 'android'
@@ -18,6 +19,33 @@ export const PRODUCTS = {
   MONTHLY: 'monthly',
   YEARLY: 'yearly',
 } as const;
+
+// Age-based pricing (COM-6). Each onboarding age bucket maps to a RevenueCat
+// offering identifier that bundles the correctly-priced weekly + annual
+// products for that bucket. These offerings are configured in the RevenueCat
+// dashboard; until they exist we fall back to the current offering.
+export const AGE_OFFERINGS: Record<AgeGroup, string> = {
+  '18_24': 'age_18_24',
+  '25_34': 'age_25_34',
+  '35_plus': 'age_35_plus',
+};
+
+// Resolve the offering for the user's stored age group, or null to fall back
+// to the current offering — when no age was captured (e.g. users who onboarded
+// before this feature) or the age offering isn't configured yet in RevenueCat.
+const resolveAgeOffering = async (): Promise<PurchasesOffering | null> => {
+  const ageGroup = getAgeGroup();
+  if (!ageGroup) return null;
+  const offeringId = AGE_OFFERINGS[ageGroup];
+  if (!offeringId) return null;
+  try {
+    const offerings = await Purchases.getOfferings();
+    return offerings.all[offeringId] ?? null;
+  } catch (e) {
+    console.error('Error resolving age offering:', e);
+    return null;
+  }
+};
 
 interface RevenueCatContextType {
   // State
@@ -145,7 +173,10 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
   const presentPaywall = useCallback(async (source?: string): Promise<boolean> => {
     try {
       analytics.track(Events.PAYWALL_VIEWED, { source });
-      const result = await RevenueCatUI.presentPaywall();
+      const ageOffering = await resolveAgeOffering();
+      const result = await RevenueCatUI.presentPaywall(
+        ageOffering ? { offering: ageOffering } : undefined
+      );
 
       switch (result) {
         case PAYWALL_RESULT.PURCHASED:
@@ -180,8 +211,10 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
   const presentPaywallIfNeeded = useCallback(async (source?: string): Promise<boolean> => {
     try {
       analytics.track(Events.PAYWALL_VIEWED, { source });
+      const ageOffering = await resolveAgeOffering();
       const result = await RevenueCatUI.presentPaywallIfNeeded({
         requiredEntitlementIdentifier: ENTITLEMENT_ID,
+        ...(ageOffering ? { offering: ageOffering } : {}),
       });
 
       switch (result) {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { Tabs, Redirect } from 'expo-router';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
@@ -12,14 +12,24 @@ import TabHomeIcon from '~/assets/tab_home_icon.svg';
 import TabTrackingIcon from '~/assets/tab_tracking_icon.svg';
 import TabSettingsIcon from '~/assets/tab_settings_icon.svg';
 import SessionExpiredSheet from '~/components/SessionExpiredSheet';
+import AgePrompt from '~/components/AgePrompt';
+import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
+import { getAgeGroup, setAgeGroup, AgeGroup } from '~/lib/storage';
 
 export default function TabLayout() {
   const { isLoading, isOnboarded } = useOnboarding();
-  const { isInitialized, isSubscribed, presentPaywallOnLaunch } = useRevenueCat();
+  const {
+    isInitialized,
+    isSubscribed,
+    isLoading: rcLoading,
+    presentPaywallOnLaunch,
+  } = useRevenueCat();
   const { account, trackedInstagrams } = useAccountContext();
   const { sessionExpired, reconnect } = useInstagram();
+  const { track } = useAnalytics();
   const sessionExpiredSheetRef = useRef<BottomSheetModal>(null);
   const [paywallHandled, setPaywallHandled] = useState(false);
+  const [needsAge, setNeedsAge] = useState(false);
   const mainUserId = account?.instagram_user_id || null;
   const { data: mainAccountActivity } = useInstagramActivity(mainUserId);
   const hasMainAccountActivity = mainAccountActivity?.hasNewActivity || false;
@@ -39,18 +49,33 @@ export default function TabLayout() {
     }
   }, [isInitialized, account?.uuid]);
 
-  // Show paywall on mount if user doesn't have a subscription (after onboarding)
-  useEffect(() => {
-    const handlePaywall = async () => {
-      if (isOnboarded && isInitialized && !isSubscribed) {
-        await presentPaywallOnLaunch();
-      }
-      setPaywallHandled(true);
-    };
-    if (isOnboarded && isInitialized) {
-      handlePaywall();
+  const runLaunchPaywall = useCallback(async () => {
+    if (!isSubscribed) {
+      await presentPaywallOnLaunch();
     }
-  }, [isOnboarded, isInitialized, isSubscribed]);
+    setPaywallHandled(true);
+  }, [isSubscribed, presentPaywallOnLaunch]);
+
+  // Users who onboarded before age-based pricing (COM-6) have no stored age, so they'd
+  // fall back to the default paywall forever. Capture it once, then run the paywall —
+  // which now resolves their age-priced offering.
+  const handleAgeSelected = (ageGroup: AgeGroup) => {
+    setAgeGroup(ageGroup);
+    track(Events.AGE_SELECTED, { age_group: ageGroup, source: 'existing_user_prompt' });
+    setNeedsAge(false);
+    runLaunchPaywall();
+  };
+
+  // Show paywall on mount if user doesn't have a subscription (after onboarding).
+  // Gated on rcLoading so customerInfo is loaded — we never prompt an existing subscriber.
+  useEffect(() => {
+    if (!isOnboarded || !isInitialized || rcLoading) return;
+    if (!isSubscribed && !getAgeGroup()) {
+      setNeedsAge(true);
+      return;
+    }
+    runLaunchPaywall();
+  }, [isOnboarded, isInitialized, rcLoading, isSubscribed, runLaunchPaywall]);
 
   // Show session expired sheet after paywall is handled
   useEffect(() => {
@@ -138,6 +163,7 @@ export default function TabLayout() {
         onReconnect={handleReconnect}
         onMaybeLater={handleMaybeLater}
       />
+      {needsAge && <AgePrompt onSelect={handleAgeSelected} />}
     </>
   );
 }
