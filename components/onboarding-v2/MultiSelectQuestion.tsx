@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Circle, CircleCheck } from 'lucide-react-native';
 import Button from '~/components/Button';
@@ -22,6 +23,7 @@ export default function MultiSelectQuestion({
   choices,
   onSubmit,
 }: MultiSelectQuestionProps) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const toggleChoice = (id: string) => {
@@ -68,7 +70,7 @@ export default function MultiSelectQuestion({
         <LinearGradient
           colors={['#FFE51F00', '#FFE51FCC']}
           style={{ paddingHorizontal: 16, paddingBottom: 32, paddingTop: 48 }}>
-          <Button label="Continue" onPress={() => onSubmit(Array.from(selected))} />
+          <Button label={t('onboardingV2.multiSelect.continue')} onPress={() => onSubmit(Array.from(selected))} />
         </LinearGradient>
       </View>
     </View>

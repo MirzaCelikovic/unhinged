@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet, Pressable, Alert, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
@@ -29,6 +30,7 @@ interface AccountsListProps {
 }
 
 export default function AccountsList({ userId, type, isMainAccount }: AccountsListProps) {
+  const { t } = useTranslation();
   const { data: accounts, isLoading } = useAccountList(userId ?? null, type ?? null);
   const { followUser, unfollowUser } = useInstagram();
   const db = useSQLiteContext();
@@ -68,20 +70,20 @@ export default function AccountsList({ userId, type, isMainAccount }: AccountsLi
       if (result.success) {
         setCompletedActions((prev) => new Set(prev).add(accountId));
       } else {
-        Alert.alert('Error', result.error || 'Failed to follow user');
+        Alert.alert(t('components.accountsList.errorTitle'), result.error || t('components.accountsList.followFailed'));
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to follow user');
+      Alert.alert(t('components.accountsList.errorTitle'), t('components.accountsList.followFailed'));
     } finally {
       setLoadingAccountId(null);
     }
   };
 
   const handleUnfollow = async (accountId: string, username: string) => {
-    Alert.alert('Unfollow', `Unfollow @${username}?`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('components.accountsList.unfollowTitle'), t('components.accountsList.unfollowConfirm', { username }), [
+      { text: t('components.accountsList.cancel'), style: 'cancel' },
       {
-        text: 'Unfollow',
+        text: t('components.accountsList.unfollowTitle'),
         style: 'destructive',
         onPress: async () => {
           setLoadingAccountId(accountId);
@@ -90,10 +92,10 @@ export default function AccountsList({ userId, type, isMainAccount }: AccountsLi
             if (result.success) {
               setCompletedActions((prev) => new Set(prev).add(accountId));
             } else {
-              Alert.alert('Error', result.error || 'Failed to unfollow user');
+              Alert.alert(t('components.accountsList.errorTitle'), result.error || t('components.accountsList.unfollowFailed'));
             }
           } catch (error) {
-            Alert.alert('Error', 'Failed to unfollow user');
+            Alert.alert(t('components.accountsList.errorTitle'), t('components.accountsList.unfollowFailed'));
           } finally {
             setLoadingAccountId(null);
           }
@@ -142,7 +144,7 @@ export default function AccountsList({ userId, type, isMainAccount }: AccountsLi
         {/* Search Field */}
         <View className="mb-4">
           <TextField
-            placeholder="Search"
+            placeholder={t('components.accountsList.searchPlaceholder')}
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoCapitalize="none"
@@ -153,11 +155,11 @@ export default function AccountsList({ userId, type, isMainAccount }: AccountsLi
 
         {isLoading ? (
           <View className="flex-1 items-center justify-center">
-            <Text className="text-gray-500">Loading...</Text>
+            <Text className="text-gray-500">{t('components.accountsList.loading')}</Text>
           </View>
         ) : filteredAccounts.length === 0 ? (
           <View className="flex-1 items-center justify-center">
-            <Text className="text-gray-500">No accounts found</Text>
+            <Text className="text-gray-500">{t('components.accountsList.noAccounts')}</Text>
           </View>
         ) : (
           <FlashList
@@ -175,21 +177,21 @@ export default function AccountsList({ userId, type, isMainAccount }: AccountsLi
               let actionProps = {};
               if (actionType === 'follow' && !isCompleted) {
                 actionProps = {
-                  actionLabel: 'Follow',
+                  actionLabel: t('components.accountsList.follow'),
                   actionVariant: 'primary' as const,
                   actionLoading: isLoading,
                   onAction: () => handleFollow(account.id, account.username, account.profile_pic_url),
                 };
               } else if (actionType === 'unfollow' && !isCompleted) {
                 actionProps = {
-                  actionLabel: 'Unfollow',
+                  actionLabel: t('components.accountsList.unfollow'),
                   actionVariant: 'secondary' as const,
                   actionLoading: isLoading,
                   onAction: () => handleUnfollow(account.id, account.username),
                 };
               } else if (isCompleted) {
                 actionProps = {
-                  actionLabel: actionType === 'follow' ? 'Following' : 'Unfollowed',
+                  actionLabel: actionType === 'follow' ? t('components.accountsList.following') : t('components.accountsList.unfollowed'),
                   actionVariant: 'secondary' as const,
                 };
               }

@@ -1,5 +1,6 @@
 import React, { forwardRef, memo, useCallback, useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import {
   BottomSheetModal,
   BottomSheetView,
@@ -17,6 +18,7 @@ interface NotificationsSheetProps {
 
 const NotificationsSheetComponent = forwardRef<BottomSheetModal, NotificationsSheetProps>(
   ({ onEnableNotifications, onMaybeLater }, ref) => {
+    const { t } = useTranslation();
     const snapPoints = useMemo(() => ['50%'], []);
     const renderBackdrop = useCallback(
       (props: BottomSheetBackdropProps) => (
@@ -44,40 +46,43 @@ const NotificationsSheetComponent = forwardRef<BottomSheetModal, NotificationsSh
           </View>
           <View className="flex-1 p-6">
             <Text className="mb-3 font-roboto-extrablack text-3xl text-black">
-              Don't miss a thing 👀
+              {t('components.notificationsSheet.title')}
             </Text>
             <View className="mb-6 gap-3 py-4">
               <View className="flex-row items-center gap-3">
                 <CircleCheck size={22} color="#000000" />
                 <Text className="flex-1 font-roboto-medium text-lg text-black">
-                  Know instantly when your crush follows someone new
+                  {t('components.notificationsSheet.benefit1')}
                 </Text>
               </View>
               <View className="flex-row items-center gap-3">
                 <CircleCheck size={22} color="#000000" />
                 <Text className="flex-1 font-roboto-medium text-lg text-black">
-                  See when that ex gets a new follower
+                  {t('components.notificationsSheet.benefit2')}
                 </Text>
               </View>
               <View className="flex-row items-center gap-3">
                 <CircleCheck size={22} color="#000000" />
                 <Text className="flex-1 font-roboto-medium text-lg text-black">
-                  Catch unfollows the moment they happen
+                  {t('components.notificationsSheet.benefit3')}
                 </Text>
               </View>
               <View className="flex-row items-center gap-3">
                 <CircleCheck size={22} color="#000000" />
                 <Text className="flex-1 font-roboto-medium text-lg text-black">
-                  Never miss suspicious activity again
+                  {t('components.notificationsSheet.benefit4')}
                 </Text>
               </View>
             </View>
 
-            <Button label="Enable notifications" onPress={onEnableNotifications} />
+            <Button
+              label={t('components.notificationsSheet.enableButton')}
+              onPress={onEnableNotifications}
+            />
 
             <Pressable className="py-3 active:opacity-70" onPress={onMaybeLater}>
               <Text className="text-center font-roboto-medium text-base text-gray-500">
-                Maybe later
+                {t('components.notificationsSheet.maybeLater')}
               </Text>
             </Pressable>
           </View>

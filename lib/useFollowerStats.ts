@@ -1,5 +1,6 @@
 import { useSQLiteContext } from 'expo-sqlite';
 import { useQuery } from '@tanstack/react-query';
+import i18n from '~/lib/i18n';
 
 // Number of days to consider as "recent" for activity
 const RECENT_DAYS = 30;
@@ -14,19 +15,44 @@ export type AccountListType =
   | 'allFollowers'
   | 'allFollowing';
 
-export const ACCOUNT_LIST_LABELS: Record<AccountListType, { main: string; tracked: string }> = {
-  addedFollowing: { main: 'You recently followed', tracked: 'They recently followed' },
-  removedFollowing: { main: 'You recently unfollowed', tracked: 'They recently unfollowed' },
-  gainedFollowers: { main: 'Recently followed you', tracked: 'Recently followed by' },
-  lostFollowers: { main: 'Recently unfollowed you', tracked: 'Recently unfollowed them' },
-  notFollowedBack: { main: "You aren't following back", tracked: 'They are not following back' },
-  notFollowingBack: { main: 'Not following you back', tracked: 'Not following them back' },
-  allFollowers: { main: 'Followers', tracked: 'Followers' },
-  allFollowing: { main: 'Following', tracked: 'Following' },
+const ACCOUNT_LIST_LABEL_KEYS: Record<AccountListType, { main: string; tracked: string }> = {
+  addedFollowing: {
+    main: 'system.accountListLabels.addedFollowing.main',
+    tracked: 'system.accountListLabels.addedFollowing.tracked',
+  },
+  removedFollowing: {
+    main: 'system.accountListLabels.removedFollowing.main',
+    tracked: 'system.accountListLabels.removedFollowing.tracked',
+  },
+  gainedFollowers: {
+    main: 'system.accountListLabels.gainedFollowers.main',
+    tracked: 'system.accountListLabels.gainedFollowers.tracked',
+  },
+  lostFollowers: {
+    main: 'system.accountListLabels.lostFollowers.main',
+    tracked: 'system.accountListLabels.lostFollowers.tracked',
+  },
+  notFollowedBack: {
+    main: 'system.accountListLabels.notFollowedBack.main',
+    tracked: 'system.accountListLabels.notFollowedBack.tracked',
+  },
+  notFollowingBack: {
+    main: 'system.accountListLabels.notFollowingBack.main',
+    tracked: 'system.accountListLabels.notFollowingBack.tracked',
+  },
+  allFollowers: {
+    main: 'system.accountListLabels.allFollowers.main',
+    tracked: 'system.accountListLabels.allFollowers.tracked',
+  },
+  allFollowing: {
+    main: 'system.accountListLabels.allFollowing.main',
+    tracked: 'system.accountListLabels.allFollowing.tracked',
+  },
 };
 
 export const getAccountListLabel = (type: AccountListType, isMainAccount: boolean): string => {
-  return isMainAccount ? ACCOUNT_LIST_LABELS[type].main : ACCOUNT_LIST_LABELS[type].tracked;
+  const key = isMainAccount ? ACCOUNT_LIST_LABEL_KEYS[type].main : ACCOUNT_LIST_LABEL_KEYS[type].tracked;
+  return i18n.t(key);
 };
 
 export interface FollowerStats {

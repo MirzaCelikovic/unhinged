@@ -1,0 +1,414 @@
+{
+  "tabs": {
+    "home": "Home",
+    "tracking": "Tracking",
+    "settings": "Settings"
+  },
+  "home": {
+    "neverSynced": "Never synced",
+    "updatedJustNow": "Updated just now",
+    "updatedMinsAgo_one": "Updated {{count}} min ago",
+    "updatedMinsAgo_other": "Updated {{count}} mins ago",
+    "updatedHrsAgo_one": "Updated {{count}} hr ago",
+    "updatedHrsAgo_other": "Updated {{count}} hrs ago",
+    "updatedDaysAgo_one": "Updated {{count}} day ago",
+    "updatedDaysAgo_other": "Updated {{count}} days ago",
+    "pausedTitle": "Paused",
+    "pausedMessage": "Syncing is paused for a bit to protect your account. Please try again later.",
+    "refreshTitle": "Refresh",
+    "refreshMessage": "To avoid overwhelming Instagram with too many automated requests (which could make your account look like a bot), we recommend refreshing once a day or when we notify you of a follower count change.",
+    "cancel": "Cancel",
+    "refresh": "Refresh"
+  },
+  "settings": {
+    "deletingAccount": "Deleting your account...",
+    "settings": "Settings",
+    "upgradeNow": "Upgrade Now",
+    "notifications": "Notifications",
+    "support": "Support",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "dangerZone": "Danger Zone",
+    "disconnectInstagram": "Disconnect Instagram",
+    "deleteAccount": "Delete Account",
+    "debug": "Debug",
+    "resetOnboarding": "Reset Onboarding",
+    "copiedUserId": "Copied your user ID!",
+    "cancel": "Cancel",
+    "disconnect": "Disconnect",
+    "delete": "Delete",
+    "disconnectTitle": "Disconnect Instagram",
+    "disconnectMessage": "Are you sure? Reconnecting too frequently may look like automated activity to Instagram (which could make your account look like a bot).",
+    "deleteTitle": "Delete Account",
+    "deleteMessage": "Are you sure? All your tracked accounts and their activity will be gone forever."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "trackedActivity": "When someone you track has new activity",
+    "accountActivity": "When your account has new activity",
+    "marketing": "Product updates and campaigns"
+  },
+  "components": {
+    "accountsList": {
+      "errorTitle": "Error",
+      "followFailed": "Failed to follow user",
+      "unfollowFailed": "Failed to unfollow user",
+      "unfollowTitle": "Unfollow",
+      "unfollowConfirm": "Unfollow @{{username}}?",
+      "cancel": "Cancel",
+      "searchPlaceholder": "Search",
+      "loading": "Loading...",
+      "noAccounts": "No accounts found",
+      "follow": "Follow",
+      "unfollow": "Unfollow",
+      "following": "Following",
+      "unfollowed": "Unfollowed"
+    },
+    "newActivityBanner": {
+      "title": "New Instagram activity found",
+      "refresh": "Refresh"
+    },
+    "instagramCard": {
+      "posts": "posts",
+      "followers": "followers",
+      "following": "following"
+    },
+    "activityFeed": {
+      "justNow": "just now",
+      "minutesAgo": "{{count}}m ago",
+      "hoursAgo": "{{count}}h ago",
+      "daysAgo": "{{count}}d ago",
+      "startedFollowingThem": "started following them",
+      "unfollowedThem": "unfollowed them",
+      "theyStartedFollowing": "they started following",
+      "theyUnfollowed": "they unfollowed",
+      "youStartedTracking": "you started tracking"
+    },
+    "notConnected": {
+      "title": "One connection away from the truth.",
+      "subtitle": "Connect Instagram to start watching without being watched.",
+      "connectButton": "Connect Instagram"
+    },
+    "notTracking": {
+      "title": "No accounts tracked",
+      "subtitle": "Track your first account",
+      "trackButton": "Track account"
+    },
+    "notificationsSheet": {
+      "title": "Don't miss a thing 👀",
+      "benefit1": "Know instantly when your crush follows someone new",
+      "benefit2": "See when that ex gets a new follower",
+      "benefit3": "Catch unfollows the moment they happen",
+      "benefit4": "Never miss suspicious activity again",
+      "enableButton": "Enable notifications",
+      "maybeLater": "Maybe later"
+    },
+    "sessionExpiredSheet": {
+      "title": "Session expired",
+      "body": "Your Instagram session has expired. Reconnect to sync new activity and keep tracking followers.",
+      "reconnectButton": "Reconnect Instagram",
+      "maybeLater": "Maybe later"
+    },
+    "startTracking": {
+      "title": "Who do you want to track?",
+      "usernamePlaceholder": "Instagram username",
+      "note": "Note: The profile must be public or you currently follow them. This action is private and they will not be notified.",
+      "continueButton": "Continue"
+    },
+    "startedTracking": {
+      "title": "You are tracking\n@{{username}}",
+      "subtitle": "Now you'll know what happens when you're not supposed to see.",
+      "continueButton": "Continue"
+    },
+    "trackConfirm": {
+      "title": "What we found",
+      "syncFollowing": "Sync following activity",
+      "syncFollowers": "Sync followers activity",
+      "rateLimitWarning": "We recommend keeping this off for this account to protect your Instagram session from rate limiting.",
+      "startButton": "Start Tracking"
+    },
+    "trackedAccountSync": {
+      "title": "Syncing @{{username}}",
+      "subtitleFetchingProfile": "Fetching profile information...",
+      "subtitleMayTakeMinute": "This might take a minute depending on number of followers.",
+      "stepFetchingProfile": "Fetching profile",
+      "stepAnalyzing": "Analyzing activity",
+      "step2SyncingInstagram": "Syncing with Instagram",
+      "step2SyncingFollowing": "Syncing following list",
+      "step2SyncingFollowers": "Syncing followers list"
+    },
+    "initialSync": {
+      "title": "Syncing...",
+      "subtitleFetchingProfile": "Fetching profile information...",
+      "subtitleMayTakeMinute": "This might take a minute depending on number of followers.",
+      "stepFetchingProfile": "Fetching profile",
+      "stepAnalyzing": "Analyzing activity",
+      "step2SyncingInstagram": "Syncing with Instagram",
+      "step2SyncingFollowing": "Syncing following list",
+      "step2SyncingFollowers": "Syncing followers list"
+    }
+  },
+  "onboardingV2": {
+    "start": {
+      "headline": "You already know,\ndon't you?",
+      "subheadline": "Let's stop guessing and find out what's really going on.",
+      "notification1Title": "Your crush",
+      "notification1Subtitle": "started followed someone",
+      "notification2Title": "Your ex",
+      "notification2Subtitle": "started following your bestie",
+      "notification3Title": "Your best friend",
+      "notification3Subtitle": "just unfollowed you",
+      "cta": "Show me what they're hiding",
+      "agreementPrefix": "By continuing, you agree with our",
+      "termsOfService": "Terms of Service",
+      "agreementAnd": "and",
+      "privacyPolicy": "Privacy Policy",
+      "agreementSuffix": "."
+    },
+    "main": {
+      "whoQuestion": "Who’s got you feeling\nthis way?",
+      "whoBoyfriend": "My boyfriend",
+      "whoGirlfriend": "My girlfriend",
+      "whoEx": "My ex",
+      "whoTalkingTo": "Someone I’m talking to",
+      "whoFriend": "A ‘friend’ I don’t really trust",
+      "whoSomeoneElse": "Someone else",
+      "alarmBellsQuestion": "What’s been setting off\nalarm bells?",
+      "alarmBellsSubtitle": "Check everything that sounds familiar.\nNo one sees this but you.",
+      "alarmBellsPhone": "On their phone way more than usual",
+      "alarmBellsHidesScreen": "Hides screen when I walk up",
+      "alarmBellsThirstTraps": "Liking random girls’/guys’ thirst traps",
+      "alarmBellsFitnessModels": "Following new fitness models",
+      "alarmBellsWeirdHours": "Active on IG at weird hours",
+      "alarmBellsNewFollowers": "New followers I’ve never heard of",
+      "alarmBellsWeirdNotifications": "Getting weird notifications",
+      "alarmBellsChangedPassword": "Changed their password"
+    },
+    "multiSelect": {
+      "continue": "Continue"
+    },
+    "trackSearch": {
+      "titleBoyfriend": "What’s your boyfriend’s\nInstagram?",
+      "titleGirlfriend": "What’s your girlfriend’s\nInstagram?",
+      "titleEx": "What’s your ex’s\nInstagram?",
+      "titleTalkingTo": "What’s their\nInstagram?",
+      "titleFriend": "What’s this ‘friend’s’\nInstagram?",
+      "titleSomeoneElse": "What’s their\nInstagram?",
+      "titleDefault": "What’s their\nInstagram?",
+      "placeholder": "@username",
+      "privacyNote": "100% private. They will never see this, never get a notification, never know. We can't tell them even if we wanted to.",
+      "errorNotFound": "Could not find this account. Please check the username.",
+      "cta": "Scan their account"
+    },
+    "analyzing": {
+      "headlinePrefix": "Analyzing",
+      "headlineSuffix": " ...",
+      "checklist1": "Pulling 90 days of public activity.",
+      "checklist2": "Mapping their follow / followed-by graph",
+      "checklist3": "Cross checking late-night behaviour",
+      "checklist4": "Matching against warning signs you picked up on",
+      "checklist5": "Validating patterns and gathering insights",
+      "redFlagsFound": "RED FLAGS FOUND",
+      "continue": "Continue",
+      "review1Quote": "My GF said she wasn’t on IG anymore. Unhinged showed me she followed 14 new guys in a week.",
+      "review1Name": "Jake M",
+      "review2Quote": "I had a gut feeling and Unhinged confirmed everything I was scared of.",
+      "review2Name": "Taylor S",
+      "review3Quote": "Found out my bf was liking this fitness girl’s stuff at 2am every night.",
+      "review3Name": "Jess K"
+    },
+    "reveal": {
+      "headline": "Here's what we found on",
+      "posts": "posts",
+      "following": "following",
+      "followers": "followers",
+      "rowNewFollowers": "New followers this week",
+      "rowLastActivity": "Last activity",
+      "rowLastActivityValue": "3 hours ago",
+      "rowFlagged": "Accounts flagged as unusual",
+      "rowMostActive": "Most active late at night",
+      "redFlagsFound": "RED FLAGS FOUND",
+      "cta": "Show me everything",
+      "maybeLater": "Maybe later"
+    }
+  },
+  "onboarding": {
+    "main": {
+      "source": {
+        "question": "How did you find us?",
+        "friends": "Friends",
+        "tiktok": "TikTok",
+        "instagram": "Instagram",
+        "facebook": "Facebook",
+        "google": "Google",
+        "other": "Other"
+      },
+      "helpWith": {
+        "question": "What can Unhinged help you with?",
+        "track": "Track users privately",
+        "notFollowingBack": "See who's not following you back",
+        "stories": "View stories anonymously",
+        "redFlags": "Generate red flag reports",
+        "wrapped": "See your IG wrapped"
+      }
+    },
+    "comparison": {
+      "title": "We're better than every other app",
+      "featureHeader": "Feature",
+      "otherHeader": "Other",
+      "continue": "Continue",
+      "features": {
+        "trackPrivateUsers": "Track Private Users",
+        "encryptedIgConnection": "Encrypted IG Connection",
+        "identifyRedFlagBehavior": "Identify Red Flag Behavior",
+        "thirstTrapWarnings": "Thirst Trap Warnings",
+        "followerFollowBackAlerts": "Follower-Follow-Back Alerts"
+      }
+    },
+    "connect": {
+      "title": "They'll never know you're watching",
+      "secureSubtitle": "Your data is fully secure",
+      "bankSecurityTitle": "Bank Level Security",
+      "bankSecurityBody": "Protected Sync. Log into Instagram. Your connection is secured with bank-grade encryption.",
+      "secureLocalTitle": "Secure and Local",
+      "secureLocalBody": "Private, by design. Your data resides securely on your device, giving you total control. We simply don't have the keys to see it.",
+      "discreetTitle": "Discreet & Private",
+      "discreetBody": "Nobody knows you're using Unhinged. Your activity on Unhinged remains known only to you.",
+      "connectButton": "Connect Instagram",
+      "skip": "Skip"
+    },
+    "help1": {
+      "heading": "Here's how we'll help",
+      "title": "Track people privately",
+      "body": "See who starts following them and who follows them back.",
+      "continue": "Continue"
+    },
+    "help2": {
+      "heading": "Here's how we'll help",
+      "title": "See who's not following you back",
+      "body": "Clean up your following and unfollow users with one tap",
+      "continue": "Continue"
+    },
+    "notificationConsent": {
+      "title": "Don't miss out on\nwhat's happening",
+      "subtitle": "Get notified when someone unfollows you and more",
+      "enableButton": "Stay up to date",
+      "skip": "I don't want to stay updated"
+    },
+    "review": {
+      "title": "Everyone loves being Unhinged",
+      "subtitle": "See what our users have to say",
+      "continue": "Continue"
+    },
+    "start": {
+      "getStarted": "Get Started",
+      "agreePrefix": "By continuing, you agree with our",
+      "termsOfService": "Terms of Service",
+      "and": "and",
+      "privacyPolicy": "Privacy Policy",
+      "agreeSuffix": "."
+    },
+    "stats": {
+      "title": "Stats to back us up",
+      "subtitle": "Based on 2025 data",
+      "usersTracked": "Users tracked",
+      "continue": "Continue"
+    },
+    "trackSearch": {
+      "timeYesterday": "Yesterday",
+      "timeTwoHoursAgo": "2 hours ago",
+      "timeFiveHoursAgo": "5 hours ago",
+      "whatWeFound": "What we found",
+      "recentActivity": "Recent activity",
+      "title": "Who do you want to track?",
+      "usernamePlaceholder": "Instagram username",
+      "privacyNote": "This action is completely private and they will never know or be notified.",
+      "notFoundError": "Could not find this account. Please check the username.",
+      "continue": "Continue",
+      "skip": "Skip"
+    },
+    "usernameSearch": {
+      "whatWeFound": "What we found",
+      "notFollowingYouBack": "Not following you back",
+      "title": "What's your Instagram username?",
+      "usernamePlaceholder": "Instagram username",
+      "notFoundError": "Could not find this account. Please check the username.",
+      "continue": "Continue",
+      "skip": "Skip"
+    }
+  },
+  "system": {
+    "syncPaused": {
+      "title": "Instagram needs a break",
+      "message": "To protect your account, syncing is paused for about 30 minutes. Please try again later."
+    },
+    "loginModal": {
+      "title": "Connect Instagram",
+      "cancel": "Cancel"
+    },
+    "accountListLabels": {
+      "addedFollowing": {
+        "main": "You recently followed",
+        "tracked": "They recently followed"
+      },
+      "removedFollowing": {
+        "main": "You recently unfollowed",
+        "tracked": "They recently unfollowed"
+      },
+      "gainedFollowers": {
+        "main": "Recently followed you",
+        "tracked": "Recently followed by"
+      },
+      "lostFollowers": {
+        "main": "Recently unfollowed you",
+        "tracked": "Recently unfollowed them"
+      },
+      "notFollowedBack": {
+        "main": "You aren't following back",
+        "tracked": "They are not following back"
+      },
+      "notFollowingBack": {
+        "main": "Not following you back",
+        "tracked": "Not following them back"
+      },
+      "allFollowers": {
+        "main": "Followers",
+        "tracked": "Followers"
+      },
+      "allFollowing": {
+        "main": "Following",
+        "tracked": "Following"
+      }
+    }
+  },
+  "tracking": {
+    "addMoreCta": "Why stop now? The more, the messier!",
+    "trackAccountButton": "Track account",
+    "pausedTitle": "Paused",
+    "pausedMessage": "Syncing is paused for a bit to protect your account. Please try again later.",
+    "notificationsDisabledTitle": "Notifications Disabled",
+    "notificationsDisabledMessage": "To receive notifications, please enable them in your device settings.",
+    "openSettings": "Open Settings",
+    "cancel": "Cancel",
+    "ok": "OK",
+    "limitReachedTitle": "Limit Reached",
+    "limitReachedMessage": "You can track up to {{max}} accounts. Tracking more could trigger Instagram's automated activity detection, which may flag your account as a bot.",
+    "tabActivity": "Activity",
+    "tabInsights": "Insights",
+    "tabSettings": "Settings",
+    "syncFollowingActivity": "Sync following activity",
+    "syncFollowersActivity": "Sync followers activity",
+    "syncRateLimitWarning": "We recommend keeping this off for this account to protect your Instagram session from rate limiting.",
+    "stopTrackingTitle": "Stop Tracking",
+    "stopTrackingConfirm": "Stop tracking @{{username}}?",
+    "stopTrackingError": "Failed to stop tracking. Please try again.",
+    "errorTitle": "Error",
+    "errorInvalidUsername": "Invalid username",
+    "errorAccountNotReady": "Account not ready",
+    "errorNotFollowing": "You are not following this account",
+    "errorVerifiedNotSupported": "Verified accounts are not supported due to Instagram restrictions",
+    "errorAccountNotFound": "Account not found",
+    "errorLookupFailed": "Failed to look up account",
+    "errorAddFailed": "Failed to add tracked account"
+  }
+}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import { Tabs, Redirect } from 'expo-router';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
@@ -14,6 +15,7 @@ import TabSettingsIcon from '~/assets/tab_settings_icon.svg';
 import SessionExpiredSheet from '~/components/SessionExpiredSheet';
 
 export default function TabLayout() {
+  const { t } = useTranslation();
   const { isLoading, isOnboarded } = useOnboarding();
   const { isInitialized, isSubscribed, presentPaywallOnLaunch } = useRevenueCat();
   const { account, trackedInstagrams } = useAccountContext();
@@ -94,8 +96,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="home"
           options={{
-            title: 'Home',
-            tabBarLabel: 'Home',
+            title: t('tabs.home'),
+            tabBarLabel: t('tabs.home'),
             tabBarIcon: ({ color }) => (
               <View>
                 <TabHomeIcon color={color} width={28} height={28} />
@@ -110,8 +112,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="tracking"
           options={{
-            title: 'Tracking',
-            tabBarLabel: 'Tracking',
+            title: t('tabs.tracking'),
+            tabBarLabel: t('tabs.tracking'),
             tabBarIcon: ({ color }) => (
               <View>
                 <TabTrackingIcon color={color} width={28} height={28} />
@@ -126,8 +128,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="settings"
           options={{
-            title: 'Settings',
-            tabBarLabel: 'Settings',
+            title: t('tabs.settings'),
+            tabBarLabel: t('tabs.settings'),
             tabBarIcon: ({ color }) => <TabSettingsIcon color={color} width={28} height={28} />,
             headerShown: false,
           }}

@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import Logo from '~/assets/logo_black.svg';
 import { useInstagram as useInstagramContext } from '~/contexts/InstagramContext';
 import { useInstagram } from '~/lib/useInstagram';
@@ -36,6 +37,7 @@ import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 type HomeState = 'notConnected' | 'initialSync' | 'connected';
 
 export default function Index() {
+  const { t } = useTranslation();
   const { isLoggedIn, syncState, showLogin, sync, syncTrackedAccount, userId, isCoolingDown } = useInstagramContext();
   const { account } = useAccountContext();
   const { data: instagram } = useInstagram(userId);
@@ -145,7 +147,7 @@ export default function Index() {
   };
 
   const formatLastSyncTime = (timestamp: string | null): string => {
-    if (!timestamp) return 'Never synced';
+    if (!timestamp) return t('home.neverSynced');
 
     const syncDate = new Date(timestamp);
     const diffMs = currentTime.getTime() - syncDate.getTime();
@@ -153,10 +155,10 @@ export default function Index() {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Updated just now';
-    if (diffMins < 60) return `Updated ${diffMins} min${diffMins === 1 ? '' : 's'} ago`;
-    if (diffHours < 24) return `Updated ${diffHours} hr${diffHours === 1 ? '' : 's'} ago`;
-    return `Updated ${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+    if (diffMins < 1) return t('home.updatedJustNow');
+    if (diffMins < 60) return t('home.updatedMinsAgo', { count: diffMins });
+    if (diffHours < 24) return t('home.updatedHrsAgo', { count: diffHours });
+    return t('home.updatedDaysAgo', { count: diffDays });
   };
 
   const contentAnimatedStyle = useAnimatedStyle(() => ({
@@ -167,18 +169,18 @@ export default function Index() {
     // Block refresh while the circuit-breaker cooldown is active
     if (isCoolingDown) {
       Alert.alert(
-        'Paused',
-        'Syncing is paused for a bit to protect your account. Please try again later.'
+        t('home.pausedTitle'),
+        t('home.pausedMessage')
       );
       return;
     }
 
     Alert.alert(
-      'Refresh',
-      'To avoid overwhelming Instagram with too many automated requests (which could make your account look like a bot), we recommend refreshing once a day or when we notify you of a follower count change.',
+      t('home.refreshTitle'),
+      t('home.refreshMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Refresh', onPress: sync },
+        { text: t('home.cancel'), style: 'cancel' },
+        { text: t('home.refresh'), onPress: sync },
       ]
     );
   };
@@ -246,7 +248,7 @@ export default function Index() {
                       ) : (
                         <Pressable className="active:opacity-70" onPress={handleRefresh}>
                           <Text className="font-roboto-bold text-base text-gray-400">
-                            Refresh
+                            {t('home.refresh')}
                           </Text>
                         </Pressable>
                       )}

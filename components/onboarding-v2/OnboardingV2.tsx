@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View, Pressable } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -26,8 +27,8 @@ interface OnboardingV2Props {
 interface ChoiceStep {
   id: string;
   type: 'choice';
-  question: string;
-  choices: { id: string; label: string }[];
+  questionKey: string;
+  choices: { id: string; labelKey: string }[];
 }
 
 interface TrackStep {
@@ -38,9 +39,9 @@ interface TrackStep {
 interface MultiSelectStep {
   id: string;
   type: 'multiselect';
-  question: string;
-  subtitle?: string;
-  choices: { id: string; label: string }[];
+  questionKey: string;
+  subtitleKey?: string;
+  choices: { id: string; labelKey: string }[];
 }
 
 interface AnalyzingStep {
@@ -68,30 +69,30 @@ const STEPS: Step[] = [
   {
     id: 'who',
     type: 'choice',
-    question: "Who\u2019s got you feeling\nthis way?",
+    questionKey: 'onboardingV2.main.whoQuestion',
     choices: [
-      { id: 'boyfriend', label: 'My boyfriend' },
-      { id: 'girlfriend', label: 'My girlfriend' },
-      { id: 'ex', label: 'My ex' },
-      { id: 'talking_to', label: "Someone I\u2019m talking to" },
-      { id: 'friend', label: "A \u2018friend\u2019 I don\u2019t really trust" },
-      { id: 'someone_else', label: 'Someone else' },
+      { id: 'boyfriend', labelKey: 'onboardingV2.main.whoBoyfriend' },
+      { id: 'girlfriend', labelKey: 'onboardingV2.main.whoGirlfriend' },
+      { id: 'ex', labelKey: 'onboardingV2.main.whoEx' },
+      { id: 'talking_to', labelKey: 'onboardingV2.main.whoTalkingTo' },
+      { id: 'friend', labelKey: 'onboardingV2.main.whoFriend' },
+      { id: 'someone_else', labelKey: 'onboardingV2.main.whoSomeoneElse' },
     ],
   },
   {
     id: 'alarm_bells',
     type: 'multiselect',
-    question: "What\u2019s been setting off\nalarm bells?",
-    subtitle: "Check everything that sounds familiar.\nNo one sees this but you.",
+    questionKey: 'onboardingV2.main.alarmBellsQuestion',
+    subtitleKey: 'onboardingV2.main.alarmBellsSubtitle',
     choices: [
-      { id: 'phone', label: 'On their phone way more than usual' },
-      { id: 'hides_screen', label: 'Hides screen when I walk up' },
-      { id: 'thirst_traps', label: "Liking random girls\u2019/guys\u2019 thirst traps" },
-      { id: 'fitness_models', label: 'Following new fitness models' },
-      { id: 'weird_hours', label: 'Active on IG at weird hours' },
-      { id: 'new_followers', label: "New followers I\u2019ve never heard of" },
-      { id: 'weird_notifications', label: 'Getting weird notifications' },
-      { id: 'changed_password', label: 'Changed their password' },
+      { id: 'phone', labelKey: 'onboardingV2.main.alarmBellsPhone' },
+      { id: 'hides_screen', labelKey: 'onboardingV2.main.alarmBellsHidesScreen' },
+      { id: 'thirst_traps', labelKey: 'onboardingV2.main.alarmBellsThirstTraps' },
+      { id: 'fitness_models', labelKey: 'onboardingV2.main.alarmBellsFitnessModels' },
+      { id: 'weird_hours', labelKey: 'onboardingV2.main.alarmBellsWeirdHours' },
+      { id: 'new_followers', labelKey: 'onboardingV2.main.alarmBellsNewFollowers' },
+      { id: 'weird_notifications', labelKey: 'onboardingV2.main.alarmBellsWeirdNotifications' },
+      { id: 'changed_password', labelKey: 'onboardingV2.main.alarmBellsChangedPassword' },
     ],
   },
   {
@@ -113,6 +114,7 @@ export default function OnboardingV2({ onComplete }: OnboardingV2Props) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [trackProfile, setTrackProfile] = useState<Instagram | null>(null);
   const { track } = useAnalytics();
+  const { t } = useTranslation();
 
   // Progress bar excludes the start step (step 0)
   const stepsWithProgress = STEPS.length - 1;
@@ -184,9 +186,9 @@ export default function OnboardingV2({ onComplete }: OnboardingV2Props) {
           {step.type === 'start' && <StartScreen onNext={handleNext} />}
           {step.type === 'multiselect' && (
             <MultiSelectQuestion
-              question={(step as MultiSelectStep).question}
-              subtitle={(step as MultiSelectStep).subtitle}
-              choices={(step as MultiSelectStep).choices}
+              question={t((step as MultiSelectStep).questionKey)}
+              subtitle={(step as MultiSelectStep).subtitleKey ? t((step as MultiSelectStep).subtitleKey!) : undefined}
+              choices={(step as MultiSelectStep).choices.map((c) => ({ id: c.id, label: t(c.labelKey) }))}
               onSubmit={(selectedIds) => {
                 track(Events.ALARM_BELLS_COMPLETED, { selections: selectedIds });
                 setAnswers({ ...answers, [step.id]: selectedIds.join(',') });
@@ -196,8 +198,8 @@ export default function OnboardingV2({ onComplete }: OnboardingV2Props) {
           )}
           {step.type === 'choice' && (
             <ChoiceQuestion
-              question={(step as ChoiceStep).question}
-              choices={(step as ChoiceStep).choices}
+              question={t((step as ChoiceStep).questionKey)}
+              choices={(step as ChoiceStep).choices.map((c) => ({ id: c.id, label: t(c.labelKey) }))}
               onSelect={handleSelect}
             />
           )}

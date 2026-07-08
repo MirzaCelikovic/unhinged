@@ -1,4 +1,5 @@
 import { View, Text, ScrollView } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import InstagramCard from '~/components/InstagramCard';
 import Button from '~/components/Button';
 import { useInstagram } from '~/lib/useInstagram';
@@ -9,6 +10,7 @@ interface StartedTrackingProps {
 }
 
 export default function StartedTracking({ userId, onContinue }: StartedTrackingProps) {
+  const { t } = useTranslation();
   const { data: account } = useInstagram(userId);
 
   if (!account) {
@@ -22,17 +24,17 @@ export default function StartedTracking({ userId, onContinue }: StartedTrackingP
           <InstagramCard account={account} />
 
           <Text className="font-roboto-extrablack mt-8 px-12 text-center text-4xl tracking-tighter">
-            You are tracking{'\n'}@{account.username}
+            {t('components.startedTracking.title', { username: account.username })}
           </Text>
 
           <Text className="font-roboto-regular mt-6 px-12 text-center text-lg tracking-tighter text-gray-600">
-            Now you'll know what happens when you're not supposed to see.
+            {t('components.startedTracking.subtitle')}
           </Text>
         </View>
       </ScrollView>
 
       <View className="p-4 pb-12">
-        <Button label="Continue" onPress={onContinue} />
+        <Button label={t('components.startedTracking.continueButton')} onPress={onContinue} />
       </View>
     </View>
   );

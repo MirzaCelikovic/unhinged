@@ -1,4 +1,6 @@
 import { View, Linking } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import i18n from '~/lib/i18n';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useQuery } from '@tanstack/react-query';
 import AccountCard from './AccountCard';
@@ -195,23 +197,23 @@ const formatRelativeTime = (timestamp: string): string => {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffMins < 1) return i18n.t('components.activityFeed.justNow');
+  if (diffMins < 60) return i18n.t('components.activityFeed.minutesAgo', { count: diffMins });
+  if (diffHours < 24) return i18n.t('components.activityFeed.hoursAgo', { count: diffHours });
+  if (diffDays < 7) return i18n.t('components.activityFeed.daysAgo', { count: diffDays });
   return date.toLocaleDateString();
 };
 
 const getEventLabel = (type: FeedEvent['type']): string => {
   switch (type) {
     case 'new_follower':
-      return 'started following them';
+      return i18n.t('components.activityFeed.startedFollowingThem');
     case 'lost_follower':
-      return 'unfollowed them';
+      return i18n.t('components.activityFeed.unfollowedThem');
     case 'started_following':
-      return 'they started following';
+      return i18n.t('components.activityFeed.theyStartedFollowing');
     case 'stopped_following':
-      return 'they unfollowed';
+      return i18n.t('components.activityFeed.theyUnfollowed');
   }
 };
 
@@ -226,6 +228,7 @@ export default function ActivityFeed({
   trackedUsername,
   trackedProfilePicUrl,
 }: ActivityFeedProps) {
+  const { t } = useTranslation();
   const db = useSQLiteContext();
   const { isSubscribed, presentPaywall } = useRevenueCat();
 
@@ -291,7 +294,7 @@ export default function ActivityFeed({
         <AccountCard
           username={trackedUsername || 'username'}
           profilePicUrl={trackedProfilePicUrl}
-          label="you started tracking"
+          label={t('components.activityFeed.youStartedTracking')}
           timestamp={formatRelativeTime(
             trackingStartDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
           )}

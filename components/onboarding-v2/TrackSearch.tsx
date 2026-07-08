@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { View, Text, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import Button from '~/components/Button';
 import TextField from '~/components/TextField';
 import Unhinged from '~/assets/unhinged_2.svg';
@@ -8,13 +9,13 @@ import { Instagram } from '~/lib/types';
 import { fetchPublicProfile } from '~/lib/fetchPublicProfile';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
-const WHO_TITLES: Record<string, string> = {
-  boyfriend: "What\u2019s your boyfriend\u2019s\nInstagram?",
-  girlfriend: "What\u2019s your girlfriend\u2019s\nInstagram?",
-  ex: "What\u2019s your ex\u2019s\nInstagram?",
-  talking_to: "What\u2019s their\nInstagram?",
-  friend: "What\u2019s this \u2018friend\u2019s\u2019\nInstagram?",
-  someone_else: "What\u2019s their\nInstagram?",
+const WHO_TITLE_KEYS: Record<string, string> = {
+  boyfriend: 'onboardingV2.trackSearch.titleBoyfriend',
+  girlfriend: 'onboardingV2.trackSearch.titleGirlfriend',
+  ex: 'onboardingV2.trackSearch.titleEx',
+  talking_to: 'onboardingV2.trackSearch.titleTalkingTo',
+  friend: 'onboardingV2.trackSearch.titleFriend',
+  someone_else: 'onboardingV2.trackSearch.titleSomeoneElse',
 };
 
 function extractUsername(input: string): string {
@@ -44,12 +45,13 @@ export default function TrackSearch({ whoAnswer, onNext }: TrackSearchProps) {
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState('');
   const { track } = useAnalytics();
+  const { t } = useTranslation();
 
   const svgOpacity = useSharedValue(1);
   const svgScale = useSharedValue(1);
   const svgMarginTop = useSharedValue(0);
 
-  const title = WHO_TITLES[whoAnswer] || "What\u2019s their\nInstagram?";
+  const title = t(WHO_TITLE_KEYS[whoAnswer] || 'onboardingV2.trackSearch.titleDefault');
 
   useEffect(() => {
     const keyboardWillShowListener = Keyboard.addListener(
@@ -94,7 +96,7 @@ export default function TrackSearch({ whoAnswer, onNext }: TrackSearchProps) {
       track(Events.TRACK_SEARCH_COMPLETED);
       onNext(cleaned, profile);
     } catch (err) {
-      setError('Could not find this account. Please check the username.');
+      setError(t('onboardingV2.trackSearch.errorNotFound'));
     } finally {
       setIsSearching(false);
     }
@@ -113,7 +115,7 @@ export default function TrackSearch({ whoAnswer, onNext }: TrackSearchProps) {
         </Text>
         <View className="mt-8 w-full">
           <TextField
-            placeholder="@username"
+            placeholder={t('onboardingV2.trackSearch.placeholder')}
             value={username}
             onChangeText={(text) => {
               setUsername(text);
@@ -127,13 +129,13 @@ export default function TrackSearch({ whoAnswer, onNext }: TrackSearchProps) {
           />
         </View>
         <Text className="mt-4 px-2 text-center font-roboto text-sm text-gray-600">
-          100% private. They will never see this, never get a notification, never know. We can't tell them even if we wanted to.
+          {t('onboardingV2.trackSearch.privacyNote')}
         </Text>
       </View>
 
       <View className="px-4 pb-8">
         <Button
-          label="Scan their account"
+          label={t('onboardingV2.trackSearch.cta')}
           loading={isSearching}
           onPress={handleContinue}
           disabled={!username.trim()}

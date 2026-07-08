@@ -24,6 +24,7 @@ import { Instagram } from '~/lib/types';
 import { useInstagram } from '~/contexts/InstagramContext';
 import { useAccountContext } from '~/contexts/AccountContext';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
+import i18n from '~/lib/i18n';
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -91,14 +92,14 @@ const STEPS: Step[] = [
   {
     id: 'source',
     type: 'choice',
-    question: 'How did you find us?',
+    question: i18n.t('onboarding.main.source.question'),
     choices: [
-      { id: 'friends', label: 'Friends' },
-      { id: 'tiktok', label: 'TikTok' },
-      { id: 'instagram', label: 'Instagram' },
-      { id: 'facebook', label: 'Facebook' },
-      { id: 'google', label: 'Google' },
-      { id: 'other', label: 'Other' },
+      { id: 'friends', label: i18n.t('onboarding.main.source.friends') },
+      { id: 'tiktok', label: i18n.t('onboarding.main.source.tiktok') },
+      { id: 'instagram', label: i18n.t('onboarding.main.source.instagram') },
+      { id: 'facebook', label: i18n.t('onboarding.main.source.facebook') },
+      { id: 'google', label: i18n.t('onboarding.main.source.google') },
+      { id: 'other', label: i18n.t('onboarding.main.source.other') },
     ],
   },
   {
@@ -108,13 +109,13 @@ const STEPS: Step[] = [
   {
     id: 'help_with',
     type: 'choice',
-    question: 'What can Unhinged help you with?',
+    question: i18n.t('onboarding.main.helpWith.question'),
     choices: [
-      { id: 'track', label: 'Track users privately' },
-      { id: 'not_following_back', label: "See who's not following you back" },
-      { id: 'stories', label: 'View stories anonymously' },
-      { id: 'red_flags', label: 'Generate red flag reports' },
-      { id: 'wrapped', label: 'See your IG wrapped' },
+      { id: 'track', label: i18n.t('onboarding.main.helpWith.track') },
+      { id: 'not_following_back', label: i18n.t('onboarding.main.helpWith.notFollowingBack') },
+      { id: 'stories', label: i18n.t('onboarding.main.helpWith.stories') },
+      { id: 'red_flags', label: i18n.t('onboarding.main.helpWith.redFlags') },
+      { id: 'wrapped', label: i18n.t('onboarding.main.helpWith.wrapped') },
     ],
   },
   {

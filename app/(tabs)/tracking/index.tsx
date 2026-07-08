@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Logo from '~/assets/logo_black.svg';
 import { useCallback, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -100,6 +101,7 @@ function TrackedAccountItem({ account, syncStatus }: TrackedAccountItemProps) {
 }
 
 export default function Tracking() {
+  const { t } = useTranslation();
   const { trackedInstagrams, isLoading, account } = useAccountContext();
   const { isLoggedIn, showLogin, syncState, userId, sync, isCoolingDown } = useInstagramContext();
   const { data: stats, hasNewActivity } = useFollowerStats(userId, account?.latest_activity_date);
@@ -160,12 +162,12 @@ export default function Tracking() {
     } else if (status === 'denied') {
       // Permission was denied, show alert to open settings
       Alert.alert(
-        'Notifications Disabled',
-        'To receive notifications, please enable them in your device settings.',
+        t('tracking.notificationsDisabledTitle'),
+        t('tracking.notificationsDisabledMessage'),
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: t('tracking.cancel'), style: 'cancel' },
           {
-            text: 'Open Settings',
+            text: t('tracking.openSettings'),
             onPress: () => Linking.openSettings(),
           },
         ]
@@ -231,8 +233,8 @@ export default function Tracking() {
               onRefresh={() => {
                 if (isCoolingDown) {
                   Alert.alert(
-                    'Paused',
-                    'Syncing is paused for a bit to protect your account. Please try again later.'
+                    t('tracking.pausedTitle'),
+                    t('tracking.pausedMessage')
                   );
                   return;
                 }
@@ -256,11 +258,11 @@ export default function Tracking() {
         {/* Add another account CTA - bottom aligned */}
         <View className="background-red items-center pb-4">
           <Text className="px-2 text-center font-roboto-extrablack text-4xl tracking-tighter">
-            Why stop now? The more, the messier!
+            {t('tracking.addMoreCta')}
           </Text>
           <View className="mt-6 w-full">
             <Button
-              label="Track account"
+              label={t('tracking.trackAccountButton')}
               onPress={() => {
                 // Non-paying users can only track 1 account
                 const maxAccounts = isSubscribed ? MAX_TRACKED_ACCOUNTS_PAID : MAX_TRACKED_ACCOUNTS_FREE;
@@ -270,9 +272,9 @@ export default function Tracking() {
                     return;
                   }
                   Alert.alert(
-                    'Limit Reached',
-                    `You can track up to ${maxAccounts} accounts. Tracking more could trigger Instagram's automated activity detection, which may flag your account as a bot.`,
-                    [{ text: 'OK' }]
+                    t('tracking.limitReachedTitle'),
+                    t('tracking.limitReachedMessage', { max: maxAccounts }),
+                    [{ text: t('tracking.ok') }]
                   );
                   return;
                 }
