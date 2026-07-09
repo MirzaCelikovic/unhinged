@@ -13,10 +13,18 @@
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "SENTRY_ALLOW_FAILURE": "true"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "6756537255",
+        "appleTeamId": "DUZR4LXSY7"
+      }
+    }
   }
 }
