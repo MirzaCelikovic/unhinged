@@ -56,9 +56,9 @@ export default function TabLayout() {
     setPaywallHandled(true);
   }, [isSubscribed, presentPaywallOnLaunch]);
 
-  // Users who onboarded before age-based pricing (COM-6) have no stored age, so they'd
-  // fall back to the default paywall forever. Capture it once, then run the paywall —
-  // which now resolves their age-priced offering.
+  // Age no longer affects pricing (COM-36 reverted COM-6) — everyone gets the current
+  // offering. We still capture it once for users who onboarded before the age question
+  // existed, because segmentation and ad-signal suppression (COM-11) depend on it.
   const handleAgeSelected = (ageGroup: AgeGroup) => {
     setAgeGroup(ageGroup);
     track(Events.AGE_SELECTED, { age_group: ageGroup, source: 'existing_user_prompt' });
