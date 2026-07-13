@@ -18,6 +18,11 @@ const LOGIN_CHECK_DELAY_MS = 500;
 const FETCH_FOLLOWING_DELAY_MS = 1000;
 // Circuit-breaker cooldown: how long syncing stays paused after pushback is detected
 const CIRCUIT_BREAKER_COOLDOWN_MS = 30 * 60 * 1000;
+// COM-34: consecutive soft-block-shaped fetch failures (HTTP 400 / unparseable body)
+// within ONE sync that indicate Instagram is soft-blocking the whole session — as
+// opposed to a single benign body (e.g. an HTML login page on normal expiry, which must
+// NOT trip a 30-min lockout). At/above this count we trip the circuit breaker to back off.
+const SOFT_BLOCK_TRIP_THRESHOLD = 4;
 // COM-26 Stage C — tunable: stagger between tracked account sync starts
 const INTER_ACCOUNT_START_DELAY_MS = 500;
 const INTER_ACCOUNT_START_JITTER_MS = 500;
@@ -162,6 +167,19 @@ const classifyFetchError = (message?: string): string => {
   return 'other';
 };
 
+// COM-34: is a FETCH_ERROR shaped like Instagram's soft-block? A BURST of these within one
+// sync means the session is being blocked; a one-off is benign. Deliberately narrow —
+// HTTP 400 + unparseable/garbled bodies — and excludes 401/403 (session-expiry, handled
+// via checkLoginStatus) and network/timeout (transient).
+const isSoftBlockError = (message?: string): boolean => {
+  if (classifyFetchError(message) === 'http_400') return true;
+  // A garbled GraphQL body (Instagram serving a block page mid-scrape) throws this
+  // specific cursor/base64-decode error. Deliberately NOT matching generic parse errors
+  // ('unexpected token', 'json parse') — those also arise from a benign HTML login page on
+  // a normal session expiry, which must NEVER cause a 30-min lockout (see fetchWithRetry).
+  return (message ?? '').toLowerCase().includes('did not match the expected pattern');
+};
+
 // Context
 const InstagramContext = createContext<InstagramContextType | undefined>(undefined);
 
@@ -205,6 +223,8 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const justLoggedInRef = useRef(false);
   // Set by reconnect() so LOGIN_SUCCESS can tell an expiry-recovery from a first connect.
   const reconnectingRef = useRef(false);
+  // COM-34: consecutive soft-block-shaped fetch failures in the current sync (reset per sync).
+  const softBlockCountRef = useRef(0);
   const pendingFetchUserIdRef = useRef<string | null>(null);
   const pendingLoginCheckRef = useRef<string | null>(null);
   // COM-22: Map value types include `timer` so the cleanup path can always clearTimeout
@@ -631,6 +651,9 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
 
+    // COM-34: reset the per-sync soft-block counter for this run.
+    softBlockCountRef.current = 0;
+
     if (!isLoggedIn || !userId) {
       console.warn('⚠️ Cannot sync: not logged in', { isLoggedIn, userId });
       return;
@@ -777,6 +800,9 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
 
     stalledRef.current = false;
+    // COM-34: independent sync entry point — reset the soft-block counter so a stale count
+    // from a previous sync can't false-trip the circuit breaker here.
+    softBlockCountRef.current = 0;
     // Add to sync state (or update if already exists)
     setSyncState((prev) => {
       const existingIndex = prev.trackedAccounts.findIndex((acc) => acc.userId === trackedUserId);
@@ -1134,6 +1160,8 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           // mark every still-syncing/pending step as 'error' and stop the sync.
           fetchingUsersRef.current.clear();
           stalledRef.current = true;
+          // COM-34: clear the soft-block counter so it can't carry into the next sync/cooldown.
+          softBlockCountRef.current = 0;
           clearStallTimer();
           setSyncState((prev) => {
             if (!prev.isActive) return prev;
@@ -1211,6 +1239,25 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             listType: data.listType ?? 'unknown',
             reason: classifyFetchError(data.error),
           });
+
+          // COM-34: a BURST of soft-block-shaped failures (HTTP 400 / unparseable body)
+          // within one sync means Instagram is soft-blocking the session, not a one-off
+          // benign error — back off via the circuit breaker instead of hammering into it.
+          // (The per-request JS checks deliberately don't trip on a single one.) The JS
+          // trigger is idempotent and, once tripped, sets stalledRef so this won't re-fire.
+          if (isSoftBlockError(data.error)) {
+            softBlockCountRef.current += 1;
+            if (
+              softBlockCountRef.current >= SOFT_BLOCK_TRIP_THRESHOLD &&
+              Date.now() >= circuitBreakerCooldownRef.current
+            ) {
+              console.warn('⚠️ Soft-block burst detected — tripping circuit breaker');
+              apiWebViewRef.current?.injectJavaScript(
+                "window.instagramAPI?._triggerCircuitBreaker && window.instagramAPI._triggerCircuitBreaker('soft_block'); true;"
+              );
+            }
+          }
+
           if (data.listType === 'metadata') {
             // Metadata failure: resolve username→userId using the ref (no state-setter hack needed)
             const metaUsername = data.username;
@@ -1845,6 +1892,13 @@ const instagramAPI = `
       _circuitBroken = false;
       _circuitBreakerReason = null;
       _resetScheduler();
+    },
+
+    // COM-34: let RN trip the breaker when it detects a soft-block burst (HTTP 400 /
+    // unparseable bodies) that the per-request checks deliberately don't trip on.
+    // The bare identifier resolves to the module-scope function below (no recursion).
+    _triggerCircuitBreaker: function(reason) {
+      _triggerCircuitBreaker(reason || 'soft_block');
     },
 
     // Abort all in-flight and queued requests and reset the scheduler state,
