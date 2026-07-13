@@ -81,6 +81,7 @@ export default function TabLayout() {
   useEffect(() => {
     if (paywallHandled && sessionExpired) {
       sessionExpiredSheetRef.current?.present();
+      track(Events.RECONNECT_PROMPT_SHOWN, { surface: 'sheet' });
     }
   }, [paywallHandled, sessionExpired]);
 

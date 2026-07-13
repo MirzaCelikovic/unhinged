@@ -26,6 +26,7 @@ import {
 import { CircleChevronRight } from 'lucide-react-native';
 import Circles from '~/assets/circles.svg';
 import NotConnected from '~/components/NotConnected';
+import ReconnectBanner from '~/components/ReconnectBanner';
 import NotTracking from '~/components/NotTracking';
 import NotificationsSheet from '~/components/NotificationsSheet';
 import Button from '~/components/Button';
@@ -101,7 +102,16 @@ function TrackedAccountItem({ account, syncStatus }: TrackedAccountItemProps) {
 
 export default function Tracking() {
   const { trackedInstagrams, isLoading, account } = useAccountContext();
-  const { isLoggedIn, showLogin, syncState, userId, sync, isCoolingDown } = useInstagramContext();
+  const {
+    isLoggedIn,
+    showLogin,
+    syncState,
+    userId,
+    sync,
+    isCoolingDown,
+    sessionExpired,
+    reconnect,
+  } = useInstagramContext();
   const { data: stats, hasNewActivity } = useFollowerStats(userId, account?.latest_activity_date);
   const { isSubscribed, presentPaywall } = useRevenueCat();
   const { track } = useAnalytics();
@@ -190,8 +200,9 @@ export default function Tracking() {
     );
   }
 
-  // Not connected state - redirect to home after connecting
-  if (!isLoggedIn) {
+  // Not connected state - redirect to home after connecting. An expired session is NOT
+  // "not connected" — it keeps the list and shows a reconnect banner (below).
+  if (!isLoggedIn && !sessionExpired) {
     return (
       <NotConnected
         onConnect={() => {
@@ -224,11 +235,16 @@ export default function Tracking() {
       <View className="flex-1 justify-between px-4 pb-4 pt-2">
         {/* Tracked accounts list */}
         <View>
+          {sessionExpired && <ReconnectBanner onReconnect={reconnect} />}
           {/* New activity banner */}
           {hasNewActivity ? (
             <NewActivityBanner
               isSyncing={syncState.isActive}
               onRefresh={() => {
+                if (sessionExpired) {
+                  reconnect();
+                  return;
+                }
                 if (isCoolingDown) {
                   Alert.alert(
                     'Paused',
@@ -263,7 +279,9 @@ export default function Tracking() {
               label="Track account"
               onPress={() => {
                 // Non-paying users can only track 1 account
-                const maxAccounts = isSubscribed ? MAX_TRACKED_ACCOUNTS_PAID : MAX_TRACKED_ACCOUNTS_FREE;
+                const maxAccounts = isSubscribed
+                  ? MAX_TRACKED_ACCOUNTS_PAID
+                  : MAX_TRACKED_ACCOUNTS_FREE;
                 if (trackedInstagrams.length >= maxAccounts) {
                   if (!isSubscribed) {
                     presentPaywall('tracking_add_account');

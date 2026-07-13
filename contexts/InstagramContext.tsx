@@ -128,6 +128,8 @@ interface WebViewMessage {
   pushbackCount?: number;
   errorCount?: number;
   reason?: string;
+  authFailed?: boolean;
+  status?: number;
 }
 
 interface User {
@@ -201,11 +203,20 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const apiWebViewRef = useRef<WebView>(null);
   const fetchingUsersRef = useRef<Set<string>>(new Set());
   const justLoggedInRef = useRef(false);
+  // Set by reconnect() so LOGIN_SUCCESS can tell an expiry-recovery from a first connect.
+  const reconnectingRef = useRef(false);
   const pendingFetchUserIdRef = useRef<string | null>(null);
   const pendingLoginCheckRef = useRef<string | null>(null);
   // COM-22: Map value types include `timer` so the cleanup path can always clearTimeout
   const userIdFetchPromisesRef = useRef<
-    Map<string, { resolve: (result: UserIdResult) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>
+    Map<
+      string,
+      {
+        resolve: (result: UserIdResult) => void;
+        reject: (error: Error) => void;
+        timer: ReturnType<typeof setTimeout>;
+      }
+    >
   >(new Map());
   const followPromisesRef = useRef<
     Map<
@@ -220,7 +231,14 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     >
   >(new Map());
   const unfollowPromisesRef = useRef<
-    Map<string, { resolve: (result: FollowResult) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>
+    Map<
+      string,
+      {
+        resolve: (result: FollowResult) => void;
+        reject: (error: Error) => void;
+        timer: ReturnType<typeof setTimeout>;
+      }
+    >
   >(new Map());
 
   // Watchdog: stall timeout (ms) with no incoming WebView message while isActive=true
@@ -1021,6 +1039,12 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               });
             }
           }
+
+          // If this login recovered an expired session, record the recovery (vs a fresh connect).
+          if (reconnectingRef.current) {
+            analytics.track(Events.RECONNECT_COMPLETED, { same_account: !isDifferentAccount });
+            reconnectingRef.current = false;
+          }
           break;
 
         case 'LOGOUT_SUCCESS':
@@ -1058,10 +1082,18 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           if (data.success) {
             setIsLoggedIn(true);
             setSessionExpired(false);
-          } else {
-            // Session was valid before (we had userId) but is now invalid
+          } else if (data.authFailed) {
+            // Definitive auth failure (401/403 login_required) — session really is dead.
             setSessionExpired(true);
             setIsLoggedIn(false);
+            analytics.track(Events.SESSION_EXPIRED, { reason: 'auth_failed' });
+          } else {
+            // Inconclusive (429 rate-limit, 5xx, offline). Don't eject a valid returning
+            // user off their dashboard. On cold launch isLoggedIn is still null —
+            // optimistically show their cached data rather than hang on the spinner;
+            // a real API call will surface a genuinely dead session.
+            console.warn('checkLoginStatus inconclusive:', data.status ?? data.error);
+            setIsLoggedIn((prev) => (prev === null ? true : prev));
           }
           break;
 
@@ -1416,7 +1448,10 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Reconnect - used when session has expired
   const reconnect = () => {
-    setSessionExpired(false);
+    reconnectingRef.current = true;
+    // Do NOT clear sessionExpired here — only a successful LOGIN_SUCCESS clears it.
+    // If the user cancels/abandons the login, we must stay in the expired state
+    // (dashboard + reconnect banner), not fall back to the "never connected" wall.
     setShowLoginModal(true);
   };
 
@@ -1915,13 +1950,20 @@ const instagramAPI = `
           }
         );
 
+        // Only a definitive auth failure (401/403 = login_required) means the session
+        // is really dead. A 429 (rate limit), 5xx, or any other non-200 is inconclusive
+        // and must NOT eject a valid returning user off their dashboard.
         sendMessage('LOGIN_STATUS_CHECK', {
           success: response.status === 200,
+          authFailed: response.status === 401 || response.status === 403,
+          status: response.status,
           userId: userId
         });
       } catch (error) {
+        // Network error (offline / DNS / TLS) — inconclusive, not an expired session.
         sendMessage('LOGIN_STATUS_CHECK', {
           success: false,
+          authFailed: false,
           userId: userId,
           error: error.message
         });

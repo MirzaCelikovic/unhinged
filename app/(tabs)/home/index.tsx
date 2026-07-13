@@ -21,6 +21,7 @@ import InstagramCard from '~/components/InstagramCard';
 import ActivityList from '~/components/ActivityList';
 import NewActivityBanner from '~/components/NewActivityBanner';
 import NotConnected from '~/components/NotConnected';
+import ReconnectBanner from '~/components/ReconnectBanner';
 import InitialSync from '~/components/InitialSync';
 import { useAccountContext } from '~/contexts/AccountContext';
 import { useAddTrackedInstagram } from '~/lib/useInstagram';
@@ -36,7 +37,17 @@ import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 type HomeState = 'notConnected' | 'initialSync' | 'connected';
 
 export default function Index() {
-  const { isLoggedIn, syncState, showLogin, sync, syncTrackedAccount, userId, isCoolingDown } = useInstagramContext();
+  const {
+    isLoggedIn,
+    syncState,
+    showLogin,
+    sync,
+    syncTrackedAccount,
+    userId,
+    isCoolingDown,
+    sessionExpired,
+    reconnect,
+  } = useInstagramContext();
   const { account } = useAccountContext();
   const { data: instagram } = useInstagram(userId);
   const { data: stats, hasNewActivity } = useFollowerStats(userId, account?.latest_activity_date);
@@ -61,7 +72,9 @@ export default function Index() {
     if (homeState !== null) return; // Already initialized
 
     if (isLoggedIn === false) {
-      setHomeState('notConnected');
+      // A returning user whose session expired keeps their dashboard (data is still
+      // on-device). Only a genuine "never connected / logged out" shows the wall.
+      setHomeState(sessionExpired ? 'connected' : 'notConnected');
     } else if (syncState.isActive) {
       // Sync in progress - show initial sync
       setHomeState('initialSync');
@@ -69,7 +82,7 @@ export default function Index() {
       // Returning user with no active sync - go straight to connected
       setHomeState('connected');
     }
-  }, [isLoggedIn, homeState, syncState.isActive]);
+  }, [isLoggedIn, homeState, syncState.isActive, sessionExpired]);
 
   // Handle login state changes (for fresh logins after initial load)
   useEffect(() => {
@@ -81,11 +94,12 @@ export default function Index() {
           runOnJS(setHomeState)('initialSync');
         }
       });
-    } else if (isLoggedIn === false && homeState !== 'notConnected') {
-      // Logged out - go back to not connected
+    } else if (isLoggedIn === false && !sessionExpired && homeState !== 'notConnected') {
+      // Genuinely logged out - go back to not connected. (An expired session keeps
+      // the dashboard; see the reconnect banner.)
       setHomeState('notConnected');
     }
-  }, [isLoggedIn, homeState, account?.instagram_username]);
+  }, [isLoggedIn, homeState, account?.instagram_username, sessionExpired]);
 
   // Handle state transitions with fade in
   useEffect(() => {
@@ -164,6 +178,12 @@ export default function Index() {
   }));
 
   const handleRefresh = () => {
+    // Can't sync without a live session — send them to reconnect instead.
+    if (sessionExpired) {
+      reconnect();
+      return;
+    }
+
     // Block refresh while the circuit-breaker cooldown is active
     if (isCoolingDown) {
       Alert.alert(
@@ -224,8 +244,11 @@ export default function Index() {
 
           <ScrollView className="flex-1">
             <View className="px-4 pb-4 pt-2">
+              {sessionExpired && <ReconnectBanner onReconnect={reconnect} />}
               {/* Show sync progress or normal content */}
-              {syncState.isActive && syncState.mainAccount && !(
+              {syncState.isActive &&
+              syncState.mainAccount &&
+              !(
                 syncState.mainAccount.metadata === 'complete' &&
                 syncState.mainAccount.following === 'complete' &&
                 syncState.mainAccount.followers === 'complete'
@@ -245,9 +268,7 @@ export default function Index() {
                         <Spinner size={20} color="#9ca3af" />
                       ) : (
                         <Pressable className="active:opacity-70" onPress={handleRefresh}>
-                          <Text className="font-roboto-bold text-base text-gray-400">
-                            Refresh
-                          </Text>
+                          <Text className="font-roboto-bold text-base text-gray-400">Refresh</Text>
                         </Pressable>
                       )}
                     </View>
@@ -261,7 +282,12 @@ export default function Index() {
                   )}
 
                   {/* Activity List */}
-                  <ActivityList stats={stats} userId={userId!} isMainAccount activityCounts={activityCounts} />
+                  <ActivityList
+                    stats={stats}
+                    userId={userId!}
+                    isMainAccount
+                    activityCounts={activityCounts}
+                  />
                 </>
               )}
             </View>
