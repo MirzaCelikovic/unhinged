@@ -56,26 +56,29 @@ export default function TabLayout() {
     setPaywallHandled(true);
   }, [isSubscribed, presentPaywallOnLaunch]);
 
-  // Users who onboarded before age-based pricing (COM-6) have no stored age, so they'd
-  // fall back to the default paywall forever. Capture it once, then run the paywall —
-  // which now resolves their age-priced offering.
   const handleAgeSelected = (ageGroup: AgeGroup) => {
     setAgeGroup(ageGroup);
     track(Events.AGE_SELECTED, { age_group: ageGroup, source: 'existing_user_prompt' });
     setNeedsAge(false);
-    runLaunchPaywall();
   };
 
   // Show paywall on mount if user doesn't have a subscription (after onboarding).
   // Gated on rcLoading so customerInfo is loaded — we never prompt an existing subscriber.
   useEffect(() => {
     if (!isOnboarded || !isInitialized || rcLoading) return;
+    runLaunchPaywall();
+  }, [isOnboarded, isInitialized, rcLoading, runLaunchPaywall]);
+
+  // Backfill the age of users who onboarded before the age question existed. Since COM-36
+  // this no longer selects a paywall — it is only an input to ad-signal suppression
+  // (COM-11) — so it must never delay a purchase: ask once the paywall is done with, and
+  // stand down entirely when the reconnect sheet is due.
+  useEffect(() => {
+    if (!paywallHandled || sessionExpired) return;
     if (!isSubscribed && !getAgeGroup()) {
       setNeedsAge(true);
-      return;
     }
-    runLaunchPaywall();
-  }, [isOnboarded, isInitialized, rcLoading, isSubscribed, runLaunchPaywall]);
+  }, [paywallHandled, sessionExpired, isSubscribed]);
 
   // Show session expired sheet after paywall is handled
   useEffect(() => {
