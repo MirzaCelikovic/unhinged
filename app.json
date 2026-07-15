@@ -3,7 +3,7 @@
     "name": "Unhinged",
     "slug": "unhinged-app",
     "scheme": "unhinged",
-    "version": "1.3.1",
+    "version": "1.3.2",
     "web": {
       "favicon": "./assets/favicon.png"
     },
