@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, Pressable } from 'react-native';
 import Animated, {
   FadeIn,
@@ -17,7 +17,7 @@ import RevealScreen from '~/components/onboarding-v2/RevealScreen';
 import Logo from '~/assets/logo_black.svg';
 import { Instagram } from '~/lib/types';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
-import { setAgeGroup, AgeGroup } from '~/lib/storage';
+import { setAgeGroup, AgeGroup, getOnboardingProgress, setOnboardingProgress } from '~/lib/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface OnboardingV2Props {
@@ -120,15 +120,30 @@ const STEPS: Step[] = [
 ];
 
 export default function OnboardingV2({ onComplete }: OnboardingV2Props) {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [trackProfile, setTrackProfile] = useState<Instagram | null>(null);
+  // Resume in-progress onboarding (COM-38): a user who backgrounds/relaunches
+  // mid-quiz picks up where they left off instead of restarting. Both arms — a
+  // neutral change that keeps the A/B difference to dismissibility only. Cleared
+  // on completion (start.tsx finishOnboarding).
+  const savedProgress = useRef(getOnboardingProgress()).current;
+  const [currentStep, setCurrentStep] = useState(
+    Math.min(savedProgress?.step ?? 0, STEPS.length - 1),
+  );
+  const [answers, setAnswers] = useState<Record<string, string>>(savedProgress?.answers ?? {});
+  const [trackProfile, setTrackProfile] = useState<Instagram | null>(
+    (savedProgress?.trackProfile as Instagram | null) ?? null,
+  );
   const { track } = useAnalytics();
 
   // Progress bar excludes the start step (step 0)
   const stepsWithProgress = STEPS.length - 1;
-  const progressWidth = useSharedValue((1 / stepsWithProgress) * 100);
+  const progressWidth = useSharedValue(
+    (Math.max(savedProgress?.step ?? 1, 1) / stepsWithProgress) * 100,
+  );
   const step = STEPS[currentStep];
+
+  useEffect(() => {
+    setOnboardingProgress({ step: currentStep, answers, trackProfile });
+  }, [currentStep, answers, trackProfile]);
 
   const progressAnimatedStyle = useAnimatedStyle(() => ({
     width: `${progressWidth.value}%`,

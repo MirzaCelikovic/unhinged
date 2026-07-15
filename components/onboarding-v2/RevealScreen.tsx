@@ -47,7 +47,7 @@ export default function RevealScreen({
   followersCount,
   onNext,
 }: RevealScreenProps) {
-  const { isSubscribed, presentPaywall, skipLaunchPaywall } = useRevenueCat();
+  const { isSubscribed, isHardPaywall, presentPaywall, skipLaunchPaywall } = useRevenueCat();
   const { track } = useAnalytics();
   const [hasSeenPaywall, setHasSeenPaywall] = useState(false);
 
@@ -62,7 +62,10 @@ export default function RevealScreen({
     if (purchased) {
       track(Events.REVEAL_SUBSCRIBED);
       onNext();
-    } else {
+    } else if (!isHardPaywall) {
+      // Soft (A): reveal the "Maybe later" escape. Hard (B, COM-38): stay on the
+      // reveal with the blocking CTA — no skip; onboarding can't complete without
+      // a subscription (also enforced by the completion guard in start.tsx).
       setHasSeenPaywall(true);
     }
   };
@@ -90,7 +93,7 @@ export default function RevealScreen({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}>
         <Text className="mb-6 text-center font-roboto-extrablack text-3xl text-black">
-          Here&apos;s what we found on{'\n'}@{username}
+          Start tracking @{username}{'\n'}to see:
         </Text>
 
         {/* Instagram card */}
@@ -175,7 +178,7 @@ export default function RevealScreen({
           className="mt-3 items-center rounded-2xl px-6 py-5 active:opacity-80"
           style={{ backgroundColor: 'rgba(255, 0, 0, 0.3)' }}>
           <Text className="font-roboto-extrablack text-base" style={{ color: '#FF0000' }}>
-            RED FLAGS FOUND
+            Spot the red flags 🔒
           </Text>
         </Pressable>
       </ScrollView>
@@ -185,7 +188,7 @@ export default function RevealScreen({
           colors={['#FFE51F00', '#FFE51FCC']}
           style={{ paddingHorizontal: 16, paddingBottom: 32, paddingTop: 48 }}>
           <Button label="Show me everything" onPress={handleContinue} />
-          {hasSeenPaywall && !isSubscribed && (
+          {hasSeenPaywall && !isSubscribed && !isHardPaywall && (
             <Animated.View entering={FadeIn.duration(400)}>
               <Pressable
                 onPress={() => {

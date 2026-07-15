@@ -11,6 +11,8 @@ const KEYS = {
   SKAN_SIGNUP_TRACKED: 'skan_signup_tracked',
   TRACKED_SUBSCRIPTION_CONVERSIONS: 'tracked_subscription_conversions',
   AGE_GROUP: 'age_group',
+  HARD_PAYWALL_VARIANT: 'hard_paywall_variant',
+  ONBOARDING_PROGRESS: 'onboarding_progress',
 } as const;
 
 // --- SKAN install dedupe ---
@@ -73,4 +75,45 @@ export const addTrackedConversion = (subscriptionId: string) => {
     tracked.push(subscriptionId);
     storage.set(KEYS.TRACKED_SUBSCRIPTION_CONVERSIONS, JSON.stringify(tracked));
   }
+};
+
+// --- Hard-paywall A/B (COM-38) ---
+// The experiment ARM the user was assigned, recorded once for analytics
+// attribution (Amplitude user property). The runtime gate keys on the LIVE
+// offering metadata (see lib/hardPaywall.ts), not this — this only labels the
+// user for the readout so the arm survives across sessions and post-purchase.
+export type HardPaywallVariant = 'hard' | 'control';
+
+export const getHardPaywallVariant = (): HardPaywallVariant | null => {
+  return (storage.getString(KEYS.HARD_PAYWALL_VARIANT) as HardPaywallVariant | undefined) ?? null;
+};
+export const setHardPaywallVariant = (variant: HardPaywallVariant) => {
+  storage.set(KEYS.HARD_PAYWALL_VARIANT, variant);
+};
+
+// --- Onboarding progress (COM-38) ---
+// Persist the v2 onboarding step + answers so a user who backgrounds/relaunches
+// mid-onboarding resumes where they left off instead of re-doing the whole quiz.
+// Shipped for BOTH arms as a neutral change (keeps the A/B difference to
+// dismissibility only). Cleared on completion.
+export interface OnboardingProgress {
+  step: number;
+  answers: Record<string, string>;
+  trackProfile: unknown | null;
+}
+
+export const getOnboardingProgress = (): OnboardingProgress | null => {
+  const data = storage.getString(KEYS.ONBOARDING_PROGRESS);
+  if (!data) return null;
+  try {
+    return JSON.parse(data) as OnboardingProgress;
+  } catch {
+    return null;
+  }
+};
+export const setOnboardingProgress = (progress: OnboardingProgress) => {
+  storage.set(KEYS.ONBOARDING_PROGRESS, JSON.stringify(progress));
+};
+export const clearOnboardingProgress = () => {
+  storage.delete(KEYS.ONBOARDING_PROGRESS);
 };

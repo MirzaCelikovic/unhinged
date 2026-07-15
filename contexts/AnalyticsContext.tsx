@@ -65,6 +65,9 @@ const dispatchAttribution = (event: string, properties?: Record<string, any>) =>
       trackSignupIfNeeded(); // SKAN signup postback (fineValue 2), deduped per install
       break;
     case Events.PURCHASE:
+      // Restores are not new purchases — don't re-fire ad-network attribution
+      // (would double-count and pollute the SKAN/TikTok signal). (COM-38)
+      if (properties?.restored) break;
       logTikTokPurchase(properties?.product); // TikTok 'Purchase' content event
       // SKAN purchase postback (fineValue 4), deduped per product id
       trackPurchaseIfNeeded(String(properties?.product ?? 'purchase'));
@@ -81,6 +84,13 @@ export const analytics = {
   },
   identify: (userId: string) => {
     amplitude.setUserId(userId);
+  },
+  // Set durable user properties (e.g. the hard-paywall A/B arm, COM-38) so the
+  // arm is attached to every event and survives across sessions.
+  setUserProperties: (props: Record<string, string | number | boolean>) => {
+    const identify = new amplitude.Identify();
+    Object.entries(props).forEach(([key, value]) => identify.set(key, value as any));
+    amplitude.identify(identify);
   },
 };
 
