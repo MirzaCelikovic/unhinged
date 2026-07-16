@@ -85,13 +85,6 @@ export const analytics = {
   identify: (userId: string) => {
     amplitude.setUserId(userId);
   },
-  // Set durable user properties (e.g. the hard-paywall A/B arm, COM-38) so the
-  // arm is attached to every event and survives across sessions.
-  setUserProperties: (props: Record<string, string | number | boolean>) => {
-    const identify = new amplitude.Identify();
-    Object.entries(props).forEach(([key, value]) => identify.set(key, value as any));
-    amplitude.identify(identify);
-  },
 };
 
 interface AnalyticsContextType {

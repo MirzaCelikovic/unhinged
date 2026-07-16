@@ -11,8 +11,6 @@ const KEYS = {
   SKAN_SIGNUP_TRACKED: 'skan_signup_tracked',
   TRACKED_SUBSCRIPTION_CONVERSIONS: 'tracked_subscription_conversions',
   AGE_GROUP: 'age_group',
-  HARD_PAYWALL_VARIANT: 'hard_paywall_variant',
-  HARD_PAYWALL_STAMPED_AT: 'hard_paywall_stamped_at',
   ONBOARDING_PROGRESS: 'onboarding_progress',
 } as const;
 
@@ -76,29 +74,6 @@ export const addTrackedConversion = (subscriptionId: string) => {
     tracked.push(subscriptionId);
     storage.set(KEYS.TRACKED_SUBSCRIPTION_CONVERSIONS, JSON.stringify(tracked));
   }
-};
-
-// --- Hard-paywall A/B (COM-38) ---
-// The experiment ARM the user was assigned, recorded once AT THE ONBOARDING GATE
-// (the moment of exposure) for analytics attribution. The runtime gate keys on the
-// LIVE offering metadata (see lib/hardPaywall.ts), not this — this only labels the
-// user for the readout so the arm survives across sessions and post-purchase.
-//
-// The timestamp exists because the app cannot tell "control arm" apart from
-// "experiment not running" — both are simply served the control offering. Filtering
-// Amplitude to users stamped after the experiment start date keeps the control arm
-// from being polluted by users who onboarded while the build was still dormant.
-export type HardPaywallVariant = 'hard' | 'control';
-
-export const getHardPaywallVariant = (): HardPaywallVariant | null => {
-  return (storage.getString(KEYS.HARD_PAYWALL_VARIANT) as HardPaywallVariant | undefined) ?? null;
-};
-export const getHardPaywallStampedAt = (): string | null => {
-  return storage.getString(KEYS.HARD_PAYWALL_STAMPED_AT) ?? null;
-};
-export const setHardPaywallVariant = (variant: HardPaywallVariant) => {
-  storage.set(KEYS.HARD_PAYWALL_VARIANT, variant);
-  storage.set(KEYS.HARD_PAYWALL_STAMPED_AT, new Date().toISOString());
 };
 
 // --- Onboarding progress (COM-38) ---
