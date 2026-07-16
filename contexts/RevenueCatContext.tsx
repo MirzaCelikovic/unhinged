@@ -1,8 +1,18 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { Platform } from 'react-native';
-import Purchases, { CustomerInfo, PurchasesOffering, LOG_LEVEL } from 'react-native-purchases';
+import Purchases, {
+  CustomerInfo,
+  PurchasesOffering,
+  PurchasesOfferings,
+  LOG_LEVEL,
+} from 'react-native-purchases';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { analytics, Events } from '~/contexts/AnalyticsContext';
+import {
+  isHardPaywallOffering,
+  isOnboardingGateSource,
+  pickDismissableOffering,
+} from '~/lib/hardPaywall';
 
 // RevenueCat API Key from environment (platform-specific)
 const REVENUECAT_API_KEY = Platform.OS === 'android'
@@ -31,6 +41,9 @@ interface RevenueCatContextType {
   isSubscribed: boolean;
   subscriptionPlan: string | null;
   expirationDate: Date | null;
+
+  // Hard-paywall A/B (COM-38): is this user being served the treatment (B) offering?
+  isHardPaywall: boolean;
 
   // Actions
   presentPaywall: (source?: string) => Promise<boolean>;
@@ -75,9 +88,41 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const hasShownAutomaticPaywallRef = useRef(false);
+  // Hard-paywall A/B (COM-38): mirror the served offering + a dismissable fallback
+  // in refs so the paywall callbacks read the latest without re-creating.
+  const currentOfferingRef = useRef<PurchasesOffering | null>(null);
+  const dismissableOfferingRef = useRef<PurchasesOffering | null>(null);
 
   // Derive subscription status from customer info
   const isSubscribed = customerInfo?.entitlements.active[ENTITLEMENT_ID] !== undefined;
+
+  // Hard-paywall A/B (COM-38): true when RevenueCat serves this user the treatment
+  // (B) offering (metadata.hard_paywall). Fail-open (null offering => false). Note
+  // offerings are fetched per app session, so stopping the experiment releases the
+  // gate at the next cold start.
+  const isHardPaywall = isHardPaywallOffering(currentOffering);
+
+  // Apply a fetched offerings payload: mirror the served offering + a dismissable
+  // (control) fallback for arm-B users at non-onboarding surfaces. (COM-38)
+  const applyOfferings = useCallback((offerings: PurchasesOfferings) => {
+    if (!offerings.current) return;
+    setCurrentOffering(offerings.current);
+    currentOfferingRef.current = offerings.current;
+    dismissableOfferingRef.current = pickDismissableOffering(offerings);
+  }, []);
+
+  // Resolve the served offering at presentation time. The init fetch runs once and
+  // can fail on a flaky cold start, while RevenueCatUI does its own native fetch —
+  // without this the app could believe "control" while RC natively serves the
+  // close-less B paywall (a trap the app couldn't see). (COM-38)
+  const ensureOfferings = useCallback(async () => {
+    if (currentOfferingRef.current) return;
+    try {
+      applyOfferings(await Purchases.getOfferings());
+    } catch {
+      // Keep failing open — treat as control.
+    }
+  }, [applyOfferings]);
 
   const subscriptionPlan = (() => {
     const entitlement = customerInfo?.entitlements.active[ENTITLEMENT_ID];
@@ -111,10 +156,7 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
         setCustomerInfo(info);
 
         // Fetch offerings
-        const offerings = await Purchases.getOfferings();
-        if (offerings.current) {
-          setCurrentOffering(offerings.current);
-        }
+        applyOfferings(await Purchases.getOfferings());
 
         setIsLoading(false);
       } catch (e) {
@@ -125,7 +167,7 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
     };
 
     initializeRevenueCat();
-  }, []);
+  }, [applyOfferings]);
 
   // Listen for customer info updates
   useEffect(() => {
@@ -145,10 +187,24 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
   const presentPaywall = useCallback(async (source?: string): Promise<boolean> => {
     try {
       analytics.track(Events.PAYWALL_VIEWED, { source });
+      // Know the served arm before choosing which paywall to show — the init fetch
+      // may have failed while RC still natively serves the B offering. (COM-38)
+      await ensureOfferings();
       // Present the current offering. Never pass an explicit offering here:
       // that bypasses `current`, and with it any RevenueCat experiment or
       // targeting rule, silently excluding these users from both.
-      const result = await RevenueCatUI.presentPaywall();
+      //
+      // Exception (COM-38): a hard-paywall (B) user's `current` offering is
+      // close-less. We only want that non-dismissable paywall at the onboarding
+      // gate; at every other surface present an explicit dismissable (control)
+      // offering so B users are never soft-locked deep in the app.
+      const useDismissable =
+        !isOnboardingGateSource(source) &&
+        isHardPaywallOffering(currentOfferingRef.current) &&
+        dismissableOfferingRef.current != null;
+      const result = useDismissable
+        ? await RevenueCatUI.presentPaywall({ offering: dismissableOfferingRef.current! })
+        : await RevenueCatUI.presentPaywall();
 
       switch (result) {
         case PAYWALL_RESULT.PURCHASED:
@@ -165,29 +221,48 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
               restored: result === PAYWALL_RESULT.RESTORED,
             });
           }
-          return true;
+          // RevenueCat returns RESTORED whenever a restore RAN — not when it granted
+          // anything. Report success only if an entitlement is actually active, or an
+          // empty "Restore" tap would satisfy the hard-paywall gate and walk a
+          // non-subscriber straight into the app. (COM-38)
+          return entitlement !== undefined;
         case PAYWALL_RESULT.NOT_PRESENTED:
+          analytics.track(Events.PAYWALL_CLOSED, { source, result: 'not_presented' });
+          return false;
         case PAYWALL_RESULT.ERROR:
+          analytics.track(Events.PAYWALL_CLOSED, { source, result: 'error' });
+          return false;
         case PAYWALL_RESULT.CANCELLED:
         default:
-          analytics.track(Events.PAYWALL_CLOSED);
+          analytics.track(Events.PAYWALL_CLOSED, { source, result: 'cancelled' });
           return false;
       }
     } catch (e) {
       console.error('Error presenting paywall:', e);
       return false;
     }
-  }, []);
+  }, [ensureOfferings]);
 
   // Present paywall only if user doesn't have entitlement
   const presentPaywallIfNeeded = useCallback(async (source?: string): Promise<boolean> => {
     try {
       analytics.track(Events.PAYWALL_VIEWED, { source });
+      // Know the served arm before choosing which paywall to show. (COM-38)
+      await ensureOfferings();
       // See presentPaywall: no explicit offering, so `current` (and any
-      // experiment/targeting rule layered on it) applies.
-      const result = await RevenueCatUI.presentPaywallIfNeeded({
-        requiredEntitlementIdentifier: ENTITLEMENT_ID,
-      });
+      // experiment/targeting rule layered on it) applies — except a hard-paywall
+      // (B) user gets a dismissable (control) offering at these non-onboarding
+      // surfaces (this method is never the onboarding gate). (COM-38)
+      const useDismissable =
+        isHardPaywallOffering(currentOfferingRef.current) && dismissableOfferingRef.current != null;
+      const result = useDismissable
+        ? await RevenueCatUI.presentPaywallIfNeeded({
+            requiredEntitlementIdentifier: ENTITLEMENT_ID,
+            offering: dismissableOfferingRef.current!,
+          })
+        : await RevenueCatUI.presentPaywallIfNeeded({
+            requiredEntitlementIdentifier: ENTITLEMENT_ID,
+          });
 
       switch (result) {
         case PAYWALL_RESULT.PURCHASED:
@@ -203,21 +278,25 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
               restored: result === PAYWALL_RESULT.RESTORED,
             });
           }
-          return true;
+          // See presentPaywall: RESTORED can come back with nothing restored, so only
+          // report success when an entitlement is actually active. (COM-38)
+          return entitlement !== undefined;
         case PAYWALL_RESULT.NOT_PRESENTED:
           // User already has entitlement
           return true;
         case PAYWALL_RESULT.ERROR:
+          analytics.track(Events.PAYWALL_CLOSED, { source, result: 'error' });
+          return false;
         case PAYWALL_RESULT.CANCELLED:
         default:
-          analytics.track(Events.PAYWALL_CLOSED);
+          analytics.track(Events.PAYWALL_CLOSED, { source, result: 'cancelled' });
           return false;
       }
     } catch (e) {
       console.error('Error presenting paywall:', e);
       return false;
     }
-  }, []);
+  }, [ensureOfferings]);
 
   // Present paywall on launch (only once per session)
   const presentPaywallOnLaunch = useCallback(async (): Promise<boolean> => {
@@ -283,6 +362,7 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
     isSubscribed,
     subscriptionPlan,
     expirationDate,
+    isHardPaywall,
     presentPaywall,
     presentPaywallIfNeeded,
     presentPaywallOnLaunch,
