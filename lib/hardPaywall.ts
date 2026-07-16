@@ -1,4 +1,4 @@
-import type { PurchasesOffering } from 'react-native-purchases';
+import type { PurchasesOffering, PurchasesOfferings } from 'react-native-purchases';
 
 // Hard-paywall A/B (COM-38).
 //
@@ -30,4 +30,21 @@ export function isHardPaywallOffering(offering?: PurchasesOffering | null): bool
   // RevenueCat offering metadata is dashboard-authored JSON; accept the boolean
   // and its string form defensively.
   return value === true || value === 'true';
+}
+
+// The experiment's CONTROL offering, used as the dismissable fallback for arm-B
+// users at non-onboarding surfaces. Pinned by lookup key ON PURPOSE: `offerings.all`
+// is an unordered dict, so "first non-hard offering" could hand arm B the discounted
+// `winback` offering while arm A pays full price — silently biasing the D28 LTV
+// readout (the experiment's primary metric).
+export const CONTROL_OFFERING_LOOKUP_KEY = 'default_v2';
+
+export function pickDismissableOffering(offerings: PurchasesOfferings): PurchasesOffering | null {
+  return (
+    offerings.all[CONTROL_OFFERING_LOOKUP_KEY] ??
+    // Last resort if the control offering is ever renamed: any non-hard offering
+    // still beats soft-locking a B user behind a close-less paywall.
+    Object.values(offerings.all).find((o) => !isHardPaywallOffering(o)) ??
+    null
+  );
 }

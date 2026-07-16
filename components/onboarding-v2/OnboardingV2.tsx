@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Pressable } from 'react-native';
 import Animated, {
   FadeIn,
@@ -124,9 +124,9 @@ export default function OnboardingV2({ onComplete }: OnboardingV2Props) {
   // mid-quiz picks up where they left off instead of restarting. Both arms — a
   // neutral change that keeps the A/B difference to dismissibility only. Cleared
   // on completion (start.tsx finishOnboarding).
-  const savedProgress = useRef(getOnboardingProgress()).current;
+  const [savedProgress] = useState(() => getOnboardingProgress());
   const [currentStep, setCurrentStep] = useState(
-    Math.min(savedProgress?.step ?? 0, STEPS.length - 1),
+    Math.min(Math.max(savedProgress?.step ?? 0, 0), STEPS.length - 1),
   );
   const [answers, setAnswers] = useState<Record<string, string>>(savedProgress?.answers ?? {});
   const [trackProfile, setTrackProfile] = useState<Instagram | null>(

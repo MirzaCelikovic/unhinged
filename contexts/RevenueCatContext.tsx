@@ -1,9 +1,18 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { Platform } from 'react-native';
-import Purchases, { CustomerInfo, PurchasesOffering, LOG_LEVEL } from 'react-native-purchases';
+import Purchases, {
+  CustomerInfo,
+  PurchasesOffering,
+  PurchasesOfferings,
+  LOG_LEVEL,
+} from 'react-native-purchases';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { analytics, Events } from '~/contexts/AnalyticsContext';
-import { isHardPaywallOffering, isOnboardingGateSource } from '~/lib/hardPaywall';
+import {
+  isHardPaywallOffering,
+  isOnboardingGateSource,
+  pickDismissableOffering,
+} from '~/lib/hardPaywall';
 import { getHardPaywallVariant, setHardPaywallVariant } from '~/lib/storage';
 
 // RevenueCat API Key from environment (platform-specific)
@@ -89,9 +98,40 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
   const isSubscribed = customerInfo?.entitlements.active[ENTITLEMENT_ID] !== undefined;
 
   // Hard-paywall A/B (COM-38): true when RevenueCat serves this user the treatment
-  // (B) offering (metadata.hard_paywall). State-derived so the UI releases the
-  // moment the experiment stops; fail-open (null offering => false).
+  // (B) offering (metadata.hard_paywall). Fail-open (null offering => false). Note
+  // offerings are fetched per app session, so stopping the experiment releases the
+  // gate at the next cold start.
   const isHardPaywall = isHardPaywallOffering(currentOffering);
+
+  // Apply a fetched offerings payload: mirror the served offering + a dismissable
+  // (control) fallback for arm-B users at non-onboarding surfaces, and record the
+  // assigned arm for analytics. (COM-38)
+  const applyOfferings = useCallback((offerings: PurchasesOfferings) => {
+    if (!offerings.current) return;
+    setCurrentOffering(offerings.current);
+    currentOfferingRef.current = offerings.current;
+    dismissableOfferingRef.current = pickDismissableOffering(offerings);
+
+    const stored = getHardPaywallVariant();
+    const variant = stored ?? (isHardPaywallOffering(offerings.current) ? 'hard' : 'control');
+    if (!stored) setHardPaywallVariant(variant);
+    // Re-apply every launch (idempotent): Amplitude may not be initialised on the
+    // first run, and a dropped identify would otherwise never be retried.
+    analytics.setUserProperties({ hard_paywall_variant: variant });
+  }, []);
+
+  // Resolve the served offering at presentation time. The init fetch runs once and
+  // can fail on a flaky cold start, while RevenueCatUI does its own native fetch —
+  // without this the app could believe "control" while RC natively serves the
+  // close-less B paywall (a trap the app couldn't see). (COM-38)
+  const ensureOfferings = useCallback(async () => {
+    if (currentOfferingRef.current) return;
+    try {
+      applyOfferings(await Purchases.getOfferings());
+    } catch {
+      // Keep failing open — treat as control.
+    }
+  }, [applyOfferings]);
 
   const subscriptionPlan = (() => {
     const entitlement = customerInfo?.entitlements.active[ENTITLEMENT_ID];
@@ -125,21 +165,7 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
         setCustomerInfo(info);
 
         // Fetch offerings
-        const offerings = await Purchases.getOfferings();
-        if (offerings.current) {
-          setCurrentOffering(offerings.current);
-          currentOfferingRef.current = offerings.current;
-          // A dismissable (control) offering to fall back to for hard-paywall (B)
-          // users at non-onboarding surfaces, so they're never soft-locked in-app.
-          dismissableOfferingRef.current =
-            Object.values(offerings.all).find((o) => !isHardPaywallOffering(o)) ?? offerings.current;
-          // Record the assigned arm once, for analytics attribution (COM-38).
-          if (!getHardPaywallVariant()) {
-            const variant = isHardPaywallOffering(offerings.current) ? 'hard' : 'control';
-            setHardPaywallVariant(variant);
-            analytics.setUserProperties({ hard_paywall_variant: variant });
-          }
-        }
+        applyOfferings(await Purchases.getOfferings());
 
         setIsLoading(false);
       } catch (e) {
@@ -150,7 +176,7 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
     };
 
     initializeRevenueCat();
-  }, []);
+  }, [applyOfferings]);
 
   // Listen for customer info updates
   useEffect(() => {
@@ -170,6 +196,9 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
   const presentPaywall = useCallback(async (source?: string): Promise<boolean> => {
     try {
       analytics.track(Events.PAYWALL_VIEWED, { source });
+      // Know the served arm before choosing which paywall to show — the init fetch
+      // may have failed while RC still natively serves the B offering. (COM-38)
+      await ensureOfferings();
       // Present the current offering. Never pass an explicit offering here:
       // that bypasses `current`, and with it any RevenueCat experiment or
       // targeting rule, silently excluding these users from both.
@@ -201,7 +230,11 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
               restored: result === PAYWALL_RESULT.RESTORED,
             });
           }
-          return true;
+          // RevenueCat returns RESTORED whenever a restore RAN — not when it granted
+          // anything. Report success only if an entitlement is actually active, or an
+          // empty "Restore" tap would satisfy the hard-paywall gate and walk a
+          // non-subscriber straight into the app. (COM-38)
+          return entitlement !== undefined;
         case PAYWALL_RESULT.NOT_PRESENTED:
           analytics.track(Events.PAYWALL_CLOSED, { source, result: 'not_presented' });
           return false;
@@ -217,12 +250,14 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
       console.error('Error presenting paywall:', e);
       return false;
     }
-  }, []);
+  }, [ensureOfferings]);
 
   // Present paywall only if user doesn't have entitlement
   const presentPaywallIfNeeded = useCallback(async (source?: string): Promise<boolean> => {
     try {
       analytics.track(Events.PAYWALL_VIEWED, { source });
+      // Know the served arm before choosing which paywall to show. (COM-38)
+      await ensureOfferings();
       // See presentPaywall: no explicit offering, so `current` (and any
       // experiment/targeting rule layered on it) applies — except a hard-paywall
       // (B) user gets a dismissable (control) offering at these non-onboarding
@@ -252,7 +287,9 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
               restored: result === PAYWALL_RESULT.RESTORED,
             });
           }
-          return true;
+          // See presentPaywall: RESTORED can come back with nothing restored, so only
+          // report success when an entitlement is actually active. (COM-38)
+          return entitlement !== undefined;
         case PAYWALL_RESULT.NOT_PRESENTED:
           // User already has entitlement
           return true;
@@ -268,7 +305,7 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
       console.error('Error presenting paywall:', e);
       return false;
     }
-  }, []);
+  }, [ensureOfferings]);
 
   // Present paywall on launch (only once per session)
   const presentPaywallOnLaunch = useCallback(async (): Promise<boolean> => {

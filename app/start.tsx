@@ -1,3 +1,4 @@
+import { useCallback, useRef } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -15,29 +16,46 @@ export default function Start() {
   const { completeOnboarding } = useOnboarding();
   const { getVariant, experimentsReady } = useAnalytics();
   const { isHardPaywall, isSubscribed, presentPaywall } = useRevenueCat();
+  // The gate is async and long-running, and the v1 connect effect re-fires when
+  // onComplete's identity changes — without this a re-render mid-gate would present
+  // a second paywall and duplicate events. One gate at a time. (COM-38)
+  const gateInFlightRef = useRef(false);
 
-  const finishOnboarding = () => {
+  const finishOnboarding = useCallback(() => {
     clearOnboardingProgress();
     completeOnboarding();
     router.replace('/');
-  };
+  }, [completeOnboarding]);
 
-  const handleComplete = async () => {
-    // Hard-paywall gate (COM-38, backstop): a B-arm user cannot finish onboarding
-    // without a subscription. The v2 reveal screen enforces this directly; this
-    // covers every other completion path (e.g. the v1 fallback) independently, so
-    // the gate never depends on one screen. A fresh entitlement check avoids
-    // bouncing a user who JUST purchased (the context's isSubscribed can lag a
-    // frame). Fail-open: if not a hard-paywall user, complete normally.
-    if (isHardPaywall && !isSubscribed) {
-      const info = await Purchases.getCustomerInfo();
-      if (!info.entitlements.active[ENTITLEMENT_ID]) {
-        const purchased = await presentPaywall(ONBOARDING_GATE_SOURCE);
-        if (!purchased) return; // stay in onboarding until they subscribe
+  const handleComplete = useCallback(async () => {
+    if (gateInFlightRef.current) return;
+    gateInFlightRef.current = true;
+    try {
+      // Hard-paywall gate (COM-38, backstop): a B-arm user cannot finish onboarding
+      // without a subscription. The v2 reveal screen enforces this directly; this
+      // covers every other completion path (e.g. the v1 fallback) independently, so
+      // the gate never depends on one screen. Fail-open: not a B user => complete.
+      if (isHardPaywall && !isSubscribed) {
+        let hasEntitlement = false;
+        try {
+          // Fresh read: the context's isSubscribed can lag a frame behind a purchase
+          // made moments ago at the reveal, which would otherwise bounce the user.
+          const info = await Purchases.getCustomerInfo();
+          hasEntitlement = info.entitlements.active[ENTITLEMENT_ID] !== undefined;
+        } catch {
+          // Network blip — fall through to the paywall rather than failing silently;
+          // the user can still purchase or restore from there.
+        }
+        if (!hasEntitlement) {
+          const purchased = await presentPaywall(ONBOARDING_GATE_SOURCE);
+          if (!purchased) return; // stay in onboarding until they subscribe
+        }
       }
+      finishOnboarding();
+    } finally {
+      gateInFlightRef.current = false;
     }
-    finishOnboarding();
-  };
+  }, [isHardPaywall, isSubscribed, presentPaywall, finishOnboarding]);
 
   const variant = experimentsReady ? getVariant('onboarding') : undefined;
 
