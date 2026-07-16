@@ -31,3 +31,5 @@ build-*.aab
 
 # Temporary investigation / scratch notes (Claude)
 .investigations/
+.archive/
+reports/
