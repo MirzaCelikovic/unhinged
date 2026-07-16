@@ -13,7 +13,11 @@ import {
   isOnboardingGateSource,
   pickDismissableOffering,
 } from '~/lib/hardPaywall';
-import { getHardPaywallVariant, setHardPaywallVariant } from '~/lib/storage';
+import {
+  getHardPaywallStampedAt,
+  getHardPaywallVariant,
+  setHardPaywallVariant,
+} from '~/lib/storage';
 
 // RevenueCat API Key from environment (platform-specific)
 const REVENUECAT_API_KEY = Platform.OS === 'android'
@@ -112,12 +116,33 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
     currentOfferingRef.current = offerings.current;
     dismissableOfferingRef.current = pickDismissableOffering(offerings);
 
+    // Re-apply an EXISTING arm stamp every launch (idempotent): a first-run identify
+    // can be dropped before Amplitude initialises and would otherwise never retry.
+    // We deliberately do NOT stamp here — see stampArmAtGate. (COM-38)
     const stored = getHardPaywallVariant();
-    const variant = stored ?? (isHardPaywallOffering(offerings.current) ? 'hard' : 'control');
-    if (!stored) setHardPaywallVariant(variant);
-    // Re-apply every launch (idempotent): Amplitude may not be initialised on the
-    // first run, and a dropped identify would otherwise never be retried.
-    analytics.setUserProperties({ hard_paywall_variant: variant });
+    if (stored) {
+      analytics.setUserProperties({
+        hard_paywall_variant: stored,
+        hard_paywall_stamped_at: getHardPaywallStampedAt() ?? '',
+      });
+    }
+  }, []);
+
+  // Stamp the assigned arm at the ONBOARDING GATE — the moment of exposure — rather
+  // than at first offerings load. That keeps the Amplitude label honest: only users
+  // actually in the experiment get labelled (new users, mid-onboarding, after RC has
+  // resolved enrollment). Stamping at load would label the entire existing base
+  // `control` (they're never enrolled — the experiment is only_new), and would freeze
+  // a user who first launched while the build was dormant as `control` before they
+  // ever enrolled. (COM-38)
+  const stampArmAtGate = useCallback(() => {
+    if (getHardPaywallVariant()) return;
+    const variant = isHardPaywallOffering(currentOfferingRef.current) ? 'hard' : 'control';
+    setHardPaywallVariant(variant);
+    analytics.setUserProperties({
+      hard_paywall_variant: variant,
+      hard_paywall_stamped_at: getHardPaywallStampedAt() ?? '',
+    });
   }, []);
 
   // Resolve the served offering at presentation time. The init fetch runs once and
@@ -199,6 +224,8 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
       // Know the served arm before choosing which paywall to show — the init fetch
       // may have failed while RC still natively serves the B offering. (COM-38)
       await ensureOfferings();
+      // Label the arm at the moment of exposure — onboarding gate only. (COM-38)
+      if (isOnboardingGateSource(source)) stampArmAtGate();
       // Present the current offering. Never pass an explicit offering here:
       // that bypasses `current`, and with it any RevenueCat experiment or
       // targeting rule, silently excluding these users from both.
@@ -250,7 +277,7 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
       console.error('Error presenting paywall:', e);
       return false;
     }
-  }, [ensureOfferings]);
+  }, [ensureOfferings, stampArmAtGate]);
 
   // Present paywall only if user doesn't have entitlement
   const presentPaywallIfNeeded = useCallback(async (source?: string): Promise<boolean> => {
