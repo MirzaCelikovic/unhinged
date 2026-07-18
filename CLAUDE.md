@@ -171,13 +171,13 @@ npm run submit:ios      # Submit to App Store
 
 ## Important Notes
 
-1. **Rate Limiting:** GraphQL API methods have a 1s delay between pagination requests (REST methods have no delay). Currently configured to use GraphQL. Users are warned about refreshing too frequently. **TODO:** Investigate if 1s delay is really necessary - seems excessive.
+1. **Rate Limiting:** Both GraphQL and REST paths share the COM-26 pacing config (cap-2 scheduler + jittered inter-page delays) — the old "REST has no delay" note was stale. **Following defaults to the REST endpoint** (COM-39) because Instagram soft-blocks the GraphQL `query_hash` following query (`400 {"spam":true}`); followers still use GraphQL. Both are flag-gated (`ig_following_method` / `ig_followers_method`). Users are warned about refreshing too frequently.
 
 2. **Session Management:** Instagram sessions expire. The app detects this and shows a reconnect prompt.
 
 3. **Account Mismatch:** If a user logs into a different Instagram account than before, all local data is cleared.
 
-4. **GraphQL vs REST:** Both GraphQL and REST API methods are available for fetching followers/following. Currently configured to use GraphQL.
+4. **GraphQL vs REST:** Both GraphQL and REST API methods exist for fetching followers/following, selected at runtime via Amplitude flags. **Following defaults to REST** (dodges Instagram's GraphQL soft-block — COM-39); followers defaults to GraphQL. Set flag `ig_following_method='graphql'` to force the old path (no-release kill-switch; takes effect from the next sync once the Amplitude experiment loads, defaults to REST until then).
 
 5. **Baseline Prevention:** Initial sync data is marked as baseline to avoid showing the entire follower list as "new followers" on first sync.
 

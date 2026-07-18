@@ -9,7 +9,7 @@ import { useAccountContext } from './AccountContext';
 import { syncFollowingList, syncFollowersList, addFollowing, removeFollowing } from '~/lib/syncing';
 import { clearAllData } from '~/lib/database';
 import * as Notifications from 'expo-notifications';
-import { analytics, Events } from '~/contexts/AnalyticsContext';
+import { analytics, Events, useAnalytics } from '~/contexts/AnalyticsContext';
 
 // Constants
 const INSTAGRAM_APP_ID = '936619743392459';
@@ -161,6 +161,9 @@ const bucketSize = (n?: number): string => {
 // Status / coarse category only — no usernames, IDs, or response bodies.
 const classifyFetchError = (message?: string): string => {
   const m = (message ?? '').toLowerCase();
+  // COM-39: a 400 whose body carried Instagram's {"spam":true} block signal — tagged
+  // 'spam_block' at the fetch site — is reported distinctly so the soft-block is measurable.
+  if (m.includes('spam_block')) return 'spam_400';
   const status = m.match(/\b([1-5]\d{2})\b/)?.[1];
   if (status) return `http_${status}`;
   if (m.includes('network') || m.includes('timeout') || m.includes('abort')) return 'network';
@@ -172,7 +175,10 @@ const classifyFetchError = (message?: string): string => {
 // HTTP 400 + unparseable/garbled bodies — and excludes 401/403 (session-expiry, handled
 // via checkLoginStatus) and network/timeout (transient).
 const isSoftBlockError = (message?: string): boolean => {
-  if (classifyFetchError(message) === 'http_400') return true;
+  // COM-39: spam_400 is the same soft-block as http_400 — keep counting it so the COM-34
+  // burst threshold is unchanged (the observability tag must not alter trip behavior).
+  const reason = classifyFetchError(message);
+  if (reason === 'http_400' || reason === 'spam_400') return true;
   // A garbled GraphQL body (Instagram serving a block page mid-scrape) throws this
   // specific cursor/base64-decode error. Deliberately NOT matching generic parse errors
   // ('unexpected token', 'json parse') — those also arise from a benign HTML login page on
@@ -201,6 +207,8 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const { account, trackedInstagrams } = useAccountContext();
   const connectInstagram = useConnectInstagram();
   const disconnectInstagram = useDisconnectInstagram();
+  // COM-39: Amplitude flag to pick the following/followers scrape endpoint at runtime.
+  const { getVariant } = useAnalytics();
 
   // State
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -444,11 +452,12 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
 
-    console.log('🔄 fetchFollowing:', userIdToFetch, '(method:', FOLLOWING_API_METHOD, ')');
+    const followingMethod = resolveFollowingMethod();
+    console.log('🔄 fetchFollowing:', userIdToFetch, '(method:', followingMethod, ')');
     fetchingUsersRef.current.add(userIdToFetch);
 
     const apiMethod =
-      FOLLOWING_API_METHOD === 'graphql' ? 'fetchFollowingGraphQL' : 'fetchFollowing';
+      followingMethod === 'graphql' ? 'fetchFollowingGraphQL' : 'fetchFollowing';
 
     apiWebViewRef.current.injectJavaScript(`(function(){
       console.log('📱 Injecting ${apiMethod} for userId:', '${userIdToFetch}');
@@ -460,9 +469,15 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     })(); true;`);
   };
 
-  // Toggle for benchmarking: 'rest' or 'graphql'
-  const FOLLOWING_API_METHOD: 'rest' | 'graphql' = 'graphql';
-  const FOLLOWERS_API_METHOD: 'rest' | 'graphql' = 'graphql';
+  // COM-39: pick the scrape endpoint at fetch time. Following defaults to REST — Instagram
+  // soft-blocks the GraphQL `query_hash` following query (400 {"spam":true}) but leaves the
+  // REST friendships endpoint open. Flag `ig_following_method` variant 'graphql' forces the
+  // old path (no-release kill-switch / A/B). Followers defaults to GraphQL (works today) but
+  // rides `ig_followers_method` variant 'rest' as cheap insurance if IG extends the block.
+  const resolveFollowingMethod = (): 'rest' | 'graphql' =>
+    getVariant('ig_following_method') === 'graphql' ? 'graphql' : 'rest';
+  const resolveFollowersMethod = (): 'rest' | 'graphql' =>
+    getVariant('ig_followers_method') === 'rest' ? 'rest' : 'graphql';
 
   // Fetch followers list for a user (internal helper)
   const fetchFollowers = (userIdToFetch: string) => {
@@ -476,11 +491,12 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
 
-    console.log('🔄 fetchFollowers:', userIdToFetch, '(method:', FOLLOWERS_API_METHOD, ')');
+    const followersMethod = resolveFollowersMethod();
+    console.log('🔄 fetchFollowers:', userIdToFetch, '(method:', followersMethod, ')');
     fetchingUsersRef.current.add(`followers_${userIdToFetch}`);
 
     const apiMethod =
-      FOLLOWERS_API_METHOD === 'graphql' ? 'fetchFollowersGraphQL' : 'fetchFollowers';
+      followersMethod === 'graphql' ? 'fetchFollowersGraphQL' : 'fetchFollowers';
 
     apiWebViewRef.current.injectJavaScript(`(function(){
       console.log('📱 Injecting ${apiMethod} for userId:', '${userIdToFetch}');
@@ -1708,6 +1724,21 @@ const instagramAPI = `
     ));
   }
 
+  // COM-39: on a non-OK response, tag the error message when the body is a definitive
+  // Instagram pushback (spam/checkpoint) so RN reports it as spam_400 telemetry.
+  // OBSERVABILITY ONLY — does NOT trip the breaker (an endpoint-specific block must not
+  // 30-min-lock the whole sync). Parse is defensive: any failure returns the base message.
+  async function _notOkMsg(base, response) {
+    try {
+      var d = JSON.parse(await response.clone().text());
+      // Gate on 400: only the soft-block is a 400 + spam body. A 401/403 with a checkpoint
+      // body must stay classified as auth (deliberately EXCLUDED from the COM-34 soft-block
+      // counter) — Change 2 must not alter trip behavior for non-400 statuses.
+      if (response.status === 400 && _checkPushbackBody(d)) return base + ' (spam_block)';
+    } catch (e) {}
+    return base;
+  }
+
   // Helper: Get cookie value by name
   function getCookie(name) {
     const value = '; ' + document.cookie;
@@ -2052,12 +2083,16 @@ const instagramAPI = `
           debugLog('[Following] Page ' + pageNum + ' - Response status:', response.status);
 
           if (!response.ok) {
-            throw new Error('Failed to fetch following: ' + response.status);
+            throw new Error(await _notOkMsg('Failed to fetch following: ' + response.status, response));
           }
 
           const data = await response.json();
 
           if (_checkPushbackBody(data)) { _triggerCircuitBreaker('body_signal'); return; }
+
+          // COM-39: guard a malformed 200 (no status:'ok'). Without it, an empty/garbled body →
+          // 0 users → syncFollowingList ends ALL rows (mass false "unfollowed" activity).
+          if (data.status !== 'ok') { throw new Error('Invalid REST following response'); }
 
           if (data.users && data.users.length > 0) {
             allUsers = allUsers.concat(
@@ -2146,7 +2181,7 @@ const instagramAPI = `
           debugLog('📥 [Following-GraphQL] Page ' + pageNum + ' - Response status:', response.status);
 
           if (!response.ok) {
-            throw new Error('Failed to fetch following (GraphQL): ' + response.status);
+            throw new Error(await _notOkMsg('Failed to fetch following (GraphQL): ' + response.status, response));
           }
 
           const data = await response.json();
@@ -2246,12 +2281,15 @@ const instagramAPI = `
           debugLog('📥 [Followers] Page ' + pageNum + ' - Response status:', response.status);
 
           if (!response.ok) {
-            throw new Error('Failed to fetch followers: ' + response.status);
+            throw new Error(await _notOkMsg('Failed to fetch followers: ' + response.status, response));
           }
 
           const data = await response.json();
 
           if (_checkPushbackBody(data)) { _triggerCircuitBreaker('body_signal'); return; }
+
+          // COM-39: same malformed-200 guard as fetchFollowing (mass false-unfollow risk).
+          if (data.status !== 'ok') { throw new Error('Invalid REST followers response'); }
 
           const usersInPage = data.users ? data.users.length : 0;
           debugLog('📥 [Followers] Page ' + pageNum + ' - Users in page:', usersInPage, '| has_more:', data.has_more, '| next_max_id:', data.next_max_id || 'none');
@@ -2352,7 +2390,7 @@ const instagramAPI = `
           debugLog('📥 [Followers-GraphQL] Page ' + pageNum + ' - Response status:', response.status);
 
           if (!response.ok) {
-            throw new Error('Failed to fetch followers (GraphQL): ' + response.status);
+            throw new Error(await _notOkMsg('Failed to fetch followers (GraphQL): ' + response.status, response));
           }
 
           const data = await response.json();
@@ -2508,7 +2546,7 @@ const instagramAPI = `
         console.log('🌐 [WebView] Response status:', response.status);
 
         if (!response.ok) {
-          throw new Error('Failed to fetch profile: ' + response.status);
+          throw new Error(await _notOkMsg('Failed to fetch profile: ' + response.status, response));
         }
 
         const data = await response.json();
