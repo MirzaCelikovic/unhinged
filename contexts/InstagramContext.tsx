@@ -106,7 +106,8 @@ interface WebViewMessage {
     | 'FOLLOW_USER_RESULT'
     | 'UNFOLLOW_USER_RESULT'
     | 'SYNC_METRICS'
-    | 'CIRCUIT_BREAKER_TRIPPED';
+    | 'CIRCUIT_BREAKER_TRIPPED'
+    | 'LOGIN_BLOCKED';
   userId?: string;
   username?: string;
   success?: boolean;
@@ -1018,6 +1019,47 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setShowLoginModal(false);
   };
 
+  // COM-41: reason for a detected login block, surfaced as an Alert on Modal dismiss (a ref, to avoid
+  // a state race with the native onDismiss callback).
+  const loginBlockedReasonRef = useRef<string | null>(null);
+
+  // COM-41: Instagram showed a real block wall (rate-limit / suspended) during login/reconnect. Fail
+  // honestly — close the modal + Alert on dismiss, keep sessionExpired as-is (never a false success),
+  // record it. Idempotent (first signal wins). Reused by the injected LOGIN_BLOCKED + the URL guard.
+  const handleLoginBlocked = (reason: string) => {
+    if (loginBlockedReasonRef.current) return;
+    const wasReconnect = reconnectingRef.current;
+    reconnectingRef.current = false;
+    loginBlockedReasonRef.current = reason;
+    analytics.track(Events.INSTAGRAM_LOGIN_BLOCKED, { was_reconnect: wasReconnect, reason });
+    closeLoginModal();
+  };
+
+  // COM-41: fire the honest message AFTER the modal has dismissed (iOS drops an Alert presented
+  // mid-dismissal). No-op on a normal cancel (ref is null).
+  const handleLoginModalDismissed = () => {
+    const reason = loginBlockedReasonRef.current;
+    if (!reason) return;
+    loginBlockedReasonRef.current = null;
+    const message =
+      reason === 'suspended'
+        ? "Instagram has restricted this account. You'll need to resolve it in the Instagram app."
+        : 'Instagram is temporarily limiting sign-ins on this account. Please try again in a little while.';
+    Alert.alert('Instagram', message);
+  };
+
+  // COM-41: RN-side URL guard for the login WebView — pathname only (strip the query so a ?next=… param
+  // can't false-match), language-independent. Only the unambiguous suspended/disabled walls (NOT
+  // /challenge or 2FA, which are completable).
+  const handleLoginNavStateChange = (navState: { url?: string }) => {
+    const url = navState?.url;
+    if (!url) return;
+    const path = url.split('?')[0];
+    if (path.indexOf('/accounts/suspended') !== -1 || path.indexOf('/accounts/disabled') !== -1) {
+      handleLoginBlocked('suspended');
+    }
+  };
+
   // Handle messages from WebView
   const handleMessage = (event: any) => {
     try {
@@ -1027,6 +1069,11 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       resetStallTimer();
 
       switch (data.type) {
+        case 'LOGIN_BLOCKED':
+          // COM-41: Instagram blocked sign-in (429 rate-limit, or a suspended/disabled wall).
+          handleLoginBlocked(data.reason || 'blocked');
+          break;
+
         case 'LOGIN_SUCCESS':
           closeLoginModal();
           justLoggedInRef.current = true;
@@ -1542,7 +1589,11 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       {/* Login WebView - only shown in modal for login */}
       {showLoginModal && (
-        <Modal visible={showLoginModal} animationType="slide" presentationStyle="pageSheet">
+        <Modal
+          visible={showLoginModal}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onDismiss={handleLoginModalDismissed}>
           <View className="flex-1 bg-white">
             <View className="flex-row items-center justify-between border-b border-gray-200 p-4">
               <Text className="text-lg font-semibold">Connect Instagram</Text>
@@ -1556,6 +1607,7 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               className="flex-1"
               onMessage={handleMessage}
               onLoad={handleLoginWebViewLoad}
+              onNavigationStateChange={handleLoginNavStateChange}
               injectedJavaScriptBeforeContentLoaded={instagramAPI}
               sharedCookiesEnabled={true}
             />
@@ -1945,18 +1997,16 @@ const instagramAPI = `
       if (cookieCheckInterval) return;
 
       cookieCheckInterval = setInterval(function() {
-        if (loginDetected) {
-          clearInterval(cookieCheckInterval);
-          cookieCheckInterval = null;
-          return;
-        }
+        // COM-41: a fetch is in-flight from a prior tick — skip (do NOT clear; the fetch resolves it).
+        if (loginDetected) return;
 
         const userId = getCookie('ds_user_id');
         if (!userId) return;
 
+        // COM-41: mark a fetch in-flight (guard overlapping ticks). The interval is cleared only on a
+        // confirmed success or block — so a stale-cookie 401 can resume polling for a fresh login
+        // instead of firing a false LOGIN_SUCCESS.
         loginDetected = true;
-        clearInterval(cookieCheckInterval);
-        cookieCheckInterval = null;
 
         // Fetch username from web_form_data
         fetch('https://www.instagram.com/api/v1/accounts/edit/web_form_data/', {
@@ -1966,14 +2016,34 @@ const instagramAPI = `
             'X-IG-App-ID': '${INSTAGRAM_APP_ID}'
           }
         })
-        .then(function(res) { return res.json(); })
+        .then(function(res) {
+          if (res.status === 429) {
+            // Instagram is rate-limiting sign-in — a real block wall, not a completable login.
+            clearInterval(cookieCheckInterval);
+            cookieCheckInterval = null;
+            sendMessage('LOGIN_BLOCKED', { reason: 'rate_limit' });
+            return null;
+          }
+          if (!res.ok) {
+            // Stale ds_user_id / dead session (401 login_required): do NOT false-succeed — reset the
+            // in-flight guard and keep polling so a fresh login is picked up.
+            loginDetected = false;
+            return null;
+          }
+          return res.json();
+        })
         .then(function(data) {
+          if (!data) return;
+          clearInterval(cookieCheckInterval);
+          cookieCheckInterval = null;
           sendMessage('LOGIN_SUCCESS', {
             userId: userId,
             username: data.form_data?.username
           });
         })
         .catch(function(err) {
+          // Transient failure — keep polling rather than false-succeed or hard-block.
+          loginDetected = false;
           console.error('Failed to fetch form data:', err);
         });
       }, ${COOKIE_POLL_INTERVAL_MS});

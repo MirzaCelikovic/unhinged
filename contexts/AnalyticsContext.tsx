@@ -53,6 +53,8 @@ export const Events = {
   SYNC_METRICS_REPORTED: 'Sync Metrics Reported',
   SYNC_PUSHBACK_DETECTED: 'Sync Pushback Detected',
   SYNC_FETCH_ERROR: 'Sync Fetch Error',
+  // COM-41 reconnect block detection
+  INSTAGRAM_LOGIN_BLOCKED: 'Instagram Login Blocked',
 } as const;
 
 // TikTok / SKAdNetwork attribution is dispatched from this same chokepoint so it
