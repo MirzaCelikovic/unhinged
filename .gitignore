@@ -33,3 +33,6 @@ build-*.aab
 .investigations/
 .archive/
 reports/
+
+# Build output from the follow-backs typecheck/test
+dist-test/

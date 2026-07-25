@@ -1,0 +1,17 @@
+{
+  // Standalone typecheck/compile for the pure, RN-free Follow Backs logic and its
+  // unit tests. Kept separate from the app tsconfig so `npm run build` gates the
+  // new logic without dragging in the react-native/expo module graph.
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "outDir": "dist-test",
+    "rootDir": "."
+  },
+  "include": ["lib/followBacks.ts", "lib/followBacks.test.ts"]
+}
