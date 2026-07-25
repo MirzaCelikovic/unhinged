@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { Tabs, Redirect } from 'expo-router';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
+import { useTranslation } from 'react-i18next';
 import { useOnboarding } from '~/lib/useOnboarding';
 import { useRevenueCat } from '~/contexts/RevenueCatContext';
 import { useAccountContext } from '~/contexts/AccountContext';
@@ -27,6 +28,7 @@ export default function TabLayout() {
   const { account, trackedInstagrams } = useAccountContext();
   const { sessionExpired, reconnect } = useInstagram();
   const { track } = useAnalytics();
+  const { t } = useTranslation('nav');
   const sessionExpiredSheetRef = useRef<BottomSheetModal>(null);
   const [paywallHandled, setPaywallHandled] = useState(false);
   const [needsAge, setNeedsAge] = useState(false);
@@ -123,8 +125,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="home"
           options={{
-            title: 'Home',
-            tabBarLabel: 'Home',
+            title: t('tabs.home'),
+            tabBarLabel: t('tabs.home'),
             tabBarIcon: ({ color }) => (
               <View>
                 <TabHomeIcon color={color} width={28} height={28} />
@@ -139,8 +141,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="tracking"
           options={{
-            title: 'Tracking',
-            tabBarLabel: 'Tracking',
+            title: t('tabs.tracking'),
+            tabBarLabel: t('tabs.tracking'),
             tabBarIcon: ({ color }) => (
               <View>
                 <TabTrackingIcon color={color} width={28} height={28} />
@@ -155,8 +157,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="settings"
           options={{
-            title: 'Settings',
-            tabBarLabel: 'Settings',
+            title: t('tabs.settings'),
+            tabBarLabel: t('tabs.settings'),
             tabBarIcon: ({ color }) => <TabSettingsIcon color={color} width={28} height={28} />,
             headerShown: false,
           }}

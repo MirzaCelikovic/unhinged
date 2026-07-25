@@ -1,0 +1,79 @@
+{
+  "actions.continue": "続ける",
+  "actions.skip": "スキップ",
+
+  "source.question": "どこで知りましたか？",
+  "source.friends": "友だち",
+  "source.tiktok": "TikTok",
+  "source.instagram": "Instagram",
+  "source.facebook": "Facebook",
+  "source.google": "Google",
+  "source.other": "その他",
+
+  "age.question": "年齢を教えてください",
+  "age.range18_24": "18〜24",
+  "age.range25_34": "25〜34",
+  "age.range35Plus": "35以上",
+
+  "helpWith.question": "Unhingedで何をしたいですか？",
+  "helpWith.track": "ユーザーをこっそりトラッキング",
+  "helpWith.notFollowingBack": "フォローバックしていない人を確認",
+  "helpWith.stories": "ストーリーを匿名で見る",
+  "helpWith.redFlags": "危険サインのレポートを作成",
+  "helpWith.wrapped": "IGの振り返りを見る",
+
+  "search.whatWeFound": "見つかった情報",
+  "search.usernamePlaceholder": "Instagramのユーザー名",
+  "search.notFound": "このアカウントが見つかりませんでした。ユーザー名を確認してください。",
+
+  "usernameSearch.title": "あなたのInstagramのユーザー名は？",
+  "usernameSearch.notFollowingBack": "あなたをフォローバックしていません",
+
+  "trackSearch.title": "誰をトラッキングしますか？",
+  "trackSearch.privateNote": "この操作は完全に非公開で、相手に知られたり通知されたりすることはありません。",
+  "trackSearch.recentActivity": "最近のアクティビティ",
+  "trackSearch.time.yesterday": "昨日",
+  "trackSearch.time.twoHoursAgo": "2時間前",
+  "trackSearch.time.fiveHoursAgo": "5時間前",
+
+  "help.header": "こんなふうにお手伝いします",
+  "help1.title": "こっそりトラッキング",
+  "help1.body": "誰が相手をフォローし始めたか、誰がフォローバックしたかがわかります。",
+  "help2.title": "フォローバックしていない人を確認",
+  "help2.body": "フォローを整理して、ワンタップでフォロー解除",
+
+  "notifications.title": "起きていることを\n見逃さないで",
+  "notifications.subtitle": "誰かにフォロー解除されたときなどに通知が届きます",
+  "notifications.enable": "最新情報を受け取る",
+  "notifications.skip": "最新情報はいりません",
+
+  "review.title": "みんなUnhingedに夢中",
+  "review.subtitle": "ユーザーの声をチェック",
+
+  "stats.title": "数字が証明しています",
+  "stats.subtitle": "2025年のデータに基づく",
+  "stats.count": "400,000+",
+  "stats.usersTracked": "トラッキングされたユーザー",
+
+  "comparison.title": "他のどのアプリよりも優れています",
+  "comparison.featureHeader": "機能",
+  "comparison.otherHeader": "他社",
+  "comparison.features.trackPrivateUsers": "非公開ユーザーをトラッキング",
+  "comparison.features.encryptedIgConnection": "暗号化されたIG接続",
+  "comparison.features.identifyRedFlagBehavior": "危険な行動を検出",
+  "comparison.features.thirstTrapWarnings": "際どい投稿の警告",
+  "comparison.features.followerFollowBackAlerts": "フォロー・フォローバックのアラート",
+
+  "connect.title": "見ていることは決して知られません",
+  "connect.secureSubtitle": "あなたのデータは完全に安全です",
+  "connect.bankSecurity.title": "銀行レベルのセキュリティ",
+  "connect.bankSecurity.body": "保護された同期。Instagramにログインしてください。接続は銀行レベルの暗号化で保護されます。",
+  "connect.secureLocal.title": "安全かつローカル",
+  "connect.secureLocal.body": "設計から非公開。データは端末内に安全に保存され、あなたが完全にコントロールできます。私たちにはそれを見る鍵がありません。",
+  "connect.discreet.title": "控えめでプライベート",
+  "connect.discreet.body": "あなたがUnhingedを使っていることは誰にも知られません。Unhinged上のアクティビティはあなただけのものです。",
+  "connect.connectInstagram": "Instagramを接続",
+
+  "start.getStarted": "始める",
+  "start.legal": "続けることで、<terms>利用規約</terms>と<privacy>プライバシーポリシー</privacy>に同意したことになります。"
+}

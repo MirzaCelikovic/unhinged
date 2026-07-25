@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Pressable } from 'react-native';
 import Animated, {
   FadeIn,
@@ -92,24 +93,24 @@ const STEPS: Step[] = [
   {
     id: 'source',
     type: 'choice',
-    question: 'How did you find us?',
+    question: 'source.question',
     choices: [
-      { id: 'friends', label: 'Friends' },
-      { id: 'tiktok', label: 'TikTok' },
-      { id: 'instagram', label: 'Instagram' },
-      { id: 'facebook', label: 'Facebook' },
-      { id: 'google', label: 'Google' },
-      { id: 'other', label: 'Other' },
+      { id: 'friends', label: 'source.friends' },
+      { id: 'tiktok', label: 'source.tiktok' },
+      { id: 'instagram', label: 'source.instagram' },
+      { id: 'facebook', label: 'source.facebook' },
+      { id: 'google', label: 'source.google' },
+      { id: 'other', label: 'source.other' },
     ],
   },
   {
     id: 'age',
     type: 'choice',
-    question: 'How old are you?',
+    question: 'age.question',
     choices: [
-      { id: '18_24', label: '18–24' },
-      { id: '25_34', label: '25–34' },
-      { id: '35_plus', label: '35+' },
+      { id: '18_24', label: 'age.range18_24' },
+      { id: '25_34', label: 'age.range25_34' },
+      { id: '35_plus', label: 'age.range35Plus' },
     ],
   },
   {
@@ -119,13 +120,13 @@ const STEPS: Step[] = [
   {
     id: 'help_with',
     type: 'choice',
-    question: 'What can Unhinged help you with?',
+    question: 'helpWith.question',
     choices: [
-      { id: 'track', label: 'Track users privately' },
-      { id: 'not_following_back', label: "See who's not following you back" },
-      { id: 'stories', label: 'View stories anonymously' },
-      { id: 'red_flags', label: 'Generate red flag reports' },
-      { id: 'wrapped', label: 'See your IG wrapped' },
+      { id: 'track', label: 'helpWith.track' },
+      { id: 'not_following_back', label: 'helpWith.notFollowingBack' },
+      { id: 'stories', label: 'helpWith.stories' },
+      { id: 'red_flags', label: 'helpWith.redFlags' },
+      { id: 'wrapped', label: 'helpWith.wrapped' },
     ],
   },
   {
@@ -170,6 +171,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const { showLogin, isLoggedIn, sync } = useInstagram();
   const { account } = useAccountContext();
   const { track } = useAnalytics();
+  const { t } = useTranslation('onboarding');
 
   // Progress bar excludes the start step (step 0)
   const stepsWithProgress = STEPS.length - 1;
@@ -268,8 +270,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           {step.type === 'start' && <StartScreen onNext={handleNext} />}
           {step.type === 'choice' && (
             <ChoiceQuestion
-              question={(step as ChoiceStep).question}
-              choices={(step as ChoiceStep).choices}
+              question={t((step as ChoiceStep).question)}
+              choices={(step as ChoiceStep).choices.map((c) => ({ id: c.id, label: t(c.label) }))}
               onSelect={handleSelect}
             />
           )}

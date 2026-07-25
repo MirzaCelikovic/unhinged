@@ -1,0 +1,9 @@
+{
+  "tabs.home": "ホーム",
+  "tabs.tracking": "トラッキング",
+  "tabs.settings": "設定",
+  "homeListTitle.notFollowingBack": "あなたをフォローバックしていない人",
+  "homeListTitle.notFollowingYouBack": "あなたがフォローバックしていない人",
+  "homeListTitle.recentlyUnfollowed": "最近あなたのフォローを解除した人",
+  "homeListTitle.recentlyFollowed": "最近あなたをフォローした人"
+}

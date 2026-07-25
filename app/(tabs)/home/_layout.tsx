@@ -1,13 +1,14 @@
 import { Stack } from 'expo-router';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import i18n from '~/lib/i18n';
 import Logo from '~/assets/logo_black.svg';
 
 const TITLES = {
-  notFollowingBack: 'Not Following You Back',
-  notFollowingYouBack: "You're Not Following Back",
-  recentlyUnfollowed: 'Recently Unfollowed You',
-  recentlyFollowed: 'Recently Followed You',
+  notFollowingBack: i18n.t('nav:homeListTitle.notFollowingBack'),
+  notFollowingYouBack: i18n.t('nav:homeListTitle.notFollowingYouBack'),
+  recentlyUnfollowed: i18n.t('nav:homeListTitle.recentlyUnfollowed'),
+  recentlyFollowed: i18n.t('nav:homeListTitle.recentlyFollowed'),
 };
 
 function LogoHeader() {

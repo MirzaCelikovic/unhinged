@@ -8,6 +8,7 @@ import {
   Image,
 } from 'react-native';
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useQuery } from '@tanstack/react-query';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -31,6 +32,7 @@ interface StartTrackingProps {
 }
 
 export default function StartTracking({ onContinue, isLoading, error }: StartTrackingProps) {
+  const { t } = useTranslation('tracking');
   const [username, setUsername] = useState('');
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [hasSelected, setHasSelected] = useState(false);
@@ -134,11 +136,11 @@ export default function StartTracking({ onContinue, isLoading, error }: StartTra
           <Unhinged width={120} height={120} />
         </Animated.View>
         <Text className="mt-6 px-2 text-center font-roboto-extrablack text-4xl tracking-tighter">
-          Who do you want to track?
+          {t('search.title')}
         </Text>
         <View className="relative mt-8 w-full">
           <TextField
-            placeholder="Instagram username"
+            placeholder={t('search.placeholder')}
             value={username}
             onChangeText={handleUsernameChange}
             autoCapitalize="none"
@@ -179,12 +181,11 @@ export default function StartTracking({ onContinue, isLoading, error }: StartTra
           )}
         </View>
         <Text className="font-roboto-regular mt-4 px-2 text-center text-sm text-gray-600">
-          Note: The profile must be public or you currently follow them. This action is private and
-          they will not be notified.
+          {t('search.note')}
         </Text>
         <View className="mt-6 w-full">
           <Button
-            label="Continue"
+            label={t('search.continue')}
             mode="next"
             loading={isLoading}
             onPress={() => onContinue(username)}

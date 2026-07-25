@@ -10,6 +10,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { useTranslation } from 'react-i18next';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Instagram } from '~/lib/types';
 import { fetchPublicProfile } from '~/lib/fetchPublicProfile';
@@ -55,6 +56,7 @@ export default function UsernameSearch({
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState('');
   const { track } = useAnalytics();
+  const { t } = useTranslation('onboarding');
 
   const svgOpacity = useSharedValue(1);
   const svgScale = useSharedValue(1);
@@ -95,12 +97,12 @@ export default function UsernameSearch({
   if (savedResult) {
     return (
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 24 }}>
-        <Text className="mb-8 text-center font-roboto-black text-4xl">What we found</Text>
+        <Text className="mb-8 text-center font-roboto-black text-4xl">{t('search.whatWeFound')}</Text>
 
         <InstagramCard account={savedResult} />
 
         <Text className="mb-3 mt-6 font-roboto-medium text-lg text-black">
-          Not following you back
+          {t('usernameSearch.notFollowingBack')}
         </Text>
 
         <View className="gap-3">
@@ -130,7 +132,7 @@ export default function UsernameSearch({
         </View>
 
         <View className="mt-8">
-          <Button label="Continue" onPress={() => {
+          <Button label={t('actions.continue')} onPress={() => {
             track(Events.USERNAME_RESULT_COMPLETED);
             onNext(savedResult.username);
           }} />
@@ -151,7 +153,7 @@ export default function UsernameSearch({
       track(Events.USERNAME_SEARCH_COMPLETED);
       onResultFetched(profile);
     } catch (err) {
-      setError('Could not find this account. Please check the username.');
+      setError(t('search.notFound'));
     } finally {
       setIsSearching(false);
     }
@@ -166,11 +168,11 @@ export default function UsernameSearch({
           <Unhinged width={140} height={140} />
         </Animated.View>
         <Text className="mt-6 px-2 text-center font-roboto-extrablack text-4xl tracking-tighter">
-          What's your Instagram username?
+          {t('usernameSearch.title')}
         </Text>
         <View className="mt-8 w-full">
           <TextField
-            placeholder="Instagram username"
+            placeholder={t('search.usernamePlaceholder')}
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
@@ -180,7 +182,7 @@ export default function UsernameSearch({
         </View>
         <View className="mt-6 w-full">
           <Button
-            label="Continue"
+            label={t('actions.continue')}
             loading={isSearching}
             onPress={handleContinue}
             disabled={!username.trim()}
@@ -190,7 +192,7 @@ export default function UsernameSearch({
           track(Events.USERNAME_SEARCH_SKIPPED);
           onNext(null);
         }}>
-          <Text className="text-center font-roboto-medium text-base text-black">Skip</Text>
+          <Text className="text-center font-roboto-medium text-base text-black">{t('actions.skip')}</Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { View, Text, Linking } from 'react-native';
+import { Trans, useTranslation } from 'react-i18next';
 import Logo from '~/assets/logo_black.svg';
 import Button from '~/components/Button';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
@@ -10,6 +11,7 @@ interface StartScreenProps {
 
 export default function StartScreen({ onNext }: StartScreenProps) {
   const { track } = useAnalytics();
+  const { t } = useTranslation('onboarding');
 
   useEffect(() => {
     track(Events.START_SCREEN_VIEWED);
@@ -35,17 +37,16 @@ export default function StartScreen({ onNext }: StartScreenProps) {
       </View>
 
       <View className="px-4 pb-8">
-        <Button label="Get Started" onPress={handleStart} />
+        <Button label={t('start.getStarted')} onPress={handleStart} />
         <Text className="font-roboto mt-4 px-2 text-center text-sm text-gray-600">
-          By continuing, you agree with our{' '}
-          <Text className="underline" onPress={openTerms}>
-            Terms of Service
-          </Text>{' '}
-          and{' '}
-          <Text className="underline" onPress={openPrivacy}>
-            Privacy Policy
-          </Text>
-          .
+          <Trans
+            t={t}
+            i18nKey="start.legal"
+            components={{
+              terms: <Text className="underline" onPress={openTerms} />,
+              privacy: <Text className="underline" onPress={openPrivacy} />,
+            }}
+          />
         </Text>
       </View>
     </View>

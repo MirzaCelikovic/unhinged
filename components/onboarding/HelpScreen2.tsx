@@ -1,4 +1,5 @@
 import { View, Text, Image, Dimensions, ScrollView } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Button from '~/components/Button';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
@@ -10,10 +11,11 @@ interface HelpScreen2Props {
 
 export default function HelpScreen2({ onNext }: HelpScreen2Props) {
   const { track } = useAnalytics();
+  const { t } = useTranslation('onboarding');
   return (
     <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }} bounces={false}>
       <Text className="mt-4 px-4 text-center font-roboto-extrablack text-4xl tracking-tighter">
-        Here's how we'll help
+        {t('help.header')}
       </Text>
 
       <View className="mt-8 overflow-hidden" style={{ height: 350 * 0.8 }}>
@@ -40,13 +42,13 @@ export default function HelpScreen2({ onNext }: HelpScreen2Props) {
 
       <View className="px-4 pb-8">
         <Text className="text-center font-roboto-extrablack text-4xl">
-          See who's not following you back
+          {t('help2.title')}
         </Text>
         <Text className="font-roboto mt-2 text-center text-base text-black">
-          Clean up your following and unfollow users with one tap
+          {t('help2.body')}
         </Text>
         <View className="mt-6">
-          <Button label="Continue" onPress={() => {
+          <Button label={t('actions.continue')} onPress={() => {
             track(Events.HWH2_COMPLETED);
             onNext();
           }} />

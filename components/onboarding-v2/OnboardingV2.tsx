@@ -17,6 +17,7 @@ import RevealScreen from '~/components/onboarding-v2/RevealScreen';
 import Logo from '~/assets/logo_black.svg';
 import { Instagram } from '~/lib/types';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
+import { useTranslation } from 'react-i18next';
 import { setAgeGroup, AgeGroup, getOnboardingProgress, setOnboardingProgress } from '~/lib/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -69,40 +70,40 @@ const STEPS: Step[] = [
   {
     id: 'who',
     type: 'choice',
-    question: "Who\u2019s got you feeling\nthis way?",
+    question: 'steps.who.question',
     choices: [
-      { id: 'boyfriend', label: 'My boyfriend' },
-      { id: 'girlfriend', label: 'My girlfriend' },
-      { id: 'ex', label: 'My ex' },
-      { id: 'talking_to', label: "Someone I\u2019m talking to" },
-      { id: 'friend', label: "A \u2018friend\u2019 I don\u2019t really trust" },
-      { id: 'someone_else', label: 'Someone else' },
+      { id: 'boyfriend', label: 'steps.who.boyfriend' },
+      { id: 'girlfriend', label: 'steps.who.girlfriend' },
+      { id: 'ex', label: 'steps.who.ex' },
+      { id: 'talking_to', label: 'steps.who.talkingTo' },
+      { id: 'friend', label: 'steps.who.friend' },
+      { id: 'someone_else', label: 'steps.who.someoneElse' },
     ],
   },
   {
     id: 'age',
     type: 'choice',
-    question: 'How old are you?',
+    question: 'steps.age.question',
     choices: [
-      { id: '18_24', label: '18–24' },
-      { id: '25_34', label: '25–34' },
-      { id: '35_plus', label: '35+' },
+      { id: '18_24', label: 'steps.age.range18_24' },
+      { id: '25_34', label: 'steps.age.range25_34' },
+      { id: '35_plus', label: 'steps.age.range35plus' },
     ],
   },
   {
     id: 'alarm_bells',
     type: 'multiselect',
-    question: "What\u2019s been setting off\nalarm bells?",
-    subtitle: "Check everything that sounds familiar.\nNo one sees this but you.",
+    question: 'steps.alarmBells.question',
+    subtitle: 'steps.alarmBells.subtitle',
     choices: [
-      { id: 'phone', label: 'On their phone way more than usual' },
-      { id: 'hides_screen', label: 'Hides screen when I walk up' },
-      { id: 'thirst_traps', label: "Liking random girls\u2019/guys\u2019 thirst traps" },
-      { id: 'fitness_models', label: 'Following new fitness models' },
-      { id: 'weird_hours', label: 'Active on IG at weird hours' },
-      { id: 'new_followers', label: "New followers I\u2019ve never heard of" },
-      { id: 'weird_notifications', label: 'Getting weird notifications' },
-      { id: 'changed_password', label: 'Changed their password' },
+      { id: 'phone', label: 'steps.alarmBells.phone' },
+      { id: 'hides_screen', label: 'steps.alarmBells.hidesScreen' },
+      { id: 'thirst_traps', label: 'steps.alarmBells.thirstTraps' },
+      { id: 'fitness_models', label: 'steps.alarmBells.fitnessModels' },
+      { id: 'weird_hours', label: 'steps.alarmBells.weirdHours' },
+      { id: 'new_followers', label: 'steps.alarmBells.newFollowers' },
+      { id: 'weird_notifications', label: 'steps.alarmBells.weirdNotifications' },
+      { id: 'changed_password', label: 'steps.alarmBells.changedPassword' },
     ],
   },
   {
@@ -133,6 +134,7 @@ export default function OnboardingV2({ onComplete }: OnboardingV2Props) {
     (savedProgress?.trackProfile as Instagram | null) ?? null,
   );
   const { track } = useAnalytics();
+  const { t } = useTranslation('onboardingV2');
 
   // Progress bar excludes the start step (step 0)
   const stepsWithProgress = STEPS.length - 1;
@@ -216,9 +218,16 @@ export default function OnboardingV2({ onComplete }: OnboardingV2Props) {
           {step.type === 'start' && <StartScreen onNext={handleNext} />}
           {step.type === 'multiselect' && (
             <MultiSelectQuestion
-              question={(step as MultiSelectStep).question}
-              subtitle={(step as MultiSelectStep).subtitle}
-              choices={(step as MultiSelectStep).choices}
+              question={t((step as MultiSelectStep).question)}
+              subtitle={
+                (step as MultiSelectStep).subtitle
+                  ? t((step as MultiSelectStep).subtitle as string)
+                  : undefined
+              }
+              choices={(step as MultiSelectStep).choices.map((c) => ({
+                id: c.id,
+                label: t(c.label),
+              }))}
               onSubmit={(selectedIds) => {
                 track(Events.ALARM_BELLS_COMPLETED, { selections: selectedIds });
                 setAnswers({ ...answers, [step.id]: selectedIds.join(',') });
@@ -228,8 +237,11 @@ export default function OnboardingV2({ onComplete }: OnboardingV2Props) {
           )}
           {step.type === 'choice' && (
             <ChoiceQuestion
-              question={(step as ChoiceStep).question}
-              choices={(step as ChoiceStep).choices}
+              question={t((step as ChoiceStep).question)}
+              choices={(step as ChoiceStep).choices.map((c) => ({
+                id: c.id,
+                label: t(c.label),
+              }))}
               onSelect={handleSelect}
             />
           )}
