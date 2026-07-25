@@ -25,18 +25,48 @@ export type AccountListType =
   | 'allFollowers'
   | 'allFollowing';
 
+// Maps each list type to the i18n keys for its main-account / tracked-account
+// label variants. Callers resolve the returned key through `t()`.
 export const ACCOUNT_LIST_LABELS: Record<AccountListType, { main: string; tracked: string }> = {
-  addedFollowing: { main: 'You recently followed', tracked: 'They recently followed' },
-  removedFollowing: { main: 'You recently unfollowed', tracked: 'They recently unfollowed' },
-  gainedFollowers: { main: 'Recently followed you', tracked: 'Recently followed by' },
-  lostFollowers: { main: 'Recently unfollowed you', tracked: 'Recently unfollowed them' },
-  notFollowedBack: { main: "You aren't following back", tracked: 'They are not following back' },
-  notFollowingBack: { main: 'Not following you back', tracked: 'Not following them back' },
-  followBacks: { main: 'Follow backs', tracked: 'Follow backs' },
-  allFollowers: { main: 'Followers', tracked: 'Followers' },
-  allFollowing: { main: 'Following', tracked: 'Following' },
+  addedFollowing: {
+    main: 'accountLabels.addedFollowing.main',
+    tracked: 'accountLabels.addedFollowing.tracked',
+  },
+  removedFollowing: {
+    main: 'accountLabels.removedFollowing.main',
+    tracked: 'accountLabels.removedFollowing.tracked',
+  },
+  gainedFollowers: {
+    main: 'accountLabels.gainedFollowers.main',
+    tracked: 'accountLabels.gainedFollowers.tracked',
+  },
+  lostFollowers: {
+    main: 'accountLabels.lostFollowers.main',
+    tracked: 'accountLabels.lostFollowers.tracked',
+  },
+  notFollowedBack: {
+    main: 'accountLabels.notFollowedBack.main',
+    tracked: 'accountLabels.notFollowedBack.tracked',
+  },
+  notFollowingBack: {
+    main: 'accountLabels.notFollowingBack.main',
+    tracked: 'accountLabels.notFollowingBack.tracked',
+  },
+  followBacks: {
+    main: 'accountLabels.followBacks.main',
+    tracked: 'accountLabels.followBacks.tracked',
+  },
+  allFollowers: {
+    main: 'accountLabels.allFollowers.main',
+    tracked: 'accountLabels.allFollowers.tracked',
+  },
+  allFollowing: {
+    main: 'accountLabels.allFollowing.main',
+    tracked: 'accountLabels.allFollowing.tracked',
+  },
 };
 
+// Returns the i18n key for the requested label; resolve it with `t()` at the call site.
 export const getAccountListLabel = (type: AccountListType, isMainAccount: boolean): string => {
   return isMainAccount ? ACCOUNT_LIST_LABELS[type].main : ACCOUNT_LIST_LABELS[type].tracked;
 };

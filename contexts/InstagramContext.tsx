@@ -10,6 +10,7 @@ import { syncFollowingList, syncFollowersList, addFollowing, removeFollowing } f
 import { clearAllData } from '~/lib/database';
 import * as Notifications from 'expo-notifications';
 import { analytics, Events, useAnalytics } from '~/contexts/AnalyticsContext';
+import i18n from '~/lib/i18n';
 
 // Constants
 const INSTAGRAM_APP_ID = '936619743392459';
@@ -1240,8 +1241,8 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           }
 
           Alert.alert(
-            'Instagram needs a break',
-            'To protect your account, syncing is paused for about 30 minutes. Please try again later.'
+            i18n.t('instagram.needsBreakTitle'),
+            i18n.t('instagram.needsBreakMessage')
           );
           break;
 
@@ -1545,9 +1546,9 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         <Modal visible={showLoginModal} animationType="slide" presentationStyle="pageSheet">
           <View className="flex-1 bg-white">
             <View className="flex-row items-center justify-between border-b border-gray-200 p-4">
-              <Text className="text-lg font-semibold">Connect Instagram</Text>
+              <Text className="text-lg font-semibold">{i18n.t('instagram.connectTitle')}</Text>
               <Pressable className="px-4 py-2 active:opacity-70" onPress={closeLoginModal}>
-                <Text className="text-base font-medium text-blue-500">Cancel</Text>
+                <Text className="text-base font-medium text-blue-500">{i18n.t('instagram.cancel')}</Text>
               </Pressable>
             </View>
             <WebView

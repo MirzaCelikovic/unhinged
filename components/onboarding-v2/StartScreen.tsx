@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { View, Text, Linking } from 'react-native';
 import Logo from '~/assets/logo_black.svg';
 import UnhingedCircle from '~/assets/unhinged_circle.svg';
+import { useTranslation } from 'react-i18next';
 import Button from '~/components/Button';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
@@ -10,13 +11,14 @@ interface StartScreenV2Props {
 }
 
 const NOTIFICATIONS = [
-  { title: 'Your crush', subtitle: 'started followed someone', opacity: 0.7 },
-  { title: 'Your ex', subtitle: 'started following your bestie', opacity: 0.6 },
-  { title: 'Your best friend', subtitle: 'just unfollowed you', opacity: 0.5 },
+  { titleKey: 'v2Start.notification1Title', subtitleKey: 'v2Start.notification1Subtitle', opacity: 0.7 },
+  { titleKey: 'v2Start.notification2Title', subtitleKey: 'v2Start.notification2Subtitle', opacity: 0.6 },
+  { titleKey: 'v2Start.notification3Title', subtitleKey: 'v2Start.notification3Subtitle', opacity: 0.5 },
 ];
 
 export default function StartScreenV2({ onNext }: StartScreenV2Props) {
   const { track } = useAnalytics();
+  const { t } = useTranslation();
 
   useEffect(() => {
     track(Events.START_SCREEN_VIEWED);
@@ -37,10 +39,10 @@ export default function StartScreenV2({ onNext }: StartScreenV2Props) {
       {/* Content */}
       <View className="flex-1 justify-center px-6">
         <Text className="text-center font-roboto-extrablack text-4xl text-black">
-          You already know,{'\n'}don't you?
+          {t('v2Start.headline')}
         </Text>
         <Text className="mt-4 text-center font-roboto text-lg text-black">
-          Let's stop guessing and find out what's really going on.
+          {t('v2Start.subheadline')}
         </Text>
 
         {/* Notification cards */}
@@ -57,8 +59,8 @@ export default function StartScreenV2({ onNext }: StartScreenV2Props) {
                 <UnhingedCircle width={48} height={48} />
               </View>
               <View>
-                <Text className="font-roboto-bold text-base text-black">{notification.title}</Text>
-                <Text className="font-roboto text-sm text-black">{notification.subtitle}</Text>
+                <Text className="font-roboto-bold text-base text-black">{t(notification.titleKey)}</Text>
+                <Text className="font-roboto text-sm text-black">{t(notification.subtitleKey)}</Text>
               </View>
             </View>
           ))}
@@ -67,21 +69,21 @@ export default function StartScreenV2({ onNext }: StartScreenV2Props) {
 
       {/* CTA */}
       <View className="px-4 pb-8">
-        <Button label="Show me what they're hiding" onPress={handleStart} />
+        <Button label={t('v2Start.cta')} onPress={handleStart} />
         <Text className="mt-4 px-2 text-center font-roboto text-sm text-gray-600">
-          By continuing, you agree with our{' '}
+          {t('v2Start.agreePrefix')}{' '}
           <Text
             className="underline"
             onPress={() => Linking.openURL(process.env.EXPO_PUBLIC_TERMS_OF_SERVICE_URL!)}>
-            Terms of Service
+            {t('v2Start.termsOfService')}
           </Text>{' '}
-          and{' '}
+          {t('v2Start.and')}{' '}
           <Text
             className="underline"
             onPress={() => Linking.openURL(process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL!)}>
-            Privacy Policy
+            {t('v2Start.privacyPolicy')}
           </Text>
-          .
+          {t('v2Start.agreeSuffix')}
         </Text>
       </View>
     </View>

@@ -1,0 +1,451 @@
+{
+  "accountLabels": {
+    "addedFollowing": {
+      "main": "بدأت متابعة",
+      "tracked": "بدؤوا متابعة"
+    },
+    "allFollowers": {
+      "main": "المتابِعون",
+      "tracked": "المتابِعون"
+    },
+    "allFollowing": {
+      "main": "المتابَعون",
+      "tracked": "المتابَعون"
+    },
+    "followBacks": {
+      "main": "متابعات متبادلة",
+      "tracked": "متابعات متبادلة"
+    },
+    "gainedFollowers": {
+      "main": "بدؤوا متابعتك مؤخرًا",
+      "tracked": "بدؤوا متابعتهم مؤخرًا"
+    },
+    "lostFollowers": {
+      "main": "ألغوا متابعتك مؤخرًا",
+      "tracked": "ألغوا متابعتهم مؤخرًا"
+    },
+    "notFollowedBack": {
+      "main": "لا تتابعهم بالمقابل",
+      "tracked": "لا يتابعونهم بالمقابل"
+    },
+    "notFollowingBack": {
+      "main": "لا يتابعونك بالمقابل",
+      "tracked": "لا يتابعونهم بالمقابل"
+    },
+    "removedFollowing": {
+      "main": "ألغيت متابعة",
+      "tracked": "ألغوا متابعة"
+    }
+  },
+  "accountsList": {
+    "cancel": "إلغاء",
+    "errorTitle": "خطأ",
+    "failedToFollow": "تعذّرت متابعة المستخدم",
+    "failedToUnfollow": "تعذّر إلغاء متابعة المستخدم",
+    "follow": "متابعة",
+    "following": "تتابعه",
+    "loading": "جارٍ التحميل...",
+    "noAccountsFound": "لم يتم العثور على أي حسابات",
+    "searchPlaceholder": "بحث",
+    "unfollow": "إلغاء المتابعة",
+    "unfollowMessage": "هل تريد إلغاء متابعة ‎@{{username}}؟",
+    "unfollowTitle": "إلغاء المتابعة",
+    "unfollowed": "تم إلغاء المتابعة"
+  },
+  "activityFeed": {
+    "daysAgo": "قبل {{count}} يوم",
+    "hoursAgo": "قبل {{count}} ساعة",
+    "justNow": "الآن",
+    "minsAgo": "قبل {{count}} دقيقة",
+    "startedFollowingThem": "بدأ متابعتهم",
+    "theyStartedFollowing": "بدؤوا متابعة",
+    "theyUnfollowed": "ألغوا المتابعة",
+    "unfollowedThem": "ألغى متابعتهم",
+    "youStartedTracking": "بدأت التتبّع"
+  },
+  "agePrompt": {
+    "question": "كم عمرك؟"
+  },
+  "home": {
+    "cancel": "إلغاء",
+    "neverSynced": "لم تتم المزامنة بعد",
+    "pausedMessage": "تم إيقاف المزامنة مؤقتًا لحماية حسابك. حاول مرة أخرى لاحقًا من فضلك.",
+    "pausedTitle": "متوقف مؤقتًا",
+    "refresh": "تحديث",
+    "refreshMessage": "لتجنّب إغراق إنستغرام بالكثير من الطلبات التلقائية (ممّا قد يجعل حسابك يبدو كأنه روبوت)، ننصحك بالتحديث مرة واحدة يوميًا أو عندما ننبّهك بتغيّر في عدد المتابِعين.",
+    "refreshTitle": "تحديث",
+    "updatedDaysAgo_zero": "آخر تحديث قبل {{count}} يوم",
+    "updatedDaysAgo_one": "آخر تحديث قبل يوم واحد ({{count}})",
+    "updatedDaysAgo_two": "آخر تحديث قبل يومين ({{count}})",
+    "updatedDaysAgo_few": "آخر تحديث قبل {{count}} أيام",
+    "updatedDaysAgo_many": "آخر تحديث قبل {{count}} يومًا",
+    "updatedDaysAgo_other": "آخر تحديث قبل {{count}} يوم",
+    "updatedHrsAgo_zero": "آخر تحديث قبل {{count}} ساعة",
+    "updatedHrsAgo_one": "آخر تحديث قبل ساعة واحدة ({{count}})",
+    "updatedHrsAgo_two": "آخر تحديث قبل ساعتين ({{count}})",
+    "updatedHrsAgo_few": "آخر تحديث قبل {{count}} ساعات",
+    "updatedHrsAgo_many": "آخر تحديث قبل {{count}} ساعة",
+    "updatedHrsAgo_other": "آخر تحديث قبل {{count}} ساعة",
+    "updatedJustNow": "تم التحديث الآن",
+    "updatedMinsAgo_zero": "آخر تحديث قبل {{count}} دقيقة",
+    "updatedMinsAgo_one": "آخر تحديث قبل دقيقة واحدة ({{count}})",
+    "updatedMinsAgo_two": "آخر تحديث قبل دقيقتين ({{count}})",
+    "updatedMinsAgo_few": "آخر تحديث قبل {{count}} دقائق",
+    "updatedMinsAgo_many": "آخر تحديث قبل {{count}} دقيقة",
+    "updatedMinsAgo_other": "آخر تحديث قبل {{count}} دقيقة"
+  },
+  "initialSync": {
+    "analyzingActivity": "جارٍ تحليل النشاط",
+    "fetchingProfile": "جارٍ جلب الملف الشخصي",
+    "fetchingProfileInformation": "جارٍ جلب معلومات الملف الشخصي...",
+    "syncing": "جارٍ المزامنة...",
+    "syncingFollowersList": "جارٍ مزامنة قائمة المتابِعين",
+    "syncingFollowingList": "جارٍ مزامنة قائمة المتابَعين",
+    "syncingWithInstagram": "جارٍ المزامنة مع إنستغرام",
+    "thisMightTakeAMinute": "قد يستغرق هذا دقيقة حسب عدد المتابِعين."
+  },
+  "instagram": {
+    "cancel": "إلغاء",
+    "connectTitle": "ربط إنستغرام",
+    "needsBreakMessage": "لحماية حسابك، تم إيقاف المزامنة مؤقتًا لحوالي 30 دقيقة. حاول مرة أخرى لاحقًا من فضلك.",
+    "needsBreakTitle": "إنستغرام بحاجة إلى استراحة"
+  },
+  "instagramCard": {
+    "followers": "متابِع",
+    "following": "يتابع",
+    "posts": "منشور"
+  },
+  "newActivityBanner": {
+    "newActivityFound": "تم رصد نشاط جديد على إنستغرام",
+    "refresh": "تحديث"
+  },
+  "notConnected": {
+    "connectInstagram": "ربط إنستغرام",
+    "subtitle": "اربط إنستغرام لتبدأ المراقبة دون أن يراقبك أحد.",
+    "title": "على بُعد ربط واحد من الحقيقة."
+  },
+  "notTracking": {
+    "subtitle": "تتبّع أول حساب لك",
+    "title": "لا توجد حسابات متتبَّعة",
+    "trackAccount": "تتبّع حساب"
+  },
+  "notifications": {
+    "accountActivity": "عندما يظهر نشاط جديد على حسابك",
+    "marketing": "تحديثات المنتج والحملات",
+    "title": "الإشعارات",
+    "trackedActivity": "عندما يظهر نشاط جديد لشخص تتتبّعه"
+  },
+  "notificationsSheet": {
+    "benefit1": "اعرف فورًا عندما يتابع شخصٌ يهمك حسابًا جديدًا",
+    "benefit2": "شاهد متى يحصل ذلك الحبيب السابق على متابِع جديد",
+    "benefit3": "اكتشف إلغاء المتابعة لحظة حدوثه",
+    "benefit4": "لا تفوّت أي نشاط مريب بعد الآن",
+    "enableNotifications": "تفعيل الإشعارات",
+    "maybeLater": "ربما لاحقًا",
+    "title": "لا تفوّت أي شيء 👀"
+  },
+  "obComparison": {
+    "continue": "متابعة",
+    "feature": "الميزة",
+    "featureEncryptedIgConnection": "اتصال إنستغرام مشفّر",
+    "featureFollowerFollowBackAlerts": "تنبيهات المتابعة المتبادلة",
+    "featureIdentifyRedFlagBehavior": "رصد السلوكيات المشبوهة",
+    "featureThirstTrapWarnings": "تحذيرات الصور المثيرة",
+    "featureTrackPrivateUsers": "تتبّع الحسابات الخاصة",
+    "other": "التطبيقات الأخرى",
+    "title": "نحن أفضل من أي تطبيق آخر"
+  },
+  "obConnect": {
+    "bankSecurityBody": "مزامنة محميّة. سجّل الدخول إلى إنستغرام. اتصالك محمي بتشفير بمستوى البنوك.",
+    "bankSecurityTitle": "أمان بمستوى البنوك",
+    "connectInstagram": "ربط إنستغرام",
+    "dataSecure": "بياناتك آمنة تمامًا",
+    "discreetBody": "لا أحد يعرف أنك تستخدم Unhinged. نشاطك على Unhinged يبقى معروفًا لك وحدك.",
+    "discreetTitle": "سرّي وخاص",
+    "secureLocalBody": "خصوصية بحكم التصميم. بياناتك موجودة بأمان على جهازك، ممّا يمنحك تحكمًا كاملًا. ببساطة، ليست لدينا المفاتيح لرؤيتها.",
+    "secureLocalTitle": "آمن ومحلي",
+    "skip": "تخطّي",
+    "title": "لن يعرفوا أبدًا أنك تراقب"
+  },
+  "obHelp1": {
+    "body": "شاهد من يبدأ بمتابعتهم ومن يتابعهم بالمقابل.",
+    "continue": "متابعة",
+    "heading": "إليك كيف سنساعدك",
+    "title": "تتبّع الأشخاص بسرّية"
+  },
+  "obHelp2": {
+    "body": "رتّب قائمة متابعاتك وألغِ متابعة المستخدمين بنقرة واحدة",
+    "continue": "متابعة",
+    "heading": "إليك كيف سنساعدك",
+    "title": "اعرف من لا يتابعك بالمقابل"
+  },
+  "obNotificationConsent": {
+    "skip": "لا أريد أن أبقى على اطّلاع",
+    "stayUpToDate": "ابقَ على اطّلاع",
+    "subtitle": "احصل على إشعار عندما يلغي أحدهم متابعتك والمزيد",
+    "title": "لا تفوّت ما\nيحدث"
+  },
+  "obReview": {
+    "continue": "متابعة",
+    "subtitle": "شاهد ما يقوله مستخدمونا",
+    "title": "الجميع يحب أن يكون Unhinged"
+  },
+  "obStart": {
+    "agreePrefix": "بمتابعتك، فإنك توافق على",
+    "agreeSuffix": ".",
+    "and": "و",
+    "getStarted": "ابدأ الآن",
+    "privacyPolicy": "سياسة الخصوصية",
+    "termsOfService": "شروط الخدمة"
+  },
+  "obStats": {
+    "continue": "متابعة",
+    "statLabel": "مستخدم تم تتبّعهم",
+    "statValue": "+400,000",
+    "subtitle": "بناءً على بيانات 2025",
+    "title": "أرقام تدعمنا"
+  },
+  "obTrackSearch": {
+    "continue": "متابعة",
+    "notFoundError": "تعذّر العثور على هذا الحساب. تحقق من اسم المستخدم من فضلك.",
+    "privacyNote": "هذا الإجراء سرّي تمامًا ولن يعرفوا به أبدًا ولن يصلهم أي إشعار.",
+    "prompt": "من تريد أن تتتبّع؟",
+    "recentActivity": "النشاط الأخير",
+    "skip": "تخطّي",
+    "timeFiveHoursAgo": "قبل 5 ساعات",
+    "timeTwoHoursAgo": "قبل ساعتين",
+    "timeYesterday": "أمس",
+    "usernamePlaceholder": "اسم المستخدم على إنستغرام",
+    "whatWeFound": "ما وجدناه"
+  },
+  "obUsernameSearch": {
+    "continue": "متابعة",
+    "notFollowingBack": "لا يتابعونك بالمقابل",
+    "notFoundError": "تعذّر العثور على هذا الحساب. تحقق من اسم المستخدم من فضلك.",
+    "prompt": "ما اسم المستخدم الخاص بك على إنستغرام؟",
+    "skip": "تخطّي",
+    "timeFiveHoursAgo": "قبل 5 ساعات",
+    "timeTwoHoursAgo": "قبل ساعتين",
+    "timeYesterday": "أمس",
+    "usernamePlaceholder": "اسم المستخدم على إنستغرام",
+    "whatWeFound": "ما وجدناه"
+  },
+  "onboarding": {
+    "age18To24": "18–24",
+    "age25To34": "25–34",
+    "age35Plus": "+35",
+    "ageQuestion": "كم عمرك؟",
+    "helpWithNotFollowingBack": "اعرف من لا يتابعك بالمقابل",
+    "helpWithQuestion": "بماذا يمكن أن يساعدك Unhinged؟",
+    "helpWithRedFlags": "إنشاء تقارير عن السلوكيات المشبوهة",
+    "helpWithStories": "مشاهدة القصص بشكل مجهول",
+    "helpWithTrack": "تتبّع المستخدمين بسرّية",
+    "helpWithWrapped": "شاهد ملخّص سنتك على إنستغرام",
+    "sourceFacebook": "فيسبوك",
+    "sourceFriends": "الأصدقاء",
+    "sourceGoogle": "جوجل",
+    "sourceInstagram": "إنستغرام",
+    "sourceOther": "أخرى",
+    "sourceQuestion": "كيف عرفت عنّا؟",
+    "sourceTiktok": "تيك توك"
+  },
+  "reconnectBanner": {
+    "reconnect": "إعادة الربط",
+    "sessionExpired": "انتهت الجلسة",
+    "subtitle": "أعد الربط للتحديث · نعرض لك آخر مزامنة"
+  },
+  "sessionExpiredSheet": {
+    "description": "انتهت جلسة إنستغرام الخاصة بك. أعد الربط لمزامنة النشاط الجديد ومواصلة تتبّع المتابِعين.",
+    "maybeLater": "ربما لاحقًا",
+    "reconnect": "إعادة ربط إنستغرام",
+    "title": "انتهت الجلسة"
+  },
+  "settings": {
+    "cancel": "إلغاء",
+    "copiedUserId": "تم نسخ معرّف المستخدم الخاص بك!",
+    "dangerZone": "منطقة الخطر",
+    "debug": "تصحيح الأخطاء",
+    "delete": "حذف",
+    "deleteAccount": "حذف الحساب",
+    "deleteMessage": "هل أنت متأكد؟ ستختفي جميع الحسابات التي تتتبّعها ونشاطها إلى الأبد.",
+    "deleteTitle": "حذف الحساب",
+    "deletingAccount": "جارٍ حذف حسابك...",
+    "disconnect": "قطع الاتصال",
+    "disconnectInstagram": "قطع الاتصال بإنستغرام",
+    "disconnectMessage": "هل أنت متأكد؟ إعادة الربط بشكل متكرر قد تبدو كنشاط تلقائي لإنستغرام (ممّا قد يجعل حسابك يبدو كأنه روبوت).",
+    "disconnectTitle": "قطع الاتصال بإنستغرام",
+    "notifications": "الإشعارات",
+    "privacyPolicy": "سياسة الخصوصية",
+    "resetOnboarding": "إعادة ضبط التعريف",
+    "support": "الدعم",
+    "termsOfService": "شروط الخدمة",
+    "title": "الإعدادات",
+    "upgradeNow": "الترقية الآن",
+    "version": "الإصدار {{version}} ({{build}})"
+  },
+  "startTracking": {
+    "continue": "متابعة",
+    "note": "ملاحظة: يجب أن يكون الحساب عامًا أو أن تكون متابعًا له حاليًا. هذا الإجراء سرّي ولن يصلهم أي إشعار.",
+    "title": "من تريد أن تتتبّع؟",
+    "usernamePlaceholder": "اسم المستخدم على إنستغرام"
+  },
+  "startedTracking": {
+    "continue": "متابعة",
+    "subtitle": "الآن ستعرف ما يحدث عندما لا يُفترض بك أن ترى.",
+    "title": "أنت تتتبّع الآن\n‎@{{username}}"
+  },
+  "tabsLayout": {
+    "home": "الرئيسية",
+    "settings": "الإعدادات",
+    "tracking": "التتبّع"
+  },
+  "trackConfirm": {
+    "rateLimitWarning": "ننصحك بإبقاء هذا الخيار مطفأً لهذا الحساب لحماية جلسة إنستغرام الخاصة بك من قيود معدّل الطلبات.",
+    "startTracking": "بدء التتبّع",
+    "syncFollowersActivity": "مزامنة نشاط المتابِعين",
+    "syncFollowingActivity": "مزامنة نشاط المتابَعين",
+    "title": "ما وجدناه"
+  },
+  "trackedAccountSync": {
+    "analyzingActivity": "جارٍ تحليل النشاط",
+    "fetchingProfile": "جارٍ جلب الملف الشخصي",
+    "fetchingProfileInformation": "جارٍ جلب معلومات الملف الشخصي...",
+    "syncingFollowersList": "جارٍ مزامنة قائمة المتابِعين",
+    "syncingFollowingList": "جارٍ مزامنة قائمة المتابَعين",
+    "syncingUsername": "جارٍ مزامنة ‎@{{username}}",
+    "syncingWithInstagram": "جارٍ المزامنة مع إنستغرام",
+    "thisMightTakeAMinute": "قد يستغرق هذا دقيقة حسب عدد المتابِعين."
+  },
+  "tracking": {
+    "addAnotherCta": "لماذا التوقّف الآن؟ كلما زاد العدد، زادت المتعة!",
+    "cancel": "إلغاء",
+    "limitReachedMessage_zero": "يمكنك تتبّع ما يصل إلى {{count}} حساب. تتبّع المزيد قد يُفعّل نظام رصد النشاط التلقائي في إنستغرام، ممّا قد يجعله يصنّف حسابك كروبوت.",
+    "limitReachedMessage_one": "يمكنك تتبّع حساب واحد ({{count}}) فقط. تتبّع المزيد قد يُفعّل نظام رصد النشاط التلقائي في إنستغرام، ممّا قد يجعله يصنّف حسابك كروبوت.",
+    "limitReachedMessage_two": "يمكنك تتبّع ما يصل إلى حسابين ({{count}}). تتبّع المزيد قد يُفعّل نظام رصد النشاط التلقائي في إنستغرام، ممّا قد يجعله يصنّف حسابك كروبوت.",
+    "limitReachedMessage_few": "يمكنك تتبّع ما يصل إلى {{count}} حسابات. تتبّع المزيد قد يُفعّل نظام رصد النشاط التلقائي في إنستغرام، ممّا قد يجعله يصنّف حسابك كروبوت.",
+    "limitReachedMessage_many": "يمكنك تتبّع ما يصل إلى {{count}} حسابًا. تتبّع المزيد قد يُفعّل نظام رصد النشاط التلقائي في إنستغرام، ممّا قد يجعله يصنّف حسابك كروبوت.",
+    "limitReachedMessage_other": "يمكنك تتبّع ما يصل إلى {{count}} حساب. تتبّع المزيد قد يُفعّل نظام رصد النشاط التلقائي في إنستغرام، ممّا قد يجعله يصنّف حسابك كروبوت.",
+    "limitReachedTitle": "تم بلوغ الحد الأقصى",
+    "notificationsDisabledMessage": "لتلقّي الإشعارات، فعّلها من إعدادات جهازك من فضلك.",
+    "notificationsDisabledTitle": "الإشعارات معطّلة",
+    "ok": "حسنًا",
+    "openSettings": "فتح الإعدادات",
+    "pausedMessage": "تم إيقاف المزامنة مؤقتًا لحماية حسابك. حاول مرة أخرى لاحقًا من فضلك.",
+    "pausedTitle": "متوقف مؤقتًا",
+    "trackAccount": "تتبّع حساب"
+  },
+  "trackingAccount": {
+    "cancel": "إلغاء",
+    "errorTitle": "خطأ",
+    "rateLimitWarning": "ننصحك بإبقاء هذا الخيار مطفأً لهذا الحساب لحماية جلسة إنستغرام الخاصة بك من قيود معدّل الطلبات.",
+    "stopTracking": "إيقاف التتبّع",
+    "stopTrackingConfirm": "هل تريد إيقاف تتبّع ‎@{{username}}؟",
+    "stopTrackingError": "تعذّر إيقاف التتبّع. حاول مرة أخرى من فضلك.",
+    "stopTrackingTitle": "إيقاف التتبّع",
+    "syncFollowersActivity": "مزامنة نشاط المتابِعين",
+    "syncFollowingActivity": "مزامنة نشاط المتابَعين",
+    "tabActivity": "النشاط",
+    "tabInsights": "الإحصاءات",
+    "tabSettings": "الإعدادات"
+  },
+  "trackingTrack": {
+    "accountNotFound": "لم يتم العثور على الحساب",
+    "accountNotReady": "الحساب غير جاهز",
+    "addFailed": "تعذّرت إضافة الحساب المتتبَّع",
+    "invalidUsername": "اسم المستخدم غير صالح",
+    "lookupFailed": "تعذّر البحث عن الحساب",
+    "notFollowing": "أنت لا تتابع هذا الحساب",
+    "pausedMessage": "تم إيقاف المزامنة مؤقتًا لحماية حسابك. حاول مرة أخرى لاحقًا من فضلك.",
+    "pausedTitle": "متوقف مؤقتًا",
+    "verifiedNotSupported": "الحسابات الموثّقة غير مدعومة بسبب قيود إنستغرام"
+  },
+  "v2Analyzing": {
+    "analyzingPrefix": "جارٍ التحليل",
+    "analyzingSuffix": " ...",
+    "checklist1": "نجمع نشاط 90 يومًا العلني.",
+    "checklist2": "نرسم خريطة من يتابعونه ومن يتابعهم",
+    "checklist3": "نتحقق من سلوكه في وقت متأخر من الليل",
+    "checklist4": "نطابق مع علامات التحذير التي لاحظتها",
+    "checklist5": "نتحقق من الأنماط ونجمع الإحصاءات",
+    "continue": "متابعة",
+    "redFlagsFound": "تم العثور على علامات مقلقة",
+    "review1Name": "جيك م.",
+    "review1Quote": "قالت حبيبتي إنها لم تعد على إنستغرام. أظهر لي Unhinged أنها تابعت 14 شابًا جديدًا في أسبوع واحد.",
+    "review2Name": "تايلور س.",
+    "review2Quote": "كان لديّ شعور داخلي، وأكّد لي Unhinged كل ما كنت أخشاه.",
+    "review3Name": "جيس ك.",
+    "review3Quote": "اكتشفت أن حبيبي كان يُعجب بمنشورات فتاة اللياقة هذه في الثانية صباحًا كل ليلة."
+  },
+  "v2MultiSelect": {
+    "continue": "متابعة"
+  },
+  "v2Onboarding": {
+    "age1824": "18–24",
+    "age2534": "25–34",
+    "age35Plus": "+35",
+    "ageQuestion": "كم عمرك؟",
+    "alarmBellsChangedPassword": "غيّر كلمة المرور",
+    "alarmBellsFitnessModels": "يتابع عارضات لياقة جديدات",
+    "alarmBellsHidesScreen": "يُخفي الشاشة عندما أقترب",
+    "alarmBellsNewFollowers": "متابِعون جدد لم أسمع بهم من قبل",
+    "alarmBellsPhone": "على هاتفه أكثر بكثير من المعتاد",
+    "alarmBellsQuestion": "ما الذي أثار\nمخاوفك؟",
+    "alarmBellsSubtitle": "حدّد كل ما يبدو مألوفًا.\nلا أحد يرى هذا سواك.",
+    "alarmBellsThirstTraps": "يُعجب بصور مثيرة لفتيات/شبان عشوائيين",
+    "alarmBellsWeirdHours": "نشِط على إنستغرام في أوقات غريبة",
+    "alarmBellsWeirdNotifications": "يتلقّى إشعارات غريبة",
+    "whoBoyfriend": "حبيبي",
+    "whoEx": "حبيبي السابق",
+    "whoFriend": "«صديق» لا أثق به حقًا",
+    "whoGirlfriend": "حبيبتي",
+    "whoQuestion": "من الذي جعلك\nتشعر بهذا؟",
+    "whoSomeoneElse": "شخص آخر",
+    "whoTalkingTo": "شخص أتحدّث معه"
+  },
+  "v2Reveal": {
+    "followers": "متابِع",
+    "following": "يتابع",
+    "headingPrefix": "ابدأ بتتبّع ",
+    "headingSuffix": "لترى:",
+    "insightFlagged": "حسابات مصنّفة كغير معتادة",
+    "insightFlaggedValue": "18",
+    "insightLastActivity": "آخر نشاط",
+    "insightLastActivityValue": "قبل 3 ساعات",
+    "insightMostActive": "الأكثر نشاطًا في وقت متأخر من الليل",
+    "insightNewFollowers": "متابِعون جدد هذا الأسبوع",
+    "insightNewFollowersValue": "24",
+    "maybeLater": "ربما لاحقًا",
+    "posts": "منشور",
+    "showMeEverything": "أرِني كل شيء",
+    "spotRedFlags": "اكتشف العلامات المقلقة 🔒"
+  },
+  "v2Start": {
+    "agreePrefix": "بمتابعتك، فإنك توافق على",
+    "agreeSuffix": ".",
+    "and": "و",
+    "cta": "أرِني ما يُخفونه",
+    "headline": "أنت تعرف مسبقًا،\nأليس كذلك؟",
+    "notification1Subtitle": "بدأ بمتابعة شخص ما",
+    "notification1Title": "الشخص الذي يهمك",
+    "notification2Subtitle": "بدأ بمتابعة صديقتك المقرّبة",
+    "notification2Title": "حبيبك السابق",
+    "notification3Subtitle": "ألغى متابعتك للتو",
+    "notification3Title": "أعز أصدقائك",
+    "privacyPolicy": "سياسة الخصوصية",
+    "subheadline": "لنتوقّف عن التخمين ونكتشف ما يحدث حقًا.",
+    "termsOfService": "شروط الخدمة"
+  },
+  "v2TrackSearch": {
+    "errorNotFound": "تعذّر العثور على هذا الحساب. تحقق من اسم المستخدم من فضلك.",
+    "placeholder": "‎@اسم المستخدم",
+    "privacyNote": "سرّي 100%. لن يروا هذا أبدًا، ولن يصلهم أي إشعار، ولن يعرفوا أبدًا. لا يمكننا إخبارهم حتى لو أردنا ذلك.",
+    "scanButton": "افحص حسابه",
+    "titleBoyfriend": "ما حساب حبيبك على\nإنستغرام؟",
+    "titleDefault": "ما حسابه على\nإنستغرام؟",
+    "titleEx": "ما حساب حبيبك السابق على\nإنستغرام؟",
+    "titleFriend": "ما حساب هذا «الصديق» على\nإنستغرام؟",
+    "titleGirlfriend": "ما حساب حبيبتك على\nإنستغرام؟",
+    "titleSomeoneElse": "ما حسابه على\nإنستغرام؟",
+    "titleTalkingTo": "ما حسابه على\nإنستغرام؟"
+  }
+}

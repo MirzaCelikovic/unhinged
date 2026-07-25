@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import { Tabs, Redirect } from 'expo-router';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
@@ -17,6 +18,7 @@ import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 import { getAgeGroup, setAgeGroup, AgeGroup } from '~/lib/storage';
 
 export default function TabLayout() {
+  const { t } = useTranslation();
   const { isLoading, isOnboarded } = useOnboarding();
   const {
     isInitialized,
@@ -123,8 +125,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="home"
           options={{
-            title: 'Home',
-            tabBarLabel: 'Home',
+            title: t('tabsLayout.home'),
+            tabBarLabel: t('tabsLayout.home'),
             tabBarIcon: ({ color }) => (
               <View>
                 <TabHomeIcon color={color} width={28} height={28} />
@@ -139,8 +141,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="tracking"
           options={{
-            title: 'Tracking',
-            tabBarLabel: 'Tracking',
+            title: t('tabsLayout.tracking'),
+            tabBarLabel: t('tabsLayout.tracking'),
             tabBarIcon: ({ color }) => (
               <View>
                 <TabTrackingIcon color={color} width={28} height={28} />
@@ -155,8 +157,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="settings"
           options={{
-            title: 'Settings',
-            tabBarLabel: 'Settings',
+            title: t('tabsLayout.settings'),
+            tabBarLabel: t('tabsLayout.settings'),
             tabBarIcon: ({ color }) => <TabSettingsIcon color={color} width={28} height={28} />,
             headerShown: false,
           }}

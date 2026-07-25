@@ -1,0 +1,431 @@
+{
+  "accountLabels": {
+    "addedFollowing": {
+      "main": "最近フォローした人",
+      "tracked": "その人が最近フォローした相手"
+    },
+    "allFollowers": {
+      "main": "フォロワー",
+      "tracked": "フォロワー"
+    },
+    "allFollowing": {
+      "main": "フォロー中",
+      "tracked": "フォロー中"
+    },
+    "followBacks": {
+      "main": "フォローバック",
+      "tracked": "フォローバック"
+    },
+    "gainedFollowers": {
+      "main": "最近あなたをフォローした人",
+      "tracked": "最近フォローした人"
+    },
+    "lostFollowers": {
+      "main": "最近あなたをフォロー解除した人",
+      "tracked": "最近その人をフォロー解除した相手"
+    },
+    "notFollowedBack": {
+      "main": "フォローバックしてない相手",
+      "tracked": "その人がフォローバックしてない相手"
+    },
+    "notFollowingBack": {
+      "main": "あなたをフォローバックしてない人",
+      "tracked": "その人をフォローバックしてない人"
+    },
+    "removedFollowing": {
+      "main": "最近フォロー解除した人",
+      "tracked": "その人が最近フォロー解除した相手"
+    }
+  },
+  "accountsList": {
+    "cancel": "キャンセル",
+    "errorTitle": "エラー",
+    "failedToFollow": "フォローに失敗しました",
+    "failedToUnfollow": "フォロー解除に失敗しました",
+    "follow": "フォロー",
+    "following": "フォロー中",
+    "loading": "読み込み中...",
+    "noAccountsFound": "アカウントが見つかりません",
+    "searchPlaceholder": "検索",
+    "unfollow": "フォロー解除",
+    "unfollowMessage": "@{{username}} のフォローを解除する？",
+    "unfollowTitle": "フォロー解除",
+    "unfollowed": "フォロー解除しました"
+  },
+  "activityFeed": {
+    "daysAgo": "{{count}}日前",
+    "hoursAgo": "{{count}}時間前",
+    "justNow": "たった今",
+    "minsAgo": "{{count}}分前",
+    "startedFollowingThem": "がその人をフォローし始めました",
+    "theyStartedFollowing": "その人がフォローし始めました",
+    "theyUnfollowed": "その人がフォロー解除しました",
+    "unfollowedThem": "がその人のフォローを解除しました",
+    "youStartedTracking": "トラッキングを開始しました"
+  },
+  "agePrompt": {
+    "question": "年齢を教えてね"
+  },
+  "home": {
+    "cancel": "キャンセル",
+    "neverSynced": "未同期",
+    "pausedMessage": "アカウントを守るため、同期を少しの間お休みしています。あとでもう一度試してね。",
+    "pausedTitle": "一時停止中",
+    "refresh": "更新",
+    "refreshMessage": "自動リクエストが多すぎるとアカウントがボットっぽく見られてしまうことがあるので、更新は1日1回、またはフォロワー数の変化をお知らせしたときにするのがおすすめだよ。",
+    "refreshTitle": "更新",
+    "updatedDaysAgo_other": "{{count}}日前に更新",
+    "updatedHrsAgo_other": "{{count}}時間前に更新",
+    "updatedJustNow": "たった今更新",
+    "updatedMinsAgo_other": "{{count}}分前に更新"
+  },
+  "initialSync": {
+    "analyzingActivity": "アクティビティを分析中",
+    "fetchingProfile": "プロフィールを取得中",
+    "fetchingProfileInformation": "プロフィール情報を取得中...",
+    "syncing": "同期中...",
+    "syncingFollowersList": "フォロワーリストを同期中",
+    "syncingFollowingList": "フォロー中リストを同期中",
+    "syncingWithInstagram": "Instagramと同期中",
+    "thisMightTakeAMinute": "フォロワーの数によっては少し時間がかかることがあるよ。"
+  },
+  "instagram": {
+    "cancel": "キャンセル",
+    "connectTitle": "Instagramを連携",
+    "needsBreakMessage": "アカウントを守るため、同期を約30分お休みしています。あとでもう一度試してね。",
+    "needsBreakTitle": "Instagramがひと休み中"
+  },
+  "instagramCard": {
+    "followers": "フォロワー",
+    "following": "フォロー中",
+    "posts": "投稿"
+  },
+  "newActivityBanner": {
+    "newActivityFound": "Instagramの新しいアクティビティが見つかったよ",
+    "refresh": "更新"
+  },
+  "notConnected": {
+    "connectInstagram": "Instagramを連携",
+    "subtitle": "Instagramを連携して、見られずに見ちゃおう。",
+    "title": "真実まであと一歩。"
+  },
+  "notTracking": {
+    "subtitle": "最初のアカウントをトラッキングしよう",
+    "title": "トラッキング中のアカウントはありません",
+    "trackAccount": "アカウントをトラッキング"
+  },
+  "notifications": {
+    "accountActivity": "自分のアカウントに新しいアクティビティがあったとき",
+    "marketing": "製品のアップデートやキャンペーン",
+    "title": "通知",
+    "trackedActivity": "トラッキング中の人に新しいアクティビティがあったとき"
+  },
+  "notificationsSheet": {
+    "benefit1": "気になるあの人が誰かをフォローした瞬間にわかる",
+    "benefit2": "あの元カレ・元カノに新しいフォロワーがついたのがわかる",
+    "benefit3": "フォロー解除された瞬間をキャッチ",
+    "benefit4": "怪しい動きを見逃さない",
+    "enableNotifications": "通知をオンにする",
+    "maybeLater": "あとで",
+    "title": "何も見逃さない 👀"
+  },
+  "obComparison": {
+    "continue": "次へ",
+    "feature": "機能",
+    "featureEncryptedIgConnection": "暗号化されたIG連携",
+    "featureFollowerFollowBackAlerts": "フォロー・フォローバックの通知",
+    "featureIdentifyRedFlagBehavior": "危険サインの検出",
+    "featureThirstTrapWarnings": "アピール投稿の警告",
+    "featureTrackPrivateUsers": "非公開ユーザーのトラッキング",
+    "other": "その他",
+    "title": "他のどのアプリよりも優秀だよ"
+  },
+  "obConnect": {
+    "bankSecurityBody": "安全に同期。Instagramにログインしてね。あなたの接続は銀行レベルの暗号化で守られてるよ。",
+    "bankSecurityTitle": "銀行レベルのセキュリティ",
+    "connectInstagram": "Instagramを連携",
+    "dataSecure": "あなたのデータは完全に安全",
+    "discreetBody": "あなたがUnhingedを使っていることは誰にもバレないよ。Unhingedでのアクティビティはあなただけのもの。",
+    "discreetTitle": "こっそり&プライベート",
+    "secureLocalBody": "設計からしてプライベート。あなたのデータは端末の中に安全に保存されて、すべてあなたのコントロール下にあるよ。私たちにもそれを見る鍵はないんだ。",
+    "secureLocalTitle": "安全＆ローカル保存",
+    "skip": "スキップ",
+    "title": "あなたが見ていることは絶対にバレない"
+  },
+  "obHelp1": {
+    "body": "誰がその人をフォローし始めたか、誰がフォローバックしたかがわかるよ。",
+    "continue": "次へ",
+    "heading": "こんな風に役立つよ",
+    "title": "こっそり人をトラッキング"
+  },
+  "obHelp2": {
+    "body": "フォローを整理して、ワンタップでフォロー解除できるよ",
+    "continue": "次へ",
+    "heading": "こんな風に役立つよ",
+    "title": "あなたをフォローバックしてない人がわかる"
+  },
+  "obNotificationConsent": {
+    "skip": "最新情報はいらない",
+    "stayUpToDate": "最新情報を受け取る",
+    "subtitle": "誰かにフォロー解除されたときなどに通知するよ",
+    "title": "今起きていることを\n見逃さないで"
+  },
+  "obReview": {
+    "continue": "次へ",
+    "subtitle": "ユーザーの声を見てみよう",
+    "title": "みんなUnhingedに夢中"
+  },
+  "obStart": {
+    "agreePrefix": "続けると、次に同意したことになるよ：",
+    "agreeSuffix": "。",
+    "and": "と",
+    "getStarted": "始める",
+    "privacyPolicy": "プライバシーポリシー",
+    "termsOfService": "利用規約"
+  },
+  "obStats": {
+    "continue": "次へ",
+    "statLabel": "トラッキングされたユーザー数",
+    "statValue": "400,000人以上",
+    "subtitle": "2025年のデータに基づく",
+    "title": "数字が証明してるよ"
+  },
+  "obTrackSearch": {
+    "continue": "次へ",
+    "notFoundError": "このアカウントが見つかりませんでした。ユーザーネームを確認してね。",
+    "privacyNote": "この操作は完全にプライベートで、相手に知られたり通知されたりすることは絶対にないよ。",
+    "prompt": "誰をトラッキングしたい？",
+    "recentActivity": "最近のアクティビティ",
+    "skip": "スキップ",
+    "timeFiveHoursAgo": "5時間前",
+    "timeTwoHoursAgo": "2時間前",
+    "timeYesterday": "昨日",
+    "usernamePlaceholder": "Instagramのユーザーネーム",
+    "whatWeFound": "見つかったもの"
+  },
+  "obUsernameSearch": {
+    "continue": "次へ",
+    "notFollowingBack": "あなたをフォローバックしてない人",
+    "notFoundError": "このアカウントが見つかりませんでした。ユーザーネームを確認してね。",
+    "prompt": "あなたのInstagramのユーザーネームは？",
+    "skip": "スキップ",
+    "timeFiveHoursAgo": "5時間前",
+    "timeTwoHoursAgo": "2時間前",
+    "timeYesterday": "昨日",
+    "usernamePlaceholder": "Instagramのユーザーネーム",
+    "whatWeFound": "見つかったもの"
+  },
+  "onboarding": {
+    "age18To24": "18〜24歳",
+    "age25To34": "25〜34歳",
+    "age35Plus": "35歳以上",
+    "ageQuestion": "年齢を教えてね",
+    "helpWithNotFollowingBack": "あなたをフォローバックしてない人を見る",
+    "helpWithQuestion": "Unhingedで何をしたい？",
+    "helpWithRedFlags": "危険サインのレポートを作成",
+    "helpWithStories": "ストーリーを匿名で見る",
+    "helpWithTrack": "こっそりユーザーをトラッキング",
+    "helpWithWrapped": "IGのまとめを見る",
+    "sourceFacebook": "Facebook",
+    "sourceFriends": "友達",
+    "sourceGoogle": "Google",
+    "sourceInstagram": "Instagram",
+    "sourceOther": "その他",
+    "sourceQuestion": "どこで知った？",
+    "sourceTiktok": "TikTok"
+  },
+  "reconnectBanner": {
+    "reconnect": "再連携",
+    "sessionExpired": "セッションの有効期限が切れました",
+    "subtitle": "再連携して更新 · 前回の同期を表示中"
+  },
+  "sessionExpiredSheet": {
+    "description": "Instagramのセッションの有効期限が切れました。再連携して新しいアクティビティを同期し、フォロワーのトラッキングを続けよう。",
+    "maybeLater": "あとで",
+    "reconnect": "Instagramを再連携",
+    "title": "セッションの有効期限が切れました"
+  },
+  "settings": {
+    "cancel": "キャンセル",
+    "copiedUserId": "ユーザーIDをコピーしたよ！",
+    "dangerZone": "危険な操作",
+    "debug": "デバッグ",
+    "delete": "削除",
+    "deleteAccount": "アカウントを削除",
+    "deleteMessage": "本当にいい？トラッキング中のアカウントとそのアクティビティが全部消えて、元に戻せなくなるよ。",
+    "deleteTitle": "アカウントを削除",
+    "deletingAccount": "アカウントを削除中...",
+    "disconnect": "連携解除",
+    "disconnectInstagram": "Instagramの連携を解除",
+    "disconnectMessage": "本当にいい？何度も再連携すると、Instagramに自動アクティビティ（ボットっぽい動き）と見られることがあるよ。",
+    "disconnectTitle": "Instagramの連携を解除",
+    "notifications": "通知",
+    "privacyPolicy": "プライバシーポリシー",
+    "resetOnboarding": "オンボーディングをリセット",
+    "support": "サポート",
+    "termsOfService": "利用規約",
+    "title": "設定",
+    "upgradeNow": "今すぐアップグレード",
+    "version": "v{{version}} ({{build}})"
+  },
+  "startTracking": {
+    "continue": "次へ",
+    "note": "注意：プロフィールが公開されているか、あなたが現在その人をフォローしている必要があるよ。この操作はプライベートで、相手に通知されることはないよ。",
+    "title": "誰をトラッキングしたい？",
+    "usernamePlaceholder": "Instagramのユーザーネーム"
+  },
+  "startedTracking": {
+    "continue": "次へ",
+    "subtitle": "これで、見えないはずのときに何が起きているかわかるよ。",
+    "title": "@{{username}} を\nトラッキング中"
+  },
+  "tabsLayout": {
+    "home": "ホーム",
+    "settings": "設定",
+    "tracking": "トラッキング"
+  },
+  "trackConfirm": {
+    "rateLimitWarning": "このアカウントではオフのままにしておくのがおすすめだよ。Instagramのセッションをレート制限から守れるからね。",
+    "startTracking": "トラッキング開始",
+    "syncFollowersActivity": "フォロワーのアクティビティを同期",
+    "syncFollowingActivity": "フォロー中のアクティビティを同期",
+    "title": "見つかったもの"
+  },
+  "trackedAccountSync": {
+    "analyzingActivity": "アクティビティを分析中",
+    "fetchingProfile": "プロフィールを取得中",
+    "fetchingProfileInformation": "プロフィール情報を取得中...",
+    "syncingFollowersList": "フォロワーリストを同期中",
+    "syncingFollowingList": "フォロー中リストを同期中",
+    "syncingUsername": "@{{username}} を同期中",
+    "syncingWithInstagram": "Instagramと同期中",
+    "thisMightTakeAMinute": "フォロワーの数によっては少し時間がかかることがあるよ。"
+  },
+  "tracking": {
+    "addAnotherCta": "ここでやめる理由なんてないよね？多いほど面白い！",
+    "cancel": "キャンセル",
+    "limitReachedMessage_other": "トラッキングできるのは最大{{count}}アカウントまでだよ。これ以上追加するとInstagramの自動アクティビティ検出が作動して、アカウントがボットとしてフラグ付けされることがあるよ。",
+    "limitReachedTitle": "上限に達しました",
+    "notificationsDisabledMessage": "通知を受け取るには、端末の設定で通知をオンにしてね。",
+    "notificationsDisabledTitle": "通知がオフになっています",
+    "ok": "OK",
+    "openSettings": "設定を開く",
+    "pausedMessage": "アカウントを守るため、同期を少しの間お休みしています。あとでもう一度試してね。",
+    "pausedTitle": "一時停止中",
+    "trackAccount": "アカウントをトラッキング"
+  },
+  "trackingAccount": {
+    "cancel": "キャンセル",
+    "errorTitle": "エラー",
+    "rateLimitWarning": "このアカウントではオフのままにしておくのがおすすめだよ。Instagramのセッションをレート制限から守れるからね。",
+    "stopTracking": "トラッキング停止",
+    "stopTrackingConfirm": "@{{username}} のトラッキングを停止する？",
+    "stopTrackingError": "トラッキングの停止に失敗しました。もう一度試してね。",
+    "stopTrackingTitle": "トラッキング停止",
+    "syncFollowersActivity": "フォロワーのアクティビティを同期",
+    "syncFollowingActivity": "フォロー中のアクティビティを同期",
+    "tabActivity": "アクティビティ",
+    "tabInsights": "インサイト",
+    "tabSettings": "設定"
+  },
+  "trackingTrack": {
+    "accountNotFound": "アカウントが見つかりません",
+    "accountNotReady": "アカウントの準備ができていません",
+    "addFailed": "トラッキング中アカウントの追加に失敗しました",
+    "invalidUsername": "無効なユーザーネームです",
+    "lookupFailed": "アカウントの検索に失敗しました",
+    "notFollowing": "このアカウントをフォローしていません",
+    "pausedMessage": "アカウントを守るため、同期を少しの間お休みしています。あとでもう一度試してね。",
+    "pausedTitle": "一時停止中",
+    "verifiedNotSupported": "Instagramの制限により、認証済みアカウントには対応していません"
+  },
+  "v2Analyzing": {
+    "analyzingPrefix": "分析中",
+    "analyzingSuffix": " ...",
+    "checklist1": "90日分の公開アクティビティを取得中。",
+    "checklist2": "フォロー／フォロワーの関係をマッピング中",
+    "checklist3": "深夜の行動をクロスチェック中",
+    "checklist4": "あなたが気づいた警告サインと照合中",
+    "checklist5": "パターンを検証してインサイトを収集中",
+    "continue": "次へ",
+    "redFlagsFound": "危険サインを検出",
+    "review1Name": "Jake M",
+    "review1Quote": "彼女はもうIGはやってないって言ってたのに。Unhingedを見たら、1週間で14人の新しい男をフォローしてた。",
+    "review2Name": "Taylor S",
+    "review2Quote": "嫌な予感がしてたんだけど、Unhingedが怖れてたことを全部裏付けてくれた。",
+    "review3Name": "Jess K",
+    "review3Quote": "彼氏が毎晩2時にこのフィットネス女子の投稿にいいねしてたのが判明した。"
+  },
+  "v2MultiSelect": {
+    "continue": "次へ"
+  },
+  "v2Onboarding": {
+    "age1824": "18〜24歳",
+    "age2534": "25〜34歳",
+    "age35Plus": "35歳以上",
+    "ageQuestion": "年齢を教えてね",
+    "alarmBellsChangedPassword": "パスワードを変えた",
+    "alarmBellsFitnessModels": "新しいフィットネスモデルをフォローしてる",
+    "alarmBellsHidesScreen": "近づくと画面を隠す",
+    "alarmBellsNewFollowers": "聞いたことのない新しいフォロワーがいる",
+    "alarmBellsPhone": "いつもよりずっとスマホをいじってる",
+    "alarmBellsQuestion": "何が警戒心を\n刺激してるの？",
+    "alarmBellsSubtitle": "当てはまるものを全部チェックしてね。\n見えるのはあなただけだよ。",
+    "alarmBellsThirstTraps": "知らない女子／男子のアピール投稿にいいねしてる",
+    "alarmBellsWeirdHours": "変な時間にIGでアクティブ",
+    "alarmBellsWeirdNotifications": "変な通知が来てる",
+    "whoBoyfriend": "彼氏",
+    "whoEx": "元カレ・元カノ",
+    "whoFriend": "あんまり信用できない「友達」",
+    "whoGirlfriend": "彼女",
+    "whoQuestion": "誰のことで\nそう感じてるの？",
+    "whoSomeoneElse": "他の誰か",
+    "whoTalkingTo": "気になってる人"
+  },
+  "v2Reveal": {
+    "followers": "フォロワー",
+    "following": "フォロー中",
+    "headingPrefix": "トラッキングを始めて ",
+    "headingSuffix": "こんなことがわかるよ：",
+    "insightFlagged": "怪しいとフラグ付けされたアカウント",
+    "insightFlaggedValue": "18",
+    "insightLastActivity": "最後のアクティビティ",
+    "insightLastActivityValue": "3時間前",
+    "insightMostActive": "深夜に最もアクティブ",
+    "insightNewFollowers": "今週の新しいフォロワー",
+    "insightNewFollowersValue": "24",
+    "maybeLater": "あとで",
+    "posts": "投稿",
+    "showMeEverything": "全部見せて",
+    "spotRedFlags": "危険サインを見つけよう 🔒"
+  },
+  "v2Start": {
+    "agreePrefix": "続けると、次に同意したことになるよ：",
+    "agreeSuffix": "。",
+    "and": "と",
+    "cta": "隠してることを見せて",
+    "headline": "もう気づいてる\nんじゃない？",
+    "notification1Subtitle": "が誰かをフォローし始めました",
+    "notification1Title": "気になるあの人",
+    "notification2Subtitle": "があなたの親友をフォローし始めました",
+    "notification2Title": "元カレ・元カノ",
+    "notification3Subtitle": "があなたのフォローを解除しました",
+    "notification3Title": "あなたの親友",
+    "privacyPolicy": "プライバシーポリシー",
+    "subheadline": "もう推測はやめて、本当に何が起きてるのか確かめよう。",
+    "termsOfService": "利用規約"
+  },
+  "v2TrackSearch": {
+    "errorNotFound": "このアカウントが見つかりませんでした。ユーザーネームを確認してね。",
+    "placeholder": "@ユーザーネーム",
+    "privacyNote": "100%プライベート。相手にこれが見られることも、通知が届くことも、知られることも絶対にないよ。私たちが伝えたくても伝えられないんだ。",
+    "scanButton": "アカウントをスキャン",
+    "titleBoyfriend": "彼氏のInstagramは？",
+    "titleDefault": "その人のInstagramは？",
+    "titleEx": "元カレ・元カノのInstagramは？",
+    "titleFriend": "その「友達」のInstagramは？",
+    "titleGirlfriend": "彼女のInstagramは？",
+    "titleSomeoneElse": "その人のInstagramは？",
+    "titleTalkingTo": "その人のInstagramは？"
+  }
+}
