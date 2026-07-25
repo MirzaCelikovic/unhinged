@@ -1,8 +1,18 @@
+import * as SQLite from 'expo-sqlite';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useQuery } from '@tanstack/react-query';
+import { useAnalytics } from '~/contexts/AnalyticsContext';
+import { getFollowBackCount, getFollowBacks } from './followBacks';
+
+export type { FollowBack, FollowBackConnectionType } from './followBacks';
+export { getFollowBacks, getFollowBackCount } from './followBacks';
 
 // Number of days to consider as "recent" for activity
 const RECENT_DAYS = 30;
+
+// COM: "Follow backs" (mutual-follow) surfacing is flag-gated. Off by default so
+// existing stats are unchanged until the Amplitude experiment turns it on.
+const FOLLOW_BACKS_FLAG = 'follow_backs';
 
 export type AccountListType =
   | 'addedFollowing'
@@ -11,6 +21,7 @@ export type AccountListType =
   | 'lostFollowers'
   | 'notFollowingBack'
   | 'notFollowedBack'
+  | 'followBacks'
   | 'allFollowers'
   | 'allFollowing';
 
@@ -21,6 +32,7 @@ export const ACCOUNT_LIST_LABELS: Record<AccountListType, { main: string; tracke
   lostFollowers: { main: 'Recently unfollowed you', tracked: 'Recently unfollowed them' },
   notFollowedBack: { main: "You aren't following back", tracked: 'They are not following back' },
   notFollowingBack: { main: 'Not following you back', tracked: 'Not following them back' },
+  followBacks: { main: 'Follow backs', tracked: 'Follow backs' },
   allFollowers: { main: 'Followers', tracked: 'Followers' },
   allFollowing: { main: 'Following', tracked: 'Following' },
 };
@@ -36,10 +48,15 @@ export interface FollowerStats {
   lostFollowers: number;
   notFollowingBack: number;
   notFollowedBack: number;
+  followBacks: number;
   lastSyncedAt: string | null;
 }
 
-const fetchFollowerStats = async (db: any, userId: string): Promise<FollowerStats> => {
+const fetchFollowerStats = async (
+  db: SQLite.SQLiteDatabase,
+  userId: string,
+  followBacksEnabled: boolean
+): Promise<FollowerStats> => {
   // Get last sync time
   const syncState = await db.getFirstAsync<{ last_synced_at: string }>(
     'SELECT last_synced_at FROM sync_state WHERE instagram_user_id = ? ORDER BY last_synced_at DESC LIMIT 1',
@@ -101,6 +118,9 @@ const fetchFollowerStats = async (db: any, userId: string): Promise<FollowerStat
   // notFollowedBack: Followers this account doesn't follow back
   const notFollowedBack = followers.filter(f => !followingIds.has(f.follower_user_id)).length;
 
+  // followBacks: new mutual follows (flag-gated; 0 when the experiment is off)
+  const followBacks = followBacksEnabled ? await getFollowBackCount(db, userId) : 0;
+
   return {
     addedFollowing,
     removedFollowing,
@@ -108,16 +128,19 @@ const fetchFollowerStats = async (db: any, userId: string): Promise<FollowerStat
     lostFollowers,
     notFollowingBack,
     notFollowedBack,
+    followBacks,
     lastSyncedAt,
   };
 };
 
 export const useFollowerStats = (userId: string | null, latestActivityDate?: string | null) => {
   const db = useSQLiteContext();
+  const { getVariant } = useAnalytics();
+  const followBacksEnabled = getVariant(FOLLOW_BACKS_FLAG) === 'on';
 
   const query = useQuery<FollowerStats>({
-    queryKey: ['followerStats', userId],
-    queryFn: () => fetchFollowerStats(db, userId!),
+    queryKey: ['followerStats', userId, followBacksEnabled],
+    queryFn: () => fetchFollowerStats(db, userId!, followBacksEnabled),
     enabled: !!userId,
     initialData: {
       addedFollowing: 0,
@@ -126,6 +149,7 @@ export const useFollowerStats = (userId: string | null, latestActivityDate?: str
       lostFollowers: 0,
       notFollowingBack: 0,
       notFollowedBack: 0,
+      followBacks: 0,
       lastSyncedAt: null,
     },
   });
@@ -151,7 +175,7 @@ export interface AccountListItem {
 }
 
 const fetchAccountList = async (
-  db: any,
+  db: SQLite.SQLiteDatabase,
   userId: string,
   type: AccountListType
 ): Promise<AccountListItem[]> => {
@@ -273,6 +297,17 @@ const fetchAccountList = async (
         [userId]
       );
       return results.map(r => ({ id: r.followed_user_id, username: r.username || r.followed_user_id, full_name: r.full_name, profile_pic_url: r.profile_pic_url }));
+    }
+
+    case 'followBacks': {
+      // New mutual follows, enriched with profile metadata.
+      const followBacks = await getFollowBacks(db, userId);
+      return followBacks.map(fb => ({
+        id: fb.user_id,
+        username: fb.username || fb.user_id,
+        full_name: fb.full_name,
+        profile_pic_url: fb.profile_pic_url,
+      }));
     }
 
     default:

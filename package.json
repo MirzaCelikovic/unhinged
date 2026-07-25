@@ -5,6 +5,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "start": "expo start",
+    "build": "tsc -p tsconfig.build.json",
+    "test": "tsc -p tsconfig.build.json && node dist-test/lib/followBacks.test.js",
     "lint": "eslint \"**/*.{js,jsx,ts,tsx}\" && prettier -c \"**/*.{js,jsx,ts,tsx,json}\"",
     "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier \"**/*.{js,jsx,ts,tsx,json}\" --write",
     "prebuild:ios": "expo prebuild --platform ios",
