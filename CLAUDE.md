@@ -169,6 +169,33 @@ npm run build:ios       # Build iOS locally via EAS
 npm run submit:ios      # Submit to App Store
 ```
 
+## Localization / i18n
+
+The app has **no i18n framework installed** — all UI copy is hardcoded English string literals
+directly in JSX/TS. Adding one is a from-scratch setup, not a wire-up of an existing catalog.
+
+**Onboarding has TWO live flows, gated by an Amplitude experiment (`getVariant('onboarding')` in
+`app/start.tsx`), not one.** Variant `'v2'` renders `components/onboarding-v2/OnboardingV2.tsx`
+(+ `AnalyzingScreen`, `MultiSelectQuestion`, `RevealScreen`, `StartScreen`, `TrackSearch`); every
+other variant renders `components/Onboarding.tsx` (+ `components/onboarding/`: `StartScreen`,
+`UsernameSearch`, `ChoiceQuestion`, `TrackSearch`, `HelpScreen1`/`HelpScreen2`,
+`NotificationConsent`, `ReviewScreen`, `ComparisonScreen`, `ConnectScreen`, `StatsScreen`). **Both
+are live production code, not one superseding the other — extract strings from both.**
+
+User-facing copy elsewhere concentrates in:
+- `app/(tabs)/home/`, `app/(tabs)/tracking/`, `app/(tabs)/settings/`, `app/start.tsx` — Expo
+  Router screens
+- `components/` (top level) — cards, banners, sheets, prompts: e.g. `SessionExpiredSheet.tsx`,
+  `ReconnectBanner.tsx`, `NotConnected.tsx`, `NotTracking.tsx`, `AgePrompt.tsx`,
+  `NotificationsSheet.tsx`, `ActivityList.tsx`/`ActivityFeed.tsx`, `AccountCard.tsx`/`InstagramCard.tsx`
+- `contexts/InstagramContext.tsx` — session-expiration / reconnect prompts
+- `contexts/RevenueCatContext.tsx` — paywall copy (shown on launch for non-subscribers)
+
+**Not user-facing** — leave untranslated: everything in `lib/` (business logic, no rendered
+copy), the SQL schema strings in `lib/database.ts`, the JS injected into the Instagram WebView in
+`InstagramContext.tsx`'s `instagramAPI` const (developer-facing, never rendered to the user),
+analytics/event names, and log/console output throughout.
+
 ## Important Notes
 
 1. **Rate Limiting:** Both GraphQL and REST paths share the COM-26 pacing config (cap-2 scheduler + jittered inter-page delays) — the old "REST has no delay" note was stale. **Following defaults to the REST endpoint** (COM-39) because Instagram soft-blocks the GraphQL `query_hash` following query (`400 {"spam":true}`); followers still use GraphQL. Both are flag-gated (`ig_following_method` / `ig_followers_method`). Users are warned about refreshing too frequently.
