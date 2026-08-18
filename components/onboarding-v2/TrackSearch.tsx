@@ -7,14 +7,15 @@ import Unhinged from '~/assets/unhinged_2.svg';
 import { Instagram } from '~/lib/types';
 import { fetchPublicProfile } from '~/lib/fetchPublicProfile';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
+import { useTranslation } from 'react-i18next';
 
 const WHO_TITLES: Record<string, string> = {
-  boyfriend: "What\u2019s your boyfriend\u2019s\nInstagram?",
-  girlfriend: "What\u2019s your girlfriend\u2019s\nInstagram?",
-  ex: "What\u2019s your ex\u2019s\nInstagram?",
-  talking_to: "What\u2019s their\nInstagram?",
-  friend: "What\u2019s this \u2018friend\u2019s\u2019\nInstagram?",
-  someone_else: "What\u2019s their\nInstagram?",
+  boyfriend: 'whoTitles.boyfriend',
+  girlfriend: 'whoTitles.girlfriend',
+  ex: 'whoTitles.ex',
+  talking_to: 'whoTitles.talkingTo',
+  friend: 'whoTitles.friend',
+  someone_else: 'whoTitles.someoneElse',
 };
 
 function extractUsername(input: string): string {
@@ -44,12 +45,13 @@ export default function TrackSearch({ whoAnswer, onNext }: TrackSearchProps) {
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState('');
   const { track } = useAnalytics();
+  const { t } = useTranslation('onboardingV2');
 
   const svgOpacity = useSharedValue(1);
   const svgScale = useSharedValue(1);
   const svgMarginTop = useSharedValue(0);
 
-  const title = WHO_TITLES[whoAnswer] || "What\u2019s their\nInstagram?";
+  const title = WHO_TITLES[whoAnswer] || 'whoTitles.default';
 
   useEffect(() => {
     const keyboardWillShowListener = Keyboard.addListener(
@@ -94,7 +96,7 @@ export default function TrackSearch({ whoAnswer, onNext }: TrackSearchProps) {
       track(Events.TRACK_SEARCH_COMPLETED);
       onNext(cleaned, profile);
     } catch (err) {
-      setError('Could not find this account. Please check the username.');
+      setError(t('errors.notFound'));
     } finally {
       setIsSearching(false);
     }
@@ -109,11 +111,11 @@ export default function TrackSearch({ whoAnswer, onNext }: TrackSearchProps) {
           <Unhinged width={140} height={140} />
         </Animated.View>
         <Text className="mt-6 px-2 text-center font-roboto-extrablack text-4xl tracking-tighter">
-          {title}
+          {t(title)}
         </Text>
         <View className="mt-8 w-full">
           <TextField
-            placeholder="@username"
+            placeholder={t('search.placeholder')}
             value={username}
             onChangeText={(text) => {
               setUsername(text);
@@ -127,13 +129,13 @@ export default function TrackSearch({ whoAnswer, onNext }: TrackSearchProps) {
           />
         </View>
         <Text className="mt-4 px-2 text-center font-roboto text-sm text-gray-600">
-          100% private. They will never see this, never get a notification, never know. We can't tell them even if we wanted to.
+          {t('search.privacy')}
         </Text>
       </View>
 
       <View className="px-4 pb-8">
         <Button
-          label="Scan their account"
+          label={t('search.cta')}
           loading={isSearching}
           onPress={handleContinue}
           disabled={!username.trim()}

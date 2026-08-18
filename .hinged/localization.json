@@ -1,0 +1,8 @@
+{
+  "sourceLocale": "en",
+  "locales": ["en", "de", "fr", "ar", "ja"],
+  "tone": "informal",
+  "doNotTranslate": ["Unhinged", "Instagram"],
+  "framework": "i18next",
+  "resourcePath": "lib/i18n/locales/{locale}/{ns}.json"
+}

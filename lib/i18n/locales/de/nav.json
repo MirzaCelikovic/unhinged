@@ -1,0 +1,9 @@
+{
+  "tabs.home": "Start",
+  "tabs.tracking": "Tracking",
+  "tabs.settings": "Einstellungen",
+  "homeListTitle.notFollowingBack": "Folgen dir nicht zurück",
+  "homeListTitle.notFollowingYouBack": "Du folgst nicht zurück",
+  "homeListTitle.recentlyUnfollowed": "Sind dir kürzlich entfolgt",
+  "homeListTitle.recentlyFollowed": "Sind dir kürzlich gefolgt"
+}

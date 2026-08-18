@@ -1,0 +1,9 @@
+{
+  "tabs.home": "Accueil",
+  "tabs.tracking": "Suivi",
+  "tabs.settings": "Réglages",
+  "homeListTitle.notFollowingBack": "Ne te suivent pas en retour",
+  "homeListTitle.notFollowingYouBack": "Tu ne suis pas en retour",
+  "homeListTitle.recentlyUnfollowed": "Se sont récemment désabonnés",
+  "homeListTitle.recentlyFollowed": "T’ont récemment suivi"
+}

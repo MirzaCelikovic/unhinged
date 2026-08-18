@@ -1,0 +1,79 @@
+{
+  "actions.continue": "متابعة",
+  "actions.skip": "تخطّي",
+
+  "source.question": "كيف عثرت علينا؟",
+  "source.friends": "الأصدقاء",
+  "source.tiktok": "TikTok",
+  "source.instagram": "Instagram",
+  "source.facebook": "Facebook",
+  "source.google": "Google",
+  "source.other": "أخرى",
+
+  "age.question": "كم عمرك؟",
+  "age.range18_24": "18–24",
+  "age.range25_34": "25–34",
+  "age.range35Plus": "35+",
+
+  "helpWith.question": "بماذا يمكن أن يساعدك Unhinged؟",
+  "helpWith.track": "تتبّع المستخدمين بخصوصية",
+  "helpWith.notFollowingBack": "معرفة من لا يتابعك بالمقابل",
+  "helpWith.stories": "مشاهدة القصص بشكل مجهول",
+  "helpWith.redFlags": "إنشاء تقارير عن الإشارات التحذيرية",
+  "helpWith.wrapped": "شاهد ملخّص Instagram الخاص بك",
+
+  "search.whatWeFound": "ما وجدناه",
+  "search.usernamePlaceholder": "اسم المستخدم على Instagram",
+  "search.notFound": "تعذّر العثور على هذا الحساب. يُرجى التحقّق من اسم المستخدم.",
+
+  "usernameSearch.title": "ما هو اسم المستخدم الخاص بك على Instagram؟",
+  "usernameSearch.notFollowingBack": "لا يتابعك بالمقابل",
+
+  "trackSearch.title": "من الذي تريد تتبّعه؟",
+  "trackSearch.privateNote": "هذا الإجراء خاص تماماً ولن يعرفوا به أو يتم إشعارهم أبداً.",
+  "trackSearch.recentActivity": "النشاط الأخير",
+  "trackSearch.time.yesterday": "أمس",
+  "trackSearch.time.twoHoursAgo": "قبل ساعتين",
+  "trackSearch.time.fiveHoursAgo": "قبل 5 ساعات",
+
+  "help.header": "إليك كيف سنساعدك",
+  "help1.title": "تتبّع الأشخاص بخصوصية",
+  "help1.body": "شاهد من يبدأ بمتابعتهم ومن يتابعهم بالمقابل.",
+  "help2.title": "معرفة من لا يتابعك بالمقابل",
+  "help2.body": "نظّف قائمة متابَعيك وألغِ متابعة المستخدمين بنقرة واحدة",
+
+  "notifications.title": "لا تفوّت\nما يحدث",
+  "notifications.subtitle": "احصل على إشعار عندما يلغي أحدهم متابعتك والمزيد",
+  "notifications.enable": "ابقَ على اطّلاع",
+  "notifications.skip": "لا أريد البقاء على اطّلاع",
+
+  "review.title": "الجميع يحب Unhinged",
+  "review.subtitle": "شاهد ما يقوله مستخدمونا",
+
+  "stats.title": "إحصاءات تؤكّد كلامنا",
+  "stats.subtitle": "استناداً إلى بيانات 2025",
+  "stats.count": "400,000+",
+  "stats.usersTracked": "مستخدمون تم تتبّعهم",
+
+  "comparison.title": "نحن أفضل من أي تطبيق آخر",
+  "comparison.featureHeader": "الميزة",
+  "comparison.otherHeader": "غيرنا",
+  "comparison.features.trackPrivateUsers": "تتبّع المستخدمين الخاصّين",
+  "comparison.features.encryptedIgConnection": "اتصال Instagram مُشفّر",
+  "comparison.features.identifyRedFlagBehavior": "تحديد السلوك المُقلِق",
+  "comparison.features.thirstTrapWarnings": "تنبيهات الصور المُغرية",
+  "comparison.features.followerFollowBackAlerts": "تنبيهات المتابعة المتبادَلة",
+
+  "connect.title": "لن يعرفوا أبداً أنك تراقب",
+  "connect.secureSubtitle": "بياناتك آمنة تماماً",
+  "connect.bankSecurity.title": "حماية بمستوى البنوك",
+  "connect.bankSecurity.body": "مزامنة محمية. سجّل الدخول إلى Instagram. اتصالك مُؤمَّن بتشفير بمستوى البنوك.",
+  "connect.secureLocal.title": "آمن ومحلي",
+  "connect.secureLocal.body": "خاص بحكم التصميم. تبقى بياناتك بأمان على جهازك، ما يمنحك تحكّماً كاملاً. ببساطة لا نملك المفاتيح اللازمة لرؤيتها.",
+  "connect.discreet.title": "سرّي وخاص",
+  "connect.discreet.body": "لا أحد يعرف أنك تستخدم Unhinged. يبقى نشاطك على Unhinged معروفاً لك وحدك.",
+  "connect.connectInstagram": "ربط Instagram",
+
+  "start.getStarted": "ابدأ الآن",
+  "start.legal": "بالمتابعة، فإنك توافق على <terms>شروط الخدمة</terms> و<privacy>سياسة الخصوصية</privacy> الخاصة بنا."
+}

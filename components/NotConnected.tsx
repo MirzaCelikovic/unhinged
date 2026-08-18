@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import Circles from '~/assets/circles.svg';
 import Instagram from '~/assets/instagram.svg';
 import Button from '~/components/Button';
@@ -9,6 +10,7 @@ interface NotConnectedProps {
 }
 
 export default function NotConnected({ onConnect }: NotConnectedProps) {
+  const { t } = useTranslation('home');
   return (
     <SafeAreaView className="flex-1 bg-background">
       <View style={StyleSheet.absoluteFill} className="items-center justify-center">
@@ -17,14 +19,14 @@ export default function NotConnected({ onConnect }: NotConnectedProps) {
       <View className="mt-32 flex-1 items-center justify-center">
         <Instagram width={120} height={120} />
         <Text className="mt-6 px-12 text-center font-roboto-extrablack text-4xl tracking-tighter">
-          One connection away from the truth.
+          {t('notConnected.title')}
         </Text>
         <Text className="font-roboto mt-6 px-12 text-center text-lg tracking-tighter">
-          Connect Instagram to start watching without being watched.
+          {t('notConnected.subtitle')}
         </Text>
       </View>
       <View className="p-4 pb-20">
-        <Button label="Connect Instagram" onPress={onConnect} />
+        <Button label={t('notConnected.cta')} onPress={onConnect} />
       </View>
     </SafeAreaView>
   );

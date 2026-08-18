@@ -1,0 +1,79 @@
+{
+  "actions.continue": "Weiter",
+  "actions.skip": "Überspringen",
+
+  "source.question": "Wie hast du uns gefunden?",
+  "source.friends": "Freunde",
+  "source.tiktok": "TikTok",
+  "source.instagram": "Instagram",
+  "source.facebook": "Facebook",
+  "source.google": "Google",
+  "source.other": "Sonstiges",
+
+  "age.question": "Wie alt bist du?",
+  "age.range18_24": "18–24",
+  "age.range25_34": "25–34",
+  "age.range35Plus": "35+",
+
+  "helpWith.question": "Wobei kann Unhinged dir helfen?",
+  "helpWith.track": "Nutzer privat tracken",
+  "helpWith.notFollowingBack": "Sieh, wer dir nicht zurückfolgt",
+  "helpWith.stories": "Storys anonym ansehen",
+  "helpWith.redFlags": "Red-Flag-Berichte erstellen",
+  "helpWith.wrapped": "Dein IG Wrapped ansehen",
+
+  "search.whatWeFound": "Das haben wir gefunden",
+  "search.usernamePlaceholder": "Instagram-Nutzername",
+  "search.notFound": "Dieses Konto konnte nicht gefunden werden. Bitte überprüfe den Nutzernamen.",
+
+  "usernameSearch.title": "Wie lautet dein Instagram-Nutzername?",
+  "usernameSearch.notFollowingBack": "Folgen dir nicht zurück",
+
+  "trackSearch.title": "Wen möchtest du tracken?",
+  "trackSearch.privateNote": "Diese Aktion ist völlig privat und die Person wird es nie erfahren oder benachrichtigt werden.",
+  "trackSearch.recentActivity": "Letzte Aktivität",
+  "trackSearch.time.yesterday": "Gestern",
+  "trackSearch.time.twoHoursAgo": "Vor 2 Stunden",
+  "trackSearch.time.fiveHoursAgo": "Vor 5 Stunden",
+
+  "help.header": "So helfen wir dir",
+  "help1.title": "Menschen privat tracken",
+  "help1.body": "Sieh, wer ihnen zu folgen beginnt und wer ihnen zurückfolgt.",
+  "help2.title": "Sieh, wer dir nicht zurückfolgt",
+  "help2.body": "Räume deine Abos auf und entfolge Nutzern mit einem Tipp",
+
+  "notifications.title": "Verpasse nicht,\nwas gerade passiert",
+  "notifications.subtitle": "Werde benachrichtigt, wenn dir jemand entfolgt, und mehr",
+  "notifications.enable": "Bleib auf dem Laufenden",
+  "notifications.skip": "Ich möchte nicht auf dem Laufenden bleiben",
+
+  "review.title": "Alle lieben es, Unhinged zu sein",
+  "review.subtitle": "Sieh, was unsere Nutzer sagen",
+
+  "stats.title": "Zahlen, die für uns sprechen",
+  "stats.subtitle": "Basierend auf Daten von 2025",
+  "stats.count": "400.000+",
+  "stats.usersTracked": "Getrackte Nutzer",
+
+  "comparison.title": "Wir sind besser als jede andere App",
+  "comparison.featureHeader": "Funktion",
+  "comparison.otherHeader": "Andere",
+  "comparison.features.trackPrivateUsers": "Private Nutzer tracken",
+  "comparison.features.encryptedIgConnection": "Verschlüsselte IG-Verbindung",
+  "comparison.features.identifyRedFlagBehavior": "Red-Flag-Verhalten erkennen",
+  "comparison.features.thirstTrapWarnings": "Thirst-Trap-Warnungen",
+  "comparison.features.followerFollowBackAlerts": "Follow-Back-Benachrichtigungen",
+
+  "connect.title": "Sie werden nie erfahren, dass du zusiehst",
+  "connect.secureSubtitle": "Deine Daten sind vollständig sicher",
+  "connect.bankSecurity.title": "Sicherheit auf Bankniveau",
+  "connect.bankSecurity.body": "Geschützte Synchronisierung. Melde dich bei Instagram an. Deine Verbindung ist mit Verschlüsselung auf Bankniveau gesichert.",
+  "connect.secureLocal.title": "Sicher und lokal",
+  "connect.secureLocal.body": "Privat by Design. Deine Daten bleiben sicher auf deinem Gerät und geben dir volle Kontrolle. Wir haben schlicht nicht die Schlüssel, um sie zu sehen.",
+  "connect.discreet.title": "Diskret & privat",
+  "connect.discreet.body": "Niemand weiß, dass du Unhinged nutzt. Deine Aktivität auf Unhinged bleibt nur dir bekannt.",
+  "connect.connectInstagram": "Instagram verbinden",
+
+  "start.getStarted": "Loslegen",
+  "start.legal": "Indem du fortfährst, stimmst du unseren <terms>Nutzungsbedingungen</terms> und der <privacy>Datenschutzrichtlinie</privacy> zu."
+}

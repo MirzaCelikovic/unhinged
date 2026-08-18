@@ -12,30 +12,31 @@ import * as Haptics from 'expo-haptics';
 import Button from '~/components/Button';
 import Spinner from '~/components/Spinner';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
+import { useTranslation } from 'react-i18next';
 
 const CHECKLIST = [
-  'Pulling 90 days of public activity.',
-  'Mapping their follow / followed-by graph',
-  'Cross checking late-night behaviour',
-  'Matching against warning signs you picked up on',
-  'Validating patterns and gathering insights',
+  'checklist.pulling',
+  'checklist.mapping',
+  'checklist.crossChecking',
+  'checklist.matching',
+  'checklist.validating',
 ];
 
 const REVIEWS = [
   {
     image: require('~/assets/profile_1.jpg'),
-    quote: "My GF said she wasn\u2019t on IG anymore. Unhinged showed me she followed 14 new guys in a week.",
-    name: 'Jake M',
+    quoteKey: 'reviews.jake.quote',
+    nameKey: 'reviews.jake.name',
   },
   {
     image: require('~/assets/profile_2.jpg'),
-    quote: "I had a gut feeling and Unhinged confirmed everything I was scared of.",
-    name: 'Taylor S',
+    quoteKey: 'reviews.taylor.quote',
+    nameKey: 'reviews.taylor.name',
   },
   {
     image: require('~/assets/profile_0.jpg'),
-    quote: "Found out my bf was liking this fitness girl\u2019s stuff at 2am every night.",
-    name: 'Jess K',
+    quoteKey: 'reviews.jess.quote',
+    nameKey: 'reviews.jess.name',
   },
 ];
 
@@ -47,6 +48,7 @@ interface AnalyzingScreenProps {
 }
 
 export default function AnalyzingScreen({ username, onNext }: AnalyzingScreenProps) {
+  const { t } = useTranslation('onboardingV2');
   const { track } = useAnalytics();
   const mountedRef = useRef(true);
   const [completedItems, setCompletedItems] = useState<number>(0);
@@ -133,9 +135,7 @@ export default function AnalyzingScreen({ username, onNext }: AnalyzingScreenPro
       <View className="flex-1 px-6 pt-2">
         {/* Headline */}
         <Text className="text-center font-roboto-extrablack text-3xl text-black">
-          Analyzing{' '}
-          <Text className="font-roboto-extrablack">@{username}</Text>
-          {' ...'}
+          {t('headline.analyzing', { username })}
         </Text>
 
         {/* Progress bar */}
@@ -154,7 +154,7 @@ export default function AnalyzingScreen({ username, onNext }: AnalyzingScreenPro
                 ) : (
                   <Circle size={22} color="#000000" />
                 )}
-                <Text className="flex-1 font-roboto-medium text-base text-black">{item}</Text>
+                <Text className="flex-1 font-roboto-medium text-base text-black">{t(item)}</Text>
               </View>
             );
           })}
@@ -173,7 +173,7 @@ export default function AnalyzingScreen({ username, onNext }: AnalyzingScreenPro
                 <Spinner size={24} color="#000000" />
               ) : (
                 <Text className="font-roboto-extrablack text-lg tracking-wider" style={{ color: '#FF0000' }}>
-                  RED FLAGS FOUND
+                  {t('redFlagsFound')}
                 </Text>
               )}
             </Animated.View>
@@ -185,7 +185,7 @@ export default function AnalyzingScreen({ username, onNext }: AnalyzingScreenPro
       <View className="px-4 pb-8">
         {analysisComplete && (
           <Animated.View entering={FadeIn.duration(500)}>
-            <Button label="Continue" onPress={onNext} />
+            <Button label={t('continue')} onPress={onNext} />
           </Animated.View>
         )}
         {!analysisComplete && (
@@ -204,9 +204,9 @@ export default function AnalyzingScreen({ username, onNext }: AnalyzingScreenPro
                     <Text className="text-lg">{STARS}</Text>
                   </View>
                   <Text className="mt-2 font-roboto text-sm text-black">
-                    &ldquo;{r.quote}&rdquo;
+                    &ldquo;{t(r.quoteKey)}&rdquo;
                   </Text>
-                  <Text className="mt-1 font-roboto text-sm text-gray-500">- {r.name}</Text>
+                  <Text className="mt-1 font-roboto text-sm text-gray-500">- {t(r.nameKey)}</Text>
                 </View>
               ))}
             </ScrollView>

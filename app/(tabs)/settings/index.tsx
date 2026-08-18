@@ -12,17 +12,21 @@ import { useRevenueCat } from '~/contexts/RevenueCatContext';
 import { useAccountContext } from '~/contexts/AccountContext';
 import { useOnboarding } from '~/lib/useOnboarding';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
+import { useTranslation } from 'react-i18next';
 import Circles from '~/assets/circles.svg';
 import Spinner from '~/components/Spinner';
 
-const DeletingModal = memo(({ visible }: { visible: boolean }) => (
-  <Modal visible={visible} animationType="fade" statusBarTranslucent>
-    <View className="flex-1 items-center justify-center bg-background">
-      <Spinner size={40} color="#000" />
-      <Text className="mt-4 font-roboto-medium text-lg text-black">Deleting your account...</Text>
-    </View>
-  </Modal>
-));
+const DeletingModal = memo(({ visible }: { visible: boolean }) => {
+  const { t } = useTranslation('settings');
+  return (
+    <Modal visible={visible} animationType="fade" statusBarTranslucent>
+      <View className="flex-1 items-center justify-center bg-background">
+        <Spinner size={40} color="#000" />
+        <Text className="mt-4 font-roboto-medium text-lg text-black">{t('account.deleting')}</Text>
+      </View>
+    </Modal>
+  );
+});
 
 export default function Settings() {
   const { disconnect, isLoggedIn } = useInstagram();
@@ -30,6 +34,7 @@ export default function Settings() {
   const { account, deleteAccount } = useAccountContext();
   const { resetOnboarding } = useOnboarding();
   const { track } = useAnalytics();
+  const { t } = useTranslation('settings');
   const [showCopied, setShowCopied] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -48,23 +53,23 @@ export default function Settings() {
 
   const handleDisconnect = () => {
     Alert.alert(
-      'Disconnect Instagram',
-      'Are you sure? Reconnecting too frequently may look like automated activity to Instagram (which could make your account look like a bot).',
+      t('disconnect.title'),
+      t('disconnect.message'),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Disconnect', style: 'destructive', onPress: disconnect },
+        { text: t('alert.cancel'), style: 'cancel' },
+        { text: t('disconnect.confirm'), style: 'destructive', onPress: disconnect },
       ]
     );
   };
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Delete Account',
-      "Are you sure? All your tracked accounts and their activity will be gone forever.",
+      t('deleteAccount.title'),
+      t('deleteAccount.message'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('alert.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('deleteAccount.confirm'),
           style: 'destructive',
           onPress: async () => {
             setIsDeleting(true);
@@ -102,38 +107,38 @@ export default function Settings() {
         <View className="px-4 pb-4 pt-2">
           {/* Settings Section */}
           <View className="mt-4">
-            <Text className="mb-3 font-roboto-bold text-lg text-black">Settings</Text>
+            <Text className="mb-3 font-roboto-bold text-lg text-black">{t('section.settings')}</Text>
             <View className="overflow-hidden rounded-2xl bg-white">
               {!isSubscribed && (
                 <Pressable
                   className="flex-row items-center justify-between border-b border-gray-100 p-4 active:opacity-80"
                   onPress={() => presentPaywall('settings_subscribe')}>
-                  <Text className="font-roboto-medium text-base text-gray-900">Upgrade Now</Text>
+                  <Text className="font-roboto-medium text-base text-gray-900">{t('action.upgrade')}</Text>
                   <CircleChevronRight size={24} color="#9ca3af" />
                 </Pressable>
               )}
               <Pressable
                 className="flex-row items-center justify-between border-b border-gray-100 p-4 active:opacity-80"
                 onPress={() => router.push('/(tabs)/settings/notifications')}>
-                <Text className="font-roboto-medium text-base text-gray-900">Notifications</Text>
+                <Text className="font-roboto-medium text-base text-gray-900">{t('action.notifications')}</Text>
                 <CircleChevronRight size={24} color="#9ca3af" />
               </Pressable>
               <Pressable
                 className="flex-row items-center justify-between border-b border-gray-100 p-4 active:opacity-80"
                 onPress={() => Linking.openURL(process.env.EXPO_PUBLIC_SUPPORT_URL!)}>
-                <Text className="font-roboto-medium text-base text-gray-900">Support</Text>
+                <Text className="font-roboto-medium text-base text-gray-900">{t('action.support')}</Text>
                 <CircleChevronRight size={24} color="#9ca3af" />
               </Pressable>
               <Pressable
                 className="flex-row items-center justify-between border-b border-gray-100 p-4 active:opacity-80"
                 onPress={() => Linking.openURL(process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL!)}>
-                <Text className="font-roboto-medium text-base text-gray-900">Privacy Policy</Text>
+                <Text className="font-roboto-medium text-base text-gray-900">{t('action.privacyPolicy')}</Text>
                 <CircleChevronRight size={24} color="#9ca3af" />
               </Pressable>
               <Pressable
                 className="flex-row items-center justify-between p-4 active:opacity-80"
                 onPress={() => Linking.openURL(process.env.EXPO_PUBLIC_TERMS_OF_SERVICE_URL!)}>
-                <Text className="font-roboto-medium text-base text-gray-900">Terms of Service</Text>
+                <Text className="font-roboto-medium text-base text-gray-900">{t('action.termsOfService')}</Text>
                 <CircleChevronRight size={24} color="#9ca3af" />
               </Pressable>
             </View>
@@ -141,7 +146,7 @@ export default function Settings() {
 
           {/* Danger Zone Section */}
           <View className="mt-4">
-            <Text className="mb-3 font-roboto-bold text-lg text-black">Danger Zone</Text>
+            <Text className="mb-3 font-roboto-bold text-lg text-black">{t('section.dangerZone')}</Text>
             <View className="overflow-hidden rounded-2xl bg-white">
               <Pressable
                 className="flex-row items-center justify-between border-b border-gray-100 p-4 active:opacity-80"
@@ -149,14 +154,14 @@ export default function Settings() {
                 disabled={!isLoggedIn}>
                 <Text
                   className={`font-roboto-medium text-base ${isLoggedIn ? 'text-error' : 'text-gray-400'}`}>
-                  Disconnect Instagram
+                  {t('action.disconnect')}
                 </Text>
                 <CircleChevronRight size={24} color={isLoggedIn ? '#D8514B' : '#9ca3af'} />
               </Pressable>
               <Pressable
                 className="flex-row items-center justify-between p-4 active:opacity-80"
                 onPress={handleDeleteAccount}>
-                <Text className="font-roboto-medium text-base text-error">Delete Account</Text>
+                <Text className="font-roboto-medium text-base text-error">{t('action.deleteAccount')}</Text>
                 <CircleChevronRight size={24} color="#D8514B" />
               </Pressable>
             </View>
@@ -187,7 +192,7 @@ export default function Settings() {
             delayLongPress={500}>
             <Text className="font-roboto-medium text-base text-gray-500">
               {showCopied
-                ? 'Copied your user ID!'
+                ? t('copiedUserId')
                 : `v${Application.nativeApplicationVersion} (${Application.nativeBuildVersion})`}
             </Text>
           </Pressable>
