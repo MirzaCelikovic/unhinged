@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { View, Text, Linking } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Logo from '~/assets/logo_black.svg';
 import UnhingedCircle from '~/assets/unhinged_circle.svg';
 import Button from '~/components/Button';
@@ -9,14 +10,15 @@ interface StartScreenV2Props {
   onNext: () => void;
 }
 
-const NOTIFICATIONS = [
-  { title: 'Your crush', subtitle: 'started followed someone', opacity: 0.7 },
-  { title: 'Your ex', subtitle: 'started following your bestie', opacity: 0.6 },
-  { title: 'Your best friend', subtitle: 'just unfollowed you', opacity: 0.5 },
-];
-
 export default function StartScreenV2({ onNext }: StartScreenV2Props) {
+  const { t } = useTranslation();
   const { track } = useAnalytics();
+
+  const NOTIFICATIONS = [
+    { title: t('onboardingV2.start.notification1.title'), subtitle: t('onboardingV2.start.notification1.subtitle'), opacity: 0.7 },
+    { title: t('onboardingV2.start.notification2.title'), subtitle: t('onboardingV2.start.notification2.subtitle'), opacity: 0.6 },
+    { title: t('onboardingV2.start.notification3.title'), subtitle: t('onboardingV2.start.notification3.subtitle'), opacity: 0.5 },
+  ];
 
   useEffect(() => {
     track(Events.START_SCREEN_VIEWED);
@@ -37,10 +39,10 @@ export default function StartScreenV2({ onNext }: StartScreenV2Props) {
       {/* Content */}
       <View className="flex-1 justify-center px-6">
         <Text className="text-center font-roboto-extrablack text-4xl text-black">
-          You already know,{'\n'}don't you?
+          {t('onboardingV2.start.headline')}
         </Text>
         <Text className="mt-4 text-center font-roboto text-lg text-black">
-          Let's stop guessing and find out what's really going on.
+          {t('onboardingV2.start.subtext')}
         </Text>
 
         {/* Notification cards */}
@@ -67,19 +69,19 @@ export default function StartScreenV2({ onNext }: StartScreenV2Props) {
 
       {/* CTA */}
       <View className="px-4 pb-8">
-        <Button label="Show me what they're hiding" onPress={handleStart} />
+        <Button label={t('onboardingV2.start.button')} onPress={handleStart} />
         <Text className="mt-4 px-2 text-center font-roboto text-sm text-gray-600">
-          By continuing, you agree with our{' '}
+          {t('legal.prefix')}{' '}
           <Text
             className="underline"
             onPress={() => Linking.openURL(process.env.EXPO_PUBLIC_TERMS_OF_SERVICE_URL!)}>
-            Terms of Service
+            {t('legal.termsOfService')}
           </Text>{' '}
-          and{' '}
+          {t('legal.connector')}{' '}
           <Text
             className="underline"
             onPress={() => Linking.openURL(process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL!)}>
-            Privacy Policy
+            {t('legal.privacyPolicy')}
           </Text>
           .
         </Text>

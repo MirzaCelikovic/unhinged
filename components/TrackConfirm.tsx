@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, Switch } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import InstagramCard from '~/components/InstagramCard';
 import Button from '~/components/Button';
 import { Instagram } from '~/lib/types';
@@ -30,6 +31,7 @@ export default function TrackConfirm({
   onStartTracking,
   isLoading,
 }: TrackConfirmProps) {
+  const { t } = useTranslation();
   const followersWarn = followersCount >= FOLLOWERS_WARN_THRESHOLD;
   const followingWarn = followingCount >= FOLLOWING_WARN_THRESHOLD;
 
@@ -38,7 +40,7 @@ export default function TrackConfirm({
       <View className="flex-1 px-4 pb-8">
         {/* Title */}
         <Text className="mb-8 mt-6 text-center font-roboto-extrablack text-4xl tracking-tighter">
-          What we found
+          {t('trackConfirm.title')}
         </Text>
 
         {/* Account card */}
@@ -50,7 +52,7 @@ export default function TrackConfirm({
           <View className="border-b border-gray-100 p-4">
             <View className="flex-row items-center justify-between">
               <Text className="font-roboto-medium text-base text-gray-900">
-                Sync following activity
+                {t('trackConfirm.syncFollowing')}
               </Text>
               <Switch
                 value={trackFollowing}
@@ -61,7 +63,7 @@ export default function TrackConfirm({
             </View>
             {followingWarn && (
               <Text className="mt-2 font-roboto-regular text-sm text-gray-400">
-                We recommend keeping this off for this account to protect your Instagram session from rate limiting.
+                {t('trackConfirm.rateWarning')}
               </Text>
             )}
           </View>
@@ -70,7 +72,7 @@ export default function TrackConfirm({
           <View className="p-4">
             <View className="flex-row items-center justify-between">
               <Text className="font-roboto-medium text-base text-gray-900">
-                Sync followers activity
+                {t('trackConfirm.syncFollowers')}
               </Text>
               <Switch
                 value={trackFollowers}
@@ -81,7 +83,7 @@ export default function TrackConfirm({
             </View>
             {followersWarn && (
               <Text className="mt-2 font-roboto-regular text-sm text-gray-400">
-                We recommend keeping this off for this account to protect your Instagram session from rate limiting.
+                {t('trackConfirm.rateWarning')}
               </Text>
             )}
           </View>
@@ -90,7 +92,7 @@ export default function TrackConfirm({
         {/* Start tracking button */}
         <View className="mt-6">
           <Button
-            label="Start Tracking"
+            label={t('trackConfirm.startTracking')}
             onPress={onStartTracking}
             loading={isLoading}
           />

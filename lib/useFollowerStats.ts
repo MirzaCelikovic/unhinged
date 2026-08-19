@@ -25,20 +25,9 @@ export type AccountListType =
   | 'allFollowers'
   | 'allFollowing';
 
-export const ACCOUNT_LIST_LABELS: Record<AccountListType, { main: string; tracked: string }> = {
-  addedFollowing: { main: 'You recently followed', tracked: 'They recently followed' },
-  removedFollowing: { main: 'You recently unfollowed', tracked: 'They recently unfollowed' },
-  gainedFollowers: { main: 'Recently followed you', tracked: 'Recently followed by' },
-  lostFollowers: { main: 'Recently unfollowed you', tracked: 'Recently unfollowed them' },
-  notFollowedBack: { main: "You aren't following back", tracked: 'They are not following back' },
-  notFollowingBack: { main: 'Not following you back', tracked: 'Not following them back' },
-  followBacks: { main: 'Follow backs', tracked: 'Follow backs' },
-  allFollowers: { main: 'Followers', tracked: 'Followers' },
-  allFollowing: { main: 'Following', tracked: 'Following' },
-};
-
-export const getAccountListLabel = (type: AccountListType, isMainAccount: boolean): string => {
-  return isMainAccount ? ACCOUNT_LIST_LABELS[type].main : ACCOUNT_LIST_LABELS[type].tracked;
+export const getAccountListLabel = (type: AccountListType, isMainAccount: boolean, t: (key: string) => string): string => {
+  const prefix = `followerStats.${type}`;
+  return t(isMainAccount ? `${prefix}.main` : `${prefix}.tracked`);
 };
 
 export interface FollowerStats {

@@ -1,5 +1,6 @@
 import { View, Text, Alert, ScrollView, StyleSheet, Pressable, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react-native';
@@ -23,6 +24,7 @@ import {
 } from '~/lib/constants';
 
 export default function TrackingAccount() {
+  const { t } = useTranslation();
   const { userId, username } = useLocalSearchParams<{ userId: string; username: string }>();
   const { account } = useAccountContext();
   const { syncState } = useInstagramContext();
@@ -102,10 +104,10 @@ export default function TrackingAccount() {
   const handleStopTracking = () => {
     if (!account?.uuid || !userId) return;
 
-    Alert.alert('Stop Tracking', `Stop tracking @${instagram?.username || username}?`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('trackingAccount.alert.stopTracking.title'), t('trackingAccount.alert.stopTracking.message', { username: instagram?.username || username }), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Stop Tracking',
+        text: t('trackingAccount.alert.stopTracking.title'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -116,7 +118,7 @@ export default function TrackingAccount() {
             }, 100);
           } catch (error) {
             console.error('Failed to remove tracked instagram:', error);
-            Alert.alert('Error', 'Failed to stop tracking. Please try again.');
+            Alert.alert(t('trackingAccount.alert.error.title'), t('trackingAccount.alert.error.message'));
           }
         },
       },
@@ -158,7 +160,7 @@ export default function TrackingAccount() {
                 onPress={() => setActiveTab('feed')}>
                 <Text
                   className={`font-roboto-medium text-sm ${activeTab === 'feed' ? 'text-gray-900' : 'text-gray-500'}`}>
-                  Activity
+                  {t('trackingAccount.activityTab')}
                 </Text>
               </Pressable>
               <Pressable
@@ -166,7 +168,7 @@ export default function TrackingAccount() {
                 onPress={() => setActiveTab('stats')}>
                 <Text
                   className={`font-roboto-medium text-sm ${activeTab === 'stats' ? 'text-gray-900' : 'text-gray-500'}`}>
-                  Insights
+                  {t('trackingAccount.insightsTab')}
                 </Text>
                 {hasInsightsIndicator && (
                   <View className="h-3 w-3 rounded-full bg-error" />
@@ -177,7 +179,7 @@ export default function TrackingAccount() {
                 onPress={() => setActiveTab('settings')}>
                 <Text
                   className={`font-roboto-medium text-sm ${activeTab === 'settings' ? 'text-gray-900' : 'text-gray-500'}`}>
-                  Settings
+                  {t('trackingAccount.settingsTab')}
                 </Text>
               </Pressable>
             </View>
@@ -198,7 +200,7 @@ export default function TrackingAccount() {
                 <View className="border-b border-gray-100 p-4">
                   <View className="flex-row items-center justify-between">
                     <Text className="font-roboto-medium text-base text-gray-900">
-                      Sync following activity
+                      {t('trackingAccount.syncFollowing')}
                     </Text>
                     <Switch
                       value={trackFollowing}
@@ -209,14 +211,14 @@ export default function TrackingAccount() {
                   </View>
                   {followingWarn && (
                     <Text className="mt-2 font-roboto-regular text-sm text-gray-400">
-                      We recommend keeping this off for this account to protect your Instagram session from rate limiting.
+                      {t('trackingAccount.rateWarning')}
                     </Text>
                   )}
                 </View>
                 <View className="border-b border-gray-100 p-4">
                   <View className="flex-row items-center justify-between">
                     <Text className="font-roboto-medium text-base text-gray-900">
-                      Sync followers activity
+                      {t('trackingAccount.syncFollowers')}
                     </Text>
                     <Switch
                       value={trackFollowers}
@@ -227,14 +229,14 @@ export default function TrackingAccount() {
                   </View>
                   {followersWarn && (
                     <Text className="mt-2 font-roboto-regular text-sm text-gray-400">
-                      We recommend keeping this off for this account to protect your Instagram session from rate limiting.
+                      {t('trackingAccount.rateWarning')}
                     </Text>
                   )}
                 </View>
                 <Pressable
                   className="p-4 active:opacity-80"
                   onPress={handleStopTracking}>
-                  <Text className="font-roboto-medium text-base text-error">Stop Tracking</Text>
+                  <Text className="font-roboto-medium text-base text-error">{t('trackingAccount.stopTracking')}</Text>
                 </Pressable>
               </View>
             )}

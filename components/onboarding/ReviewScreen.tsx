@@ -1,4 +1,5 @@
 import { View, Text, Image, ScrollView } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Button from '~/components/Button';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
@@ -7,16 +8,17 @@ interface ReviewScreenProps {
 }
 
 export default function ReviewScreen({ onNext }: ReviewScreenProps) {
+  const { t } = useTranslation();
   const { track } = useAnalytics();
 
   return (
     <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }} bounces={false}>
       <View className="px-4">
         <Text className="text-center font-roboto-extrablack text-4xl tracking-tighter">
-          Everyone loves being Unhinged
+          {t('onboarding.review.headline')}
         </Text>
         <Text className="font-roboto mt-3 text-center text-base text-black">
-          See what our users have to say
+          {t('onboarding.review.subtext')}
         </Text>
       </View>
 
@@ -29,7 +31,7 @@ export default function ReviewScreen({ onNext }: ReviewScreenProps) {
       </View>
 
       <View className="px-4 pb-8">
-        <Button label="Continue" onPress={() => {
+        <Button label={t('onboarding.review.continue')} onPress={() => {
           track(Events.REVIEW_COMPLETED);
           onNext();
         }} />

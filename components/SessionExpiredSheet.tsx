@@ -6,6 +6,7 @@ import {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
+import { useTranslation } from 'react-i18next';
 import Circles from '~/assets/circles.svg';
 import Button from '~/components/Button';
 
@@ -16,6 +17,7 @@ interface SessionExpiredSheetProps {
 
 const SessionExpiredSheetComponent = forwardRef<BottomSheetModal, SessionExpiredSheetProps>(
   ({ onReconnect, onMaybeLater }, ref) => {
+    const { t } = useTranslation();
     const snapPoints = useMemo(() => ['40%'], []);
     const renderBackdrop = useCallback(
       (props: BottomSheetBackdropProps) => (
@@ -42,17 +44,16 @@ const SessionExpiredSheetComponent = forwardRef<BottomSheetModal, SessionExpired
             <Circles width={700} height={700} />
           </View>
           <View className="flex-1 p-6">
-            <Text className="mb-4 font-roboto-extrablack text-3xl text-black">Session expired</Text>
+            <Text className="mb-4 font-roboto-extrablack text-3xl text-black">{t('sessionExpiredSheet.title')}</Text>
             <Text className="mb-8 mt-2 font-roboto-medium text-lg text-black">
-              Your Instagram session has expired. Reconnect to sync new activity and keep tracking
-              followers.
+              {t('sessionExpiredSheet.message')}
             </Text>
 
-            <Button label="Reconnect Instagram" onPress={onReconnect} />
+            <Button label={t('sessionExpiredSheet.reconnect')} onPress={onReconnect} />
 
             <Pressable className="py-3 active:opacity-70" onPress={onMaybeLater}>
               <Text className="text-center font-roboto-medium text-base text-gray-500">
-                Maybe later
+                {t('sessionExpiredSheet.maybeLater')}
               </Text>
             </Pressable>
           </View>
