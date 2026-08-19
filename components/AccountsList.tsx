@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert, Linking } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
@@ -29,6 +30,7 @@ interface AccountsListProps {
 }
 
 export default function AccountsList({ userId, type, isMainAccount }: AccountsListProps) {
+  const { t } = useTranslation();
   const { data: accounts, isLoading } = useAccountList(userId ?? null, type ?? null);
   const { followUser, unfollowUser } = useInstagram();
   const db = useSQLiteContext();
@@ -68,20 +70,20 @@ export default function AccountsList({ userId, type, isMainAccount }: AccountsLi
       if (result.success) {
         setCompletedActions((prev) => new Set(prev).add(accountId));
       } else {
-        Alert.alert('Error', result.error || 'Failed to follow user');
+        Alert.alert(t('common.error'), result.error || t('accountsList.alert.error.failedFollow'));
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to follow user');
+      Alert.alert(t('common.error'), t('accountsList.alert.error.failedFollow'));
     } finally {
       setLoadingAccountId(null);
     }
   };
 
   const handleUnfollow = async (accountId: string, username: string) => {
-    Alert.alert('Unfollow', `Unfollow @${username}?`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('accountsList.alert.unfollow.title'), t('accountsList.alert.unfollow.message', { username }), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Unfollow',
+        text: t('accountsList.alert.unfollow.confirm'),
         style: 'destructive',
         onPress: async () => {
           setLoadingAccountId(accountId);
@@ -90,10 +92,10 @@ export default function AccountsList({ userId, type, isMainAccount }: AccountsLi
             if (result.success) {
               setCompletedActions((prev) => new Set(prev).add(accountId));
             } else {
-              Alert.alert('Error', result.error || 'Failed to unfollow user');
+              Alert.alert(t('common.error'), result.error || t('accountsList.alert.error.failedUnfollow'));
             }
           } catch (error) {
-            Alert.alert('Error', 'Failed to unfollow user');
+            Alert.alert(t('common.error'), t('accountsList.alert.error.failedUnfollow'));
           } finally {
             setLoadingAccountId(null);
           }
@@ -102,7 +104,7 @@ export default function AccountsList({ userId, type, isMainAccount }: AccountsLi
     ]);
   };
 
-  const title = type ? getAccountListLabel(type, isMainAccount) : '';
+  const title = type ? getAccountListLabel(type, isMainAccount, t) : '';
 
   const filteredAccounts = useMemo(() => {
     const sorted = [...accounts].sort((a, b) => a.username.localeCompare(b.username));
@@ -142,7 +144,7 @@ export default function AccountsList({ userId, type, isMainAccount }: AccountsLi
         {/* Search Field */}
         <View className="mb-4">
           <TextField
-            placeholder="Search"
+            placeholder={t('common.search')}
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoCapitalize="none"
@@ -153,11 +155,11 @@ export default function AccountsList({ userId, type, isMainAccount }: AccountsLi
 
         {isLoading ? (
           <View className="flex-1 items-center justify-center">
-            <Text className="text-gray-500">Loading...</Text>
+            <Text className="text-gray-500">{t('common.loading')}</Text>
           </View>
         ) : filteredAccounts.length === 0 ? (
           <View className="flex-1 items-center justify-center">
-            <Text className="text-gray-500">No accounts found</Text>
+            <Text className="text-gray-500">{t('common.noAccountsFound')}</Text>
           </View>
         ) : (
           <FlashList
@@ -175,21 +177,21 @@ export default function AccountsList({ userId, type, isMainAccount }: AccountsLi
               let actionProps = {};
               if (actionType === 'follow' && !isCompleted) {
                 actionProps = {
-                  actionLabel: 'Follow',
+                  actionLabel: t('common.follow'),
                   actionVariant: 'primary' as const,
                   actionLoading: isLoading,
                   onAction: () => handleFollow(account.id, account.username, account.profile_pic_url),
                 };
               } else if (actionType === 'unfollow' && !isCompleted) {
                 actionProps = {
-                  actionLabel: 'Unfollow',
+                  actionLabel: t('common.unfollow'),
                   actionVariant: 'secondary' as const,
                   actionLoading: isLoading,
                   onAction: () => handleUnfollow(account.id, account.username),
                 };
               } else if (isCompleted) {
                 actionProps = {
-                  actionLabel: actionType === 'follow' ? 'Following' : 'Unfollowed',
+                  actionLabel: actionType === 'follow' ? t('common.following') : t('common.unfollowed'),
                   actionVariant: 'secondary' as const,
                 };
               }

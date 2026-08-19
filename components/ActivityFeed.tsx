@@ -1,6 +1,7 @@
 import { View, Linking } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import AccountCard from './AccountCard';
 import { useRevenueCat } from '~/contexts/RevenueCatContext';
 
@@ -187,34 +188,6 @@ const fetchActivityFeed = async (db: any, trackedAccountId: string): Promise<Fee
   return events.slice(0, 10);
 };
 
-const formatRelativeTime = (timestamp: string): string => {
-  const now = new Date();
-  const date = new Date(timestamp);
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString();
-};
-
-const getEventLabel = (type: FeedEvent['type']): string => {
-  switch (type) {
-    case 'new_follower':
-      return 'started following them';
-    case 'lost_follower':
-      return 'unfollowed them';
-    case 'started_following':
-      return 'they started following';
-    case 'stopped_following':
-      return 'they unfollowed';
-  }
-};
-
 interface ActivityFeedProps {
   userId: string;
   trackedUsername?: string;
@@ -226,8 +199,32 @@ export default function ActivityFeed({
   trackedUsername,
   trackedProfilePicUrl,
 }: ActivityFeedProps) {
+  const { t } = useTranslation();
   const db = useSQLiteContext();
   const { isSubscribed, presentPaywall } = useRevenueCat();
+
+  const formatRelativeTime = (timestamp: string): string => {
+    const now = new Date();
+    const date = new Date(timestamp);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    if (diffMins < 1) return t('activityFeed.justNow');
+    if (diffMins < 60) return t('activityFeed.minutesAgo', { count: diffMins });
+    if (diffHours < 24) return t('activityFeed.hoursAgo', { count: diffHours });
+    if (diffDays < 7) return t('activityFeed.daysAgo', { count: diffDays });
+    return date.toLocaleDateString();
+  };
+
+  const getEventLabel = (type: FeedEvent['type']): string => {
+    switch (type) {
+      case 'new_follower': return t('activityFeed.newFollower');
+      case 'lost_follower': return t('activityFeed.lostFollower');
+      case 'started_following': return t('activityFeed.startedFollowing');
+      case 'stopped_following': return t('activityFeed.stoppedFollowing');
+    }
+  };
 
   const { data: events = [] } = useQuery({
     queryKey: ['activityFeed', userId],
@@ -291,7 +288,7 @@ export default function ActivityFeed({
         <AccountCard
           username={trackedUsername || 'username'}
           profilePicUrl={trackedProfilePicUrl}
-          label="you started tracking"
+          label={t('activityFeed.youStartedTracking')}
           timestamp={formatRelativeTime(
             trackingStartDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
           )}

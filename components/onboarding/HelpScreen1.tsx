@@ -1,4 +1,5 @@
 import { View, Text, Image, Dimensions, ScrollView } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Button from '~/components/Button';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 
@@ -9,11 +10,12 @@ interface HelpScreen1Props {
 }
 
 export default function HelpScreen1({ onNext }: HelpScreen1Props) {
+  const { t } = useTranslation();
   const { track } = useAnalytics();
   return (
     <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }} bounces={false}>
       <Text className="mt-4 px-4 text-center font-roboto-extrablack text-4xl tracking-tighter">
-        Here's how we'll help
+        {t('onboarding.help1.headline')}
       </Text>
 
       <View className="mt-8 overflow-hidden" style={{ height: 350 * 0.8 }}>
@@ -34,12 +36,12 @@ export default function HelpScreen1({ onNext }: HelpScreen1Props) {
       <View className="flex-1" />
 
       <View className="px-4 pb-8">
-        <Text className="text-center font-roboto-extrablack text-4xl">Track people privately</Text>
+        <Text className="text-center font-roboto-extrablack text-4xl">{t('onboarding.help1.sectionTitle')}</Text>
         <Text className="font-roboto mt-2 text-center text-base text-black">
-          See who starts following them and who follows them back.
+          {t('onboarding.help1.sectionBody')}
         </Text>
         <View className="mt-6">
-          <Button label="Continue" onPress={() => {
+          <Button label={t('onboarding.help1.continue')} onPress={() => {
             track(Events.HWH1_COMPLETED);
             onNext();
           }} />

@@ -8,6 +8,7 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { CircleChevronLeft } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import ChoiceQuestion from '~/components/onboarding/ChoiceQuestion';
 import TrackSearch from '~/components/onboarding-v2/TrackSearch';
 import StartScreen from '~/components/onboarding-v2/StartScreen';
@@ -61,65 +62,67 @@ interface StartStep {
 
 type Step = StartStep | ChoiceStep | MultiSelectStep | TrackStep | AnalyzingStep | RevealStep;
 
-const STEPS: Step[] = [
-  {
-    id: 'start',
-    type: 'start',
-  },
-  {
-    id: 'who',
-    type: 'choice',
-    question: "Who\u2019s got you feeling\nthis way?",
-    choices: [
-      { id: 'boyfriend', label: 'My boyfriend' },
-      { id: 'girlfriend', label: 'My girlfriend' },
-      { id: 'ex', label: 'My ex' },
-      { id: 'talking_to', label: "Someone I\u2019m talking to" },
-      { id: 'friend', label: "A \u2018friend\u2019 I don\u2019t really trust" },
-      { id: 'someone_else', label: 'Someone else' },
-    ],
-  },
-  {
-    id: 'age',
-    type: 'choice',
-    question: 'How old are you?',
-    choices: [
-      { id: '18_24', label: '18–24' },
-      { id: '25_34', label: '25–34' },
-      { id: '35_plus', label: '35+' },
-    ],
-  },
-  {
-    id: 'alarm_bells',
-    type: 'multiselect',
-    question: "What\u2019s been setting off\nalarm bells?",
-    subtitle: "Check everything that sounds familiar.\nNo one sees this but you.",
-    choices: [
-      { id: 'phone', label: 'On their phone way more than usual' },
-      { id: 'hides_screen', label: 'Hides screen when I walk up' },
-      { id: 'thirst_traps', label: "Liking random girls\u2019/guys\u2019 thirst traps" },
-      { id: 'fitness_models', label: 'Following new fitness models' },
-      { id: 'weird_hours', label: 'Active on IG at weird hours' },
-      { id: 'new_followers', label: "New followers I\u2019ve never heard of" },
-      { id: 'weird_notifications', label: 'Getting weird notifications' },
-      { id: 'changed_password', label: 'Changed their password' },
-    ],
-  },
-  {
-    id: 'track_username',
-    type: 'track',
-  },
-  {
-    id: 'analyzing',
-    type: 'analyzing',
-  },
-  {
-    id: 'reveal',
-    type: 'reveal',
-  },
-];
-
 export default function OnboardingV2({ onComplete }: OnboardingV2Props) {
+  const { t } = useTranslation();
+
+  const STEPS: Step[] = [
+    {
+      id: 'start',
+      type: 'start',
+    },
+    {
+      id: 'who',
+      type: 'choice',
+      question: t('onboardingV2.who.question'),
+      choices: [
+        { id: 'boyfriend', label: t('onboardingV2.who.boyfriend') },
+        { id: 'girlfriend', label: t('onboardingV2.who.girlfriend') },
+        { id: 'ex', label: t('onboardingV2.who.ex') },
+        { id: 'talking_to', label: t('onboardingV2.who.talkingTo') },
+        { id: 'friend', label: t('onboardingV2.who.friend') },
+        { id: 'someone_else', label: t('onboardingV2.who.someoneElse') },
+      ],
+    },
+    {
+      id: 'age',
+      type: 'choice',
+      question: t('onboarding.age.question'),
+      choices: [
+        { id: '18_24', label: t('onboarding.age.1824') },
+        { id: '25_34', label: t('onboarding.age.2534') },
+        { id: '35_plus', label: t('onboarding.age.35plus') },
+      ],
+    },
+    {
+      id: 'alarm_bells',
+      type: 'multiselect',
+      question: t('onboardingV2.alarmBells.question'),
+      subtitle: t('onboardingV2.alarmBells.subtitle'),
+      choices: [
+        { id: 'phone', label: t('onboardingV2.alarmBells.phone') },
+        { id: 'hides_screen', label: t('onboardingV2.alarmBells.hidesScreen') },
+        { id: 'thirst_traps', label: t('onboardingV2.alarmBells.thirstTraps') },
+        { id: 'fitness_models', label: t('onboardingV2.alarmBells.fitnessModels') },
+        { id: 'weird_hours', label: t('onboardingV2.alarmBells.weirdHours') },
+        { id: 'new_followers', label: t('onboardingV2.alarmBells.newFollowers') },
+        { id: 'weird_notifications', label: t('onboardingV2.alarmBells.weirdNotifications') },
+        { id: 'changed_password', label: t('onboardingV2.alarmBells.changedPassword') },
+      ],
+    },
+    {
+      id: 'track_username',
+      type: 'track',
+    },
+    {
+      id: 'analyzing',
+      type: 'analyzing',
+    },
+    {
+      id: 'reveal',
+      type: 'reveal',
+    },
+  ];
+
   // Resume in-progress onboarding (COM-38): a user who backgrounds/relaunches
   // mid-quiz picks up where they left off instead of restarting. Both arms — a
   // neutral change that keeps the A/B difference to dismissibility only. Cleared

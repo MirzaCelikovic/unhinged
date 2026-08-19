@@ -6,6 +6,7 @@ import Animated, {
   withTiming,
   withRepeat,
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import Spinner from '~/components/Spinner';
 
 interface NewActivityBannerProps {
@@ -14,6 +15,7 @@ interface NewActivityBannerProps {
 }
 
 export default function NewActivityBanner({ isSyncing, onRefresh }: NewActivityBannerProps) {
+  const { t } = useTranslation();
   const sonar = useSharedValue(0);
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function NewActivityBanner({ isSyncing, onRefresh }: NewActivityB
           <View className="h-3 w-3 rounded-full bg-error" />
         </View>
         <Text className="font-roboto-medium text-base text-black">
-          New Instagram activity found
+          {t('newActivityBanner.text')}
         </Text>
       </View>
       {isSyncing ? (
@@ -48,7 +50,7 @@ export default function NewActivityBanner({ isSyncing, onRefresh }: NewActivityB
       ) : (
         <Pressable className="active:opacity-70" onPress={onRefresh}>
           <Text className="font-roboto-bold text-base text-black">
-            Refresh
+            {t('common.refresh')}
           </Text>
         </Pressable>
       )}

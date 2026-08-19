@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { View, Pressable } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -84,85 +85,87 @@ interface ConnectStep {
 
 type Step = StartStep | ChoiceStep | UsernameStep | TrackStep | HelpStep | NotificationsStep | ReviewStep | StatsStep | ComparisonStep | ConnectStep;
 
-const STEPS: Step[] = [
-  {
-    id: 'start',
-    type: 'start',
-  },
-  {
-    id: 'source',
-    type: 'choice',
-    question: 'How did you find us?',
-    choices: [
-      { id: 'friends', label: 'Friends' },
-      { id: 'tiktok', label: 'TikTok' },
-      { id: 'instagram', label: 'Instagram' },
-      { id: 'facebook', label: 'Facebook' },
-      { id: 'google', label: 'Google' },
-      { id: 'other', label: 'Other' },
-    ],
-  },
-  {
-    id: 'age',
-    type: 'choice',
-    question: 'How old are you?',
-    choices: [
-      { id: '18_24', label: '18–24' },
-      { id: '25_34', label: '25–34' },
-      { id: '35_plus', label: '35+' },
-    ],
-  },
-  {
-    id: 'username',
-    type: 'username',
-  },
-  {
-    id: 'help_with',
-    type: 'choice',
-    question: 'What can Unhinged help you with?',
-    choices: [
-      { id: 'track', label: 'Track users privately' },
-      { id: 'not_following_back', label: "See who's not following you back" },
-      { id: 'stories', label: 'View stories anonymously' },
-      { id: 'red_flags', label: 'Generate red flag reports' },
-      { id: 'wrapped', label: 'See your IG wrapped' },
-    ],
-  },
-  {
-    id: 'track_username',
-    type: 'track',
-  },
-  {
-    id: 'help1',
-    type: 'help1',
-  },
-  {
-    id: 'help2',
-    type: 'help2',
-  },
-  {
-    id: 'notifications',
-    type: 'notifications',
-  },
-  {
-    id: 'review',
-    type: 'review',
-  },
-  {
-    id: 'stats',
-    type: 'stats',
-  },
-  {
-    id: 'comparison',
-    type: 'comparison',
-  },
-  {
-    id: 'connect',
-    type: 'connect',
-  },
-];
-
 export default function Onboarding({ onComplete }: OnboardingProps) {
+  const { t } = useTranslation();
+
+  const STEPS: Step[] = [
+    {
+      id: 'start',
+      type: 'start',
+    },
+    {
+      id: 'source',
+      type: 'choice',
+      question: t('onboarding.source.question'),
+      choices: [
+        { id: 'friends', label: t('onboarding.source.friends') },
+        { id: 'tiktok', label: t('onboarding.source.tiktok') },
+        { id: 'instagram', label: t('onboarding.source.instagram') },
+        { id: 'facebook', label: t('onboarding.source.facebook') },
+        { id: 'google', label: t('onboarding.source.google') },
+        { id: 'other', label: t('onboarding.source.other') },
+      ],
+    },
+    {
+      id: 'age',
+      type: 'choice',
+      question: t('onboarding.age.question'),
+      choices: [
+        { id: '18_24', label: t('onboarding.age.1824') },
+        { id: '25_34', label: t('onboarding.age.2534') },
+        { id: '35_plus', label: t('onboarding.age.35plus') },
+      ],
+    },
+    {
+      id: 'username',
+      type: 'username',
+    },
+    {
+      id: 'help_with',
+      type: 'choice',
+      question: t('onboarding.helpWith.question'),
+      choices: [
+        { id: 'track', label: t('onboarding.helpWith.track') },
+        { id: 'not_following_back', label: t('onboarding.helpWith.notFollowingBack') },
+        { id: 'stories', label: t('onboarding.helpWith.stories') },
+        { id: 'red_flags', label: t('onboarding.helpWith.redFlags') },
+        { id: 'wrapped', label: t('onboarding.helpWith.wrapped') },
+      ],
+    },
+    {
+      id: 'track_username',
+      type: 'track',
+    },
+    {
+      id: 'help1',
+      type: 'help1',
+    },
+    {
+      id: 'help2',
+      type: 'help2',
+    },
+    {
+      id: 'notifications',
+      type: 'notifications',
+    },
+    {
+      id: 'review',
+      type: 'review',
+    },
+    {
+      id: 'stats',
+      type: 'stats',
+    },
+    {
+      id: 'comparison',
+      type: 'comparison',
+    },
+    {
+      id: 'connect',
+      type: 'connect',
+    },
+  ];
+
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [instagramResult, setInstagramResult] = useState<Instagram | null>(null);

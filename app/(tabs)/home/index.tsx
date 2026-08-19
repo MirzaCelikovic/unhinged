@@ -33,10 +33,12 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
+import { useTranslation } from 'react-i18next';
 
 type HomeState = 'notConnected' | 'initialSync' | 'connected';
 
 export default function Index() {
+  const { t } = useTranslation();
   const {
     isLoggedIn,
     syncState,
@@ -159,18 +161,16 @@ export default function Index() {
   };
 
   const formatLastSyncTime = (timestamp: string | null): string => {
-    if (!timestamp) return 'Never synced';
-
+    if (!timestamp) return t('home.lastSync.neverSynced');
     const syncDate = new Date(timestamp);
     const diffMs = currentTime.getTime() - syncDate.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'Updated just now';
-    if (diffMins < 60) return `Updated ${diffMins} min${diffMins === 1 ? '' : 's'} ago`;
-    if (diffHours < 24) return `Updated ${diffHours} hr${diffHours === 1 ? '' : 's'} ago`;
-    return `Updated ${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+    if (diffMins < 1) return t('home.lastSync.justNow');
+    if (diffMins < 60) return t('home.lastSync.minutes', { count: diffMins });
+    if (diffHours < 24) return t('home.lastSync.hours', { count: diffHours });
+    return t('home.lastSync.days', { count: diffDays });
   };
 
   const contentAnimatedStyle = useAnimatedStyle(() => ({
@@ -186,19 +186,16 @@ export default function Index() {
 
     // Block refresh while the circuit-breaker cooldown is active
     if (isCoolingDown) {
-      Alert.alert(
-        'Paused',
-        'Syncing is paused for a bit to protect your account. Please try again later.'
-      );
+      Alert.alert(t('alert.paused.title'), t('alert.paused.message'));
       return;
     }
 
     Alert.alert(
-      'Refresh',
-      'To avoid overwhelming Instagram with too many automated requests (which could make your account look like a bot), we recommend refreshing once a day or when we notify you of a follower count change.',
+      t('home.alert.refresh.title'),
+      t('home.alert.refresh.message'),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Refresh', onPress: sync },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.refresh'), onPress: sync },
       ]
     );
   };
@@ -268,7 +265,7 @@ export default function Index() {
                         <Spinner size={20} color="#9ca3af" />
                       ) : (
                         <Pressable className="active:opacity-70" onPress={handleRefresh}>
-                          <Text className="font-roboto-bold text-base text-gray-400">Refresh</Text>
+                          <Text className="font-roboto-bold text-base text-gray-400">{t('common.refresh')}</Text>
                         </Pressable>
                       )}
                     </View>

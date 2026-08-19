@@ -9,6 +9,7 @@ import Animated, {
   withSequence,
   Easing,
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import Unhinged from '~/assets/unhinged.svg';
 import { useInstagram, SyncStepStatus } from '~/contexts/InstagramContext';
 import RandomProfilePhotos from '~/components/RandomProfilePhotos';
@@ -119,6 +120,7 @@ interface TrackedAccountSyncProps {
 }
 
 export default function TrackedAccountSync({ userId, username }: TrackedAccountSyncProps) {
+  const { t } = useTranslation();
   const { syncState } = useInstagram();
 
   // Find this specific tracked account in syncState
@@ -152,31 +154,31 @@ export default function TrackedAccountSync({ userId, username }: TrackedAccountS
   // Dynamic labels based on what's being synced
   const step2Label =
     followingDisabled && followersDisabled
-      ? 'Syncing with Instagram'
+      ? t('syncStep.syncingWithInstagram')
       : followersDisabled
-        ? 'Syncing following list'
+        ? t('syncStep.syncFollowingList')
         : followingDisabled
-          ? 'Syncing followers list'
-          : 'Syncing with Instagram';
+          ? t('syncStep.syncFollowersList')
+          : t('syncStep.syncingWithInstagram');
 
   return (
     <View className="flex-1 items-center justify-center p-4">
       <Unhinged width={110} height={110} />
       <Text className="mt-4 px-12 text-center font-roboto-extrablack text-4xl tracking-tighter">
-        Syncing @{username}
+        {t('syncStep.titleWithUsername', { username })}
       </Text>
       <Text className="mt-4 px-12 text-center font-roboto-regular text-lg tracking-tighter">
         {followingDisabled && followersDisabled
-          ? 'Fetching profile information...'
-          : 'This might take a minute depending on number of followers.'}
+          ? t('syncStep.bodyFetchingProfile')
+          : t('syncStep.body')}
       </Text>
 
       <View className="mt-6 w-full gap-4">
-        <SyncStep label="Fetching profile" state={step1State} />
+        <SyncStep label={t('syncStep.fetchingProfile')} state={step1State} />
         {(!followingDisabled || !followersDisabled) && (
           <SyncStep label={step2Label} state={step2State} />
         )}
-        <SyncStep label="Analyzing activity" state={step3State} />
+        <SyncStep label={t('syncStep.analyzingActivity')} state={step3State} />
       </View>
 
       <RandomProfilePhotos userId={userId} />
