@@ -1,0 +1,8 @@
+{
+  "sourceLocale": "en",
+  "tone": "informal",
+  "locales": ["en", "de", "fr", "ar", "ja"],
+  "doNotTranslate": [],
+  "framework": "i18next",
+  "resourcePath": "locales/{locale}.json"
+}

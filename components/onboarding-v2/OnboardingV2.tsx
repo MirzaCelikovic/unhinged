@@ -8,6 +8,7 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { CircleChevronLeft } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import ChoiceQuestion from '~/components/onboarding/ChoiceQuestion';
 import TrackSearch from '~/components/onboarding-v2/TrackSearch';
 import StartScreen from '~/components/onboarding-v2/StartScreen';
@@ -61,7 +62,9 @@ interface StartStep {
 
 type Step = StartStep | ChoiceStep | MultiSelectStep | TrackStep | AnalyzingStep | RevealStep;
 
-const STEPS: Step[] = [
+type TFunc = (key: string) => string;
+
+const buildSteps = (t: TFunc): Step[] => [
   {
     id: 'start',
     type: 'start',
@@ -69,40 +72,40 @@ const STEPS: Step[] = [
   {
     id: 'who',
     type: 'choice',
-    question: "Who\u2019s got you feeling\nthis way?",
+    question: t('v2Onboarding.whoQuestion'),
     choices: [
-      { id: 'boyfriend', label: 'My boyfriend' },
-      { id: 'girlfriend', label: 'My girlfriend' },
-      { id: 'ex', label: 'My ex' },
-      { id: 'talking_to', label: "Someone I\u2019m talking to" },
-      { id: 'friend', label: "A \u2018friend\u2019 I don\u2019t really trust" },
-      { id: 'someone_else', label: 'Someone else' },
+      { id: 'boyfriend', label: t('v2Onboarding.whoBoyfriend') },
+      { id: 'girlfriend', label: t('v2Onboarding.whoGirlfriend') },
+      { id: 'ex', label: t('v2Onboarding.whoEx') },
+      { id: 'talking_to', label: t('v2Onboarding.whoTalkingTo') },
+      { id: 'friend', label: t('v2Onboarding.whoFriend') },
+      { id: 'someone_else', label: t('v2Onboarding.whoSomeoneElse') },
     ],
   },
   {
     id: 'age',
     type: 'choice',
-    question: 'How old are you?',
+    question: t('v2Onboarding.ageQuestion'),
     choices: [
-      { id: '18_24', label: '18–24' },
-      { id: '25_34', label: '25–34' },
-      { id: '35_plus', label: '35+' },
+      { id: '18_24', label: t('v2Onboarding.age1824') },
+      { id: '25_34', label: t('v2Onboarding.age2534') },
+      { id: '35_plus', label: t('v2Onboarding.age35Plus') },
     ],
   },
   {
     id: 'alarm_bells',
     type: 'multiselect',
-    question: "What\u2019s been setting off\nalarm bells?",
-    subtitle: "Check everything that sounds familiar.\nNo one sees this but you.",
+    question: t('v2Onboarding.alarmBellsQuestion'),
+    subtitle: t('v2Onboarding.alarmBellsSubtitle'),
     choices: [
-      { id: 'phone', label: 'On their phone way more than usual' },
-      { id: 'hides_screen', label: 'Hides screen when I walk up' },
-      { id: 'thirst_traps', label: "Liking random girls\u2019/guys\u2019 thirst traps" },
-      { id: 'fitness_models', label: 'Following new fitness models' },
-      { id: 'weird_hours', label: 'Active on IG at weird hours' },
-      { id: 'new_followers', label: "New followers I\u2019ve never heard of" },
-      { id: 'weird_notifications', label: 'Getting weird notifications' },
-      { id: 'changed_password', label: 'Changed their password' },
+      { id: 'phone', label: t('v2Onboarding.alarmBellsPhone') },
+      { id: 'hides_screen', label: t('v2Onboarding.alarmBellsHidesScreen') },
+      { id: 'thirst_traps', label: t('v2Onboarding.alarmBellsThirstTraps') },
+      { id: 'fitness_models', label: t('v2Onboarding.alarmBellsFitnessModels') },
+      { id: 'weird_hours', label: t('v2Onboarding.alarmBellsWeirdHours') },
+      { id: 'new_followers', label: t('v2Onboarding.alarmBellsNewFollowers') },
+      { id: 'weird_notifications', label: t('v2Onboarding.alarmBellsWeirdNotifications') },
+      { id: 'changed_password', label: t('v2Onboarding.alarmBellsChangedPassword') },
     ],
   },
   {
@@ -120,6 +123,8 @@ const STEPS: Step[] = [
 ];
 
 export default function OnboardingV2({ onComplete }: OnboardingV2Props) {
+  const { t } = useTranslation();
+  const [STEPS] = useState(() => buildSteps(t));
   // Resume in-progress onboarding (COM-38): a user who backgrounds/relaunches
   // mid-quiz picks up where they left off instead of restarting. Both arms — a
   // neutral change that keeps the A/B difference to dismissibility only. Cleared

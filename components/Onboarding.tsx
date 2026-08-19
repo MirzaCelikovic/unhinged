@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { View, Pressable } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -33,8 +34,8 @@ interface OnboardingProps {
 interface ChoiceStep {
   id: string;
   type: 'choice';
-  question: string;
-  choices: { id: string; label: string }[];
+  questionKey: string;
+  choices: { id: string; labelKey: string }[];
 }
 
 interface UsernameStep {
@@ -92,24 +93,24 @@ const STEPS: Step[] = [
   {
     id: 'source',
     type: 'choice',
-    question: 'How did you find us?',
+    questionKey: 'onboarding.sourceQuestion',
     choices: [
-      { id: 'friends', label: 'Friends' },
-      { id: 'tiktok', label: 'TikTok' },
-      { id: 'instagram', label: 'Instagram' },
-      { id: 'facebook', label: 'Facebook' },
-      { id: 'google', label: 'Google' },
-      { id: 'other', label: 'Other' },
+      { id: 'friends', labelKey: 'onboarding.sourceFriends' },
+      { id: 'tiktok', labelKey: 'onboarding.sourceTiktok' },
+      { id: 'instagram', labelKey: 'onboarding.sourceInstagram' },
+      { id: 'facebook', labelKey: 'onboarding.sourceFacebook' },
+      { id: 'google', labelKey: 'onboarding.sourceGoogle' },
+      { id: 'other', labelKey: 'onboarding.sourceOther' },
     ],
   },
   {
     id: 'age',
     type: 'choice',
-    question: 'How old are you?',
+    questionKey: 'onboarding.ageQuestion',
     choices: [
-      { id: '18_24', label: '18–24' },
-      { id: '25_34', label: '25–34' },
-      { id: '35_plus', label: '35+' },
+      { id: '18_24', labelKey: 'onboarding.age18To24' },
+      { id: '25_34', labelKey: 'onboarding.age25To34' },
+      { id: '35_plus', labelKey: 'onboarding.age35Plus' },
     ],
   },
   {
@@ -119,13 +120,13 @@ const STEPS: Step[] = [
   {
     id: 'help_with',
     type: 'choice',
-    question: 'What can Unhinged help you with?',
+    questionKey: 'onboarding.helpWithQuestion',
     choices: [
-      { id: 'track', label: 'Track users privately' },
-      { id: 'not_following_back', label: "See who's not following you back" },
-      { id: 'stories', label: 'View stories anonymously' },
-      { id: 'red_flags', label: 'Generate red flag reports' },
-      { id: 'wrapped', label: 'See your IG wrapped' },
+      { id: 'track', labelKey: 'onboarding.helpWithTrack' },
+      { id: 'not_following_back', labelKey: 'onboarding.helpWithNotFollowingBack' },
+      { id: 'stories', labelKey: 'onboarding.helpWithStories' },
+      { id: 'red_flags', labelKey: 'onboarding.helpWithRedFlags' },
+      { id: 'wrapped', labelKey: 'onboarding.helpWithWrapped' },
     ],
   },
   {
@@ -170,6 +171,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const { showLogin, isLoggedIn, sync } = useInstagram();
   const { account } = useAccountContext();
   const { track } = useAnalytics();
+  const { t } = useTranslation();
 
   // Progress bar excludes the start step (step 0)
   const stepsWithProgress = STEPS.length - 1;
@@ -268,8 +270,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           {step.type === 'start' && <StartScreen onNext={handleNext} />}
           {step.type === 'choice' && (
             <ChoiceQuestion
-              question={(step as ChoiceStep).question}
-              choices={(step as ChoiceStep).choices}
+              question={t((step as ChoiceStep).questionKey)}
+              choices={(step as ChoiceStep).choices.map((choice) => ({
+                id: choice.id,
+                label: t(choice.labelKey),
+              }))}
               onSelect={handleSelect}
             />
           )}

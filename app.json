@@ -12,6 +12,12 @@
     },
     "plugins": [
       [
+        "expo-localization",
+        {
+          "supportedLocales": ["en", "de", "fr", "ar", "ja"]
+        }
+      ],
+      [
         "expo-font",
         {
           "android": {

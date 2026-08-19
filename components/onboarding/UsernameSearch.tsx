@@ -10,6 +10,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { useTranslation } from 'react-i18next';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Instagram } from '~/lib/types';
 import { fetchPublicProfile } from '~/lib/fetchPublicProfile';
@@ -18,27 +19,6 @@ import Button from '~/components/Button';
 import TextField from '~/components/TextField';
 import Unhinged from '~/assets/unhinged_2.svg';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
-
-const FAKE_ACCOUNTS = [
-  {
-    id: '1',
-    username: 'sarah_designs',
-    image: require('~/assets/profile_0.jpg'),
-    time: '2 hours ago',
-  },
-  {
-    id: '2',
-    username: 'mike.travels',
-    image: require('~/assets/profile_1.jpg'),
-    time: '5 hours ago',
-  },
-  {
-    id: '3',
-    username: 'emma_fitness',
-    image: require('~/assets/profile_2.jpg'),
-    time: 'Yesterday',
-  },
-];
 
 interface UsernameSearchProps {
   onNext: (username: string | null) => void;
@@ -55,6 +35,28 @@ export default function UsernameSearch({
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState('');
   const { track } = useAnalytics();
+  const { t } = useTranslation();
+
+  const FAKE_ACCOUNTS = [
+    {
+      id: '1',
+      username: 'sarah_designs',
+      image: require('~/assets/profile_0.jpg'),
+      time: t('obUsernameSearch.timeTwoHoursAgo'),
+    },
+    {
+      id: '2',
+      username: 'mike.travels',
+      image: require('~/assets/profile_1.jpg'),
+      time: t('obUsernameSearch.timeFiveHoursAgo'),
+    },
+    {
+      id: '3',
+      username: 'emma_fitness',
+      image: require('~/assets/profile_2.jpg'),
+      time: t('obUsernameSearch.timeYesterday'),
+    },
+  ];
 
   const svgOpacity = useSharedValue(1);
   const svgScale = useSharedValue(1);
@@ -95,12 +97,12 @@ export default function UsernameSearch({
   if (savedResult) {
     return (
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 24 }}>
-        <Text className="mb-8 text-center font-roboto-black text-4xl">What we found</Text>
+        <Text className="mb-8 text-center font-roboto-black text-4xl">{t('obUsernameSearch.whatWeFound')}</Text>
 
         <InstagramCard account={savedResult} />
 
         <Text className="mb-3 mt-6 font-roboto-medium text-lg text-black">
-          Not following you back
+          {t('obUsernameSearch.notFollowingBack')}
         </Text>
 
         <View className="gap-3">
@@ -130,7 +132,7 @@ export default function UsernameSearch({
         </View>
 
         <View className="mt-8">
-          <Button label="Continue" onPress={() => {
+          <Button label={t('obUsernameSearch.continue')} onPress={() => {
             track(Events.USERNAME_RESULT_COMPLETED);
             onNext(savedResult.username);
           }} />
@@ -151,7 +153,7 @@ export default function UsernameSearch({
       track(Events.USERNAME_SEARCH_COMPLETED);
       onResultFetched(profile);
     } catch (err) {
-      setError('Could not find this account. Please check the username.');
+      setError(t('obUsernameSearch.notFoundError'));
     } finally {
       setIsSearching(false);
     }
@@ -166,11 +168,11 @@ export default function UsernameSearch({
           <Unhinged width={140} height={140} />
         </Animated.View>
         <Text className="mt-6 px-2 text-center font-roboto-extrablack text-4xl tracking-tighter">
-          What's your Instagram username?
+          {t('obUsernameSearch.prompt')}
         </Text>
         <View className="mt-8 w-full">
           <TextField
-            placeholder="Instagram username"
+            placeholder={t('obUsernameSearch.usernamePlaceholder')}
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
@@ -180,7 +182,7 @@ export default function UsernameSearch({
         </View>
         <View className="mt-6 w-full">
           <Button
-            label="Continue"
+            label={t('obUsernameSearch.continue')}
             loading={isSearching}
             onPress={handleContinue}
             disabled={!username.trim()}
@@ -190,7 +192,7 @@ export default function UsernameSearch({
           track(Events.USERNAME_SEARCH_SKIPPED);
           onNext(null);
         }}>
-          <Text className="text-center font-roboto-medium text-base text-black">Skip</Text>
+          <Text className="text-center font-roboto-medium text-base text-black">{t('obUsernameSearch.skip')}</Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>

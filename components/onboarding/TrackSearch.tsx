@@ -10,6 +10,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { useTranslation } from 'react-i18next';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Instagram } from '~/lib/types';
 import { fetchPublicProfile } from '~/lib/fetchPublicProfile';
@@ -18,27 +19,6 @@ import Button from '~/components/Button';
 import TextField from '~/components/TextField';
 import Unhinged from '~/assets/unhinged_2.svg';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
-
-const FAKE_ACCOUNTS = [
-  {
-    id: '1',
-    username: 'emma_fitness',
-    image: require('~/assets/profile_2.jpg'),
-    time: 'Yesterday',
-  },
-  {
-    id: '2',
-    username: 'sarah_designs',
-    image: require('~/assets/profile_0.jpg'),
-    time: '2 hours ago',
-  },
-  {
-    id: '3',
-    username: 'mike.travels',
-    image: require('~/assets/profile_1.jpg'),
-    time: '5 hours ago',
-  },
-];
 
 interface TrackSearchProps {
   onNext: (username: string | null) => void;
@@ -51,6 +31,28 @@ export default function TrackSearch({ onNext, savedResult, onResultFetched }: Tr
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState('');
   const { track } = useAnalytics();
+  const { t } = useTranslation();
+
+  const FAKE_ACCOUNTS = [
+    {
+      id: '1',
+      username: 'emma_fitness',
+      image: require('~/assets/profile_2.jpg'),
+      time: t('obTrackSearch.timeYesterday'),
+    },
+    {
+      id: '2',
+      username: 'sarah_designs',
+      image: require('~/assets/profile_0.jpg'),
+      time: t('obTrackSearch.timeTwoHoursAgo'),
+    },
+    {
+      id: '3',
+      username: 'mike.travels',
+      image: require('~/assets/profile_1.jpg'),
+      time: t('obTrackSearch.timeFiveHoursAgo'),
+    },
+  ];
 
   const svgOpacity = useSharedValue(1);
   const svgScale = useSharedValue(1);
@@ -91,11 +93,11 @@ export default function TrackSearch({ onNext, savedResult, onResultFetched }: Tr
   if (savedResult) {
     return (
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 24 }}>
-        <Text className="mb-8 text-center font-roboto-black text-4xl">What we found</Text>
+        <Text className="mb-8 text-center font-roboto-black text-4xl">{t('obTrackSearch.whatWeFound')}</Text>
 
         <InstagramCard account={savedResult} />
 
-        <Text className="mb-3 mt-6 font-roboto-medium text-lg text-black">Recent activity</Text>
+        <Text className="mb-3 mt-6 font-roboto-medium text-lg text-black">{t('obTrackSearch.recentActivity')}</Text>
 
         <View className="gap-3">
           {FAKE_ACCOUNTS.map((account) => (
@@ -133,7 +135,7 @@ export default function TrackSearch({ onNext, savedResult, onResultFetched }: Tr
         </View>
 
         <View className="mt-8">
-          <Button label="Continue" onPress={() => {
+          <Button label={t('obTrackSearch.continue')} onPress={() => {
             track(Events.TRACK_RESULT_COMPLETED);
             onNext(savedResult.username);
           }} />
@@ -154,7 +156,7 @@ export default function TrackSearch({ onNext, savedResult, onResultFetched }: Tr
       track(Events.TRACK_SEARCH_COMPLETED);
       onResultFetched(profile);
     } catch (err) {
-      setError('Could not find this account. Please check the username.');
+      setError(t('obTrackSearch.notFoundError'));
     } finally {
       setIsSearching(false);
     }
@@ -169,11 +171,11 @@ export default function TrackSearch({ onNext, savedResult, onResultFetched }: Tr
           <Unhinged width={140} height={140} />
         </Animated.View>
         <Text className="mt-6 px-2 text-center font-roboto-extrablack text-4xl tracking-tighter">
-          Who do you want to track?
+          {t('obTrackSearch.prompt')}
         </Text>
         <View className="mt-8 w-full">
           <TextField
-            placeholder="Instagram username"
+            placeholder={t('obTrackSearch.usernamePlaceholder')}
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
@@ -182,11 +184,11 @@ export default function TrackSearch({ onNext, savedResult, onResultFetched }: Tr
           />
         </View>
         <Text className="mt-4 px-2 text-center font-roboto-regular text-sm text-gray-600">
-          This action is completely private and they will never know or be notified.
+          {t('obTrackSearch.privacyNote')}
         </Text>
         <View className="mt-6 w-full">
           <Button
-            label="Continue"
+            label={t('obTrackSearch.continue')}
             loading={isSearching}
             onPress={handleContinue}
             disabled={!username.trim()}
@@ -196,7 +198,7 @@ export default function TrackSearch({ onNext, savedResult, onResultFetched }: Tr
           track(Events.TRACK_SEARCH_SKIPPED);
           onNext(null);
         }}>
-          <Text className="text-center font-roboto-medium text-base text-black">Skip</Text>
+          <Text className="text-center font-roboto-medium text-base text-black">{t('obTrackSearch.skip')}</Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>
