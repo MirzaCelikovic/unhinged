@@ -9,6 +9,7 @@ import Animated, {
   withSequence,
   Easing,
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import Unhinged from '~/assets/unhinged.svg';
 import { useInstagram, SyncStepStatus } from '~/contexts/InstagramContext';
 import RandomProfilePhotos from '~/components/RandomProfilePhotos';
@@ -126,6 +127,7 @@ export default function InitialSync({
   userId: _userId,
   username: _username,
 }: InitialSyncProps) {
+  const { t } = useTranslation();
   const { syncState } = useInstagram();
 
   // Derive step states from syncState
@@ -163,31 +165,31 @@ export default function InitialSync({
 
   const step2Label =
     followingDisabled && followersDisabled
-      ? 'Syncing with Instagram'
+      ? t('initialSync.syncingWithInstagram')
       : followersDisabled
-        ? 'Syncing following list'
+        ? t('initialSync.syncingFollowingList')
         : followingDisabled
-          ? 'Syncing followers list'
-          : 'Syncing with Instagram';
+          ? t('initialSync.syncingFollowersList')
+          : t('initialSync.syncingWithInstagram');
 
   return (
     <View className="flex-1 items-center justify-center p-4">
       <Unhinged width={110} height={110} />
       <Text className="mt-4 px-12 font-roboto-extrablack text-4xl tracking-tighter">
-        Syncing...
+        {t('initialSync.title')}
       </Text>
       <Text className="font-roboto-regular mt-4 px-12 text-center text-lg tracking-tighter">
         {followingDisabled && followersDisabled
-          ? 'Fetching profile information...'
-          : 'This might take a minute depending on number of followers.'}
+          ? t('initialSync.fetchingProfileInformation')
+          : t('initialSync.mightTakeAMinute')}
       </Text>
 
       <View className="mt-6 w-full gap-4">
-        <SyncStep label="Fetching profile" state={step1State} />
+        <SyncStep label={t('initialSync.fetchingProfile')} state={step1State} />
         {(!followingDisabled || !followersDisabled) && (
           <SyncStep label={step2Label} state={step2State} />
         )}
-        <SyncStep label="Analyzing activity" state={step3State} />
+        <SyncStep label={t('initialSync.analyzingActivity')} state={step3State} />
       </View>
 
       {(mainAccount?.userId || _userId) && (

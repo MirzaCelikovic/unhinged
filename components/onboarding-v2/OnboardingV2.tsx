@@ -8,6 +8,7 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { CircleChevronLeft } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import ChoiceQuestion from '~/components/onboarding/ChoiceQuestion';
 import TrackSearch from '~/components/onboarding-v2/TrackSearch';
 import StartScreen from '~/components/onboarding-v2/StartScreen';
@@ -27,8 +28,8 @@ interface OnboardingV2Props {
 interface ChoiceStep {
   id: string;
   type: 'choice';
-  question: string;
-  choices: { id: string; label: string }[];
+  questionKey: string;
+  choices: { id: string; labelKey: string }[];
 }
 
 interface TrackStep {
@@ -39,9 +40,9 @@ interface TrackStep {
 interface MultiSelectStep {
   id: string;
   type: 'multiselect';
-  question: string;
-  subtitle?: string;
-  choices: { id: string; label: string }[];
+  questionKey: string;
+  subtitleKey?: string;
+  choices: { id: string; labelKey: string }[];
 }
 
 interface AnalyzingStep {
@@ -69,40 +70,40 @@ const STEPS: Step[] = [
   {
     id: 'who',
     type: 'choice',
-    question: "Who\u2019s got you feeling\nthis way?",
+    questionKey: 'onboardingV2.root.whoQuestion',
     choices: [
-      { id: 'boyfriend', label: 'My boyfriend' },
-      { id: 'girlfriend', label: 'My girlfriend' },
-      { id: 'ex', label: 'My ex' },
-      { id: 'talking_to', label: "Someone I\u2019m talking to" },
-      { id: 'friend', label: "A \u2018friend\u2019 I don\u2019t really trust" },
-      { id: 'someone_else', label: 'Someone else' },
+      { id: 'boyfriend', labelKey: 'onboardingV2.root.whoOptionBoyfriend' },
+      { id: 'girlfriend', labelKey: 'onboardingV2.root.whoOptionGirlfriend' },
+      { id: 'ex', labelKey: 'onboardingV2.root.whoOptionEx' },
+      { id: 'talking_to', labelKey: 'onboardingV2.root.whoOptionTalkingTo' },
+      { id: 'friend', labelKey: 'onboardingV2.root.whoOptionFriend' },
+      { id: 'someone_else', labelKey: 'onboardingV2.root.whoOptionSomeoneElse' },
     ],
   },
   {
     id: 'age',
     type: 'choice',
-    question: 'How old are you?',
+    questionKey: 'onboardingV2.root.ageQuestion',
     choices: [
-      { id: '18_24', label: '18–24' },
-      { id: '25_34', label: '25–34' },
-      { id: '35_plus', label: '35+' },
+      { id: '18_24', labelKey: 'onboardingV2.root.ageOption1824' },
+      { id: '25_34', labelKey: 'onboardingV2.root.ageOption2534' },
+      { id: '35_plus', labelKey: 'onboardingV2.root.ageOption35Plus' },
     ],
   },
   {
     id: 'alarm_bells',
     type: 'multiselect',
-    question: "What\u2019s been setting off\nalarm bells?",
-    subtitle: "Check everything that sounds familiar.\nNo one sees this but you.",
+    questionKey: 'onboardingV2.root.alarmBellsQuestion',
+    subtitleKey: 'onboardingV2.root.alarmBellsSubtitle',
     choices: [
-      { id: 'phone', label: 'On their phone way more than usual' },
-      { id: 'hides_screen', label: 'Hides screen when I walk up' },
-      { id: 'thirst_traps', label: "Liking random girls\u2019/guys\u2019 thirst traps" },
-      { id: 'fitness_models', label: 'Following new fitness models' },
-      { id: 'weird_hours', label: 'Active on IG at weird hours' },
-      { id: 'new_followers', label: "New followers I\u2019ve never heard of" },
-      { id: 'weird_notifications', label: 'Getting weird notifications' },
-      { id: 'changed_password', label: 'Changed their password' },
+      { id: 'phone', labelKey: 'onboardingV2.root.alarmBellsOptionPhone' },
+      { id: 'hides_screen', labelKey: 'onboardingV2.root.alarmBellsOptionHidesScreen' },
+      { id: 'thirst_traps', labelKey: 'onboardingV2.root.alarmBellsOptionThirstTraps' },
+      { id: 'fitness_models', labelKey: 'onboardingV2.root.alarmBellsOptionFitnessModels' },
+      { id: 'weird_hours', labelKey: 'onboardingV2.root.alarmBellsOptionWeirdHours' },
+      { id: 'new_followers', labelKey: 'onboardingV2.root.alarmBellsOptionNewFollowers' },
+      { id: 'weird_notifications', labelKey: 'onboardingV2.root.alarmBellsOptionWeirdNotifications' },
+      { id: 'changed_password', labelKey: 'onboardingV2.root.alarmBellsOptionChangedPassword' },
     ],
   },
   {
@@ -120,6 +121,7 @@ const STEPS: Step[] = [
 ];
 
 export default function OnboardingV2({ onComplete }: OnboardingV2Props) {
+  const { t } = useTranslation();
   // Resume in-progress onboarding (COM-38): a user who backgrounds/relaunches
   // mid-quiz picks up where they left off instead of restarting. Both arms — a
   // neutral change that keeps the A/B difference to dismissibility only. Cleared
@@ -216,9 +218,9 @@ export default function OnboardingV2({ onComplete }: OnboardingV2Props) {
           {step.type === 'start' && <StartScreen onNext={handleNext} />}
           {step.type === 'multiselect' && (
             <MultiSelectQuestion
-              question={(step as MultiSelectStep).question}
-              subtitle={(step as MultiSelectStep).subtitle}
-              choices={(step as MultiSelectStep).choices}
+              question={t((step as MultiSelectStep).questionKey)}
+              subtitle={(step as MultiSelectStep).subtitleKey ? t((step as MultiSelectStep).subtitleKey!) : undefined}
+              choices={(step as MultiSelectStep).choices.map((choice) => ({ id: choice.id, label: t(choice.labelKey) }))}
               onSubmit={(selectedIds) => {
                 track(Events.ALARM_BELLS_COMPLETED, { selections: selectedIds });
                 setAnswers({ ...answers, [step.id]: selectedIds.join(',') });
@@ -228,8 +230,8 @@ export default function OnboardingV2({ onComplete }: OnboardingV2Props) {
           )}
           {step.type === 'choice' && (
             <ChoiceQuestion
-              question={(step as ChoiceStep).question}
-              choices={(step as ChoiceStep).choices}
+              question={t((step as ChoiceStep).questionKey)}
+              choices={(step as ChoiceStep).choices.map((choice) => ({ id: choice.id, label: t(choice.labelKey) }))}
               onSelect={handleSelect}
             />
           )}

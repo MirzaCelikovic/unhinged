@@ -15,8 +15,10 @@ import SessionExpiredSheet from '~/components/SessionExpiredSheet';
 import AgePrompt from '~/components/AgePrompt';
 import { useAnalytics, Events } from '~/contexts/AnalyticsContext';
 import { getAgeGroup, setAgeGroup, AgeGroup } from '~/lib/storage';
+import { useTranslation } from 'react-i18next';
 
 export default function TabLayout() {
+  const { t } = useTranslation();
   const { isLoading, isOnboarded } = useOnboarding();
   const {
     isInitialized,
@@ -123,8 +125,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="home"
           options={{
-            title: 'Home',
-            tabBarLabel: 'Home',
+            title: t('tabs.layout.homeTitle'),
+            tabBarLabel: t('tabs.layout.homeTabBarLabel'),
             tabBarIcon: ({ color }) => (
               <View>
                 <TabHomeIcon color={color} width={28} height={28} />
@@ -139,8 +141,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="tracking"
           options={{
-            title: 'Tracking',
-            tabBarLabel: 'Tracking',
+            title: t('tabs.layout.trackingTitle'),
+            tabBarLabel: t('tabs.layout.trackingTabBarLabel'),
             tabBarIcon: ({ color }) => (
               <View>
                 <TabTrackingIcon color={color} width={28} height={28} />
@@ -155,8 +157,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="settings"
           options={{
-            title: 'Settings',
-            tabBarLabel: 'Settings',
+            title: t('tabs.layout.settingsTitle'),
+            tabBarLabel: t('tabs.layout.settingsTabBarLabel'),
             tabBarIcon: ({ color }) => <TabSettingsIcon color={color} width={28} height={28} />,
             headerShown: false,
           }}

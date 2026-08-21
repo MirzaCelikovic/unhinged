@@ -3,6 +3,7 @@ import { View, Modal, Text, Pressable, Alert } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useStorage } from '~/lib/useStorage';
 import { useConnectInstagram, useDisconnectInstagram } from '~/lib/useAccount';
 import { useAccountContext } from './AccountContext';
@@ -199,6 +200,7 @@ export const useInstagram = () => {
 
 // Provider
 export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { t } = useTranslation();
   // Database
   const db = useSQLiteContext();
   const queryClient = useQueryClient();
@@ -1240,8 +1242,8 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           }
 
           Alert.alert(
-            'Instagram needs a break',
-            'To protect your account, syncing is paused for about 30 minutes. Please try again later.'
+            t('instagramContext.circuitBreakerTitle'),
+            t('instagramContext.circuitBreakerMessage')
           );
           break;
 
@@ -1545,9 +1547,9 @@ export const InstagramProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         <Modal visible={showLoginModal} animationType="slide" presentationStyle="pageSheet">
           <View className="flex-1 bg-white">
             <View className="flex-row items-center justify-between border-b border-gray-200 p-4">
-              <Text className="text-lg font-semibold">Connect Instagram</Text>
+              <Text className="text-lg font-semibold">{t('instagramContext.connectInstagram')}</Text>
               <Pressable className="px-4 py-2 active:opacity-70" onPress={closeLoginModal}>
-                <Text className="text-base font-medium text-blue-500">Cancel</Text>
+                <Text className="text-base font-medium text-blue-500">{t('instagramContext.cancel')}</Text>
               </Pressable>
             </View>
             <WebView

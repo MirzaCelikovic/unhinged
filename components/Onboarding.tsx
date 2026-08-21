@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { View, Pressable } from 'react-native';
 import Animated, {
   FadeIn,
@@ -8,6 +8,7 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { CircleChevronLeft } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import ChoiceQuestion from '~/components/onboarding/ChoiceQuestion';
 import UsernameSearch from '~/components/onboarding/UsernameSearch';
 import TrackSearch from '~/components/onboarding/TrackSearch';
@@ -84,7 +85,7 @@ interface ConnectStep {
 
 type Step = StartStep | ChoiceStep | UsernameStep | TrackStep | HelpStep | NotificationsStep | ReviewStep | StatsStep | ComparisonStep | ConnectStep;
 
-const STEPS: Step[] = [
+const getSteps = (t: (key: string) => string): Step[] => [
   {
     id: 'start',
     type: 'start',
@@ -92,24 +93,24 @@ const STEPS: Step[] = [
   {
     id: 'source',
     type: 'choice',
-    question: 'How did you find us?',
+    question: t('onboarding.sourceQuestion'),
     choices: [
-      { id: 'friends', label: 'Friends' },
-      { id: 'tiktok', label: 'TikTok' },
-      { id: 'instagram', label: 'Instagram' },
-      { id: 'facebook', label: 'Facebook' },
-      { id: 'google', label: 'Google' },
-      { id: 'other', label: 'Other' },
+      { id: 'friends', label: t('onboarding.sourceFriends') },
+      { id: 'tiktok', label: t('onboarding.sourceTiktok') },
+      { id: 'instagram', label: t('onboarding.sourceInstagram') },
+      { id: 'facebook', label: t('onboarding.sourceFacebook') },
+      { id: 'google', label: t('onboarding.sourceGoogle') },
+      { id: 'other', label: t('onboarding.sourceOther') },
     ],
   },
   {
     id: 'age',
     type: 'choice',
-    question: 'How old are you?',
+    question: t('onboarding.ageQuestion'),
     choices: [
-      { id: '18_24', label: '18–24' },
-      { id: '25_34', label: '25–34' },
-      { id: '35_plus', label: '35+' },
+      { id: '18_24', label: t('onboarding.age1824') },
+      { id: '25_34', label: t('onboarding.age2534') },
+      { id: '35_plus', label: t('onboarding.age35Plus') },
     ],
   },
   {
@@ -119,13 +120,13 @@ const STEPS: Step[] = [
   {
     id: 'help_with',
     type: 'choice',
-    question: 'What can Unhinged help you with?',
+    question: t('onboarding.helpWithQuestion'),
     choices: [
-      { id: 'track', label: 'Track users privately' },
-      { id: 'not_following_back', label: "See who's not following you back" },
-      { id: 'stories', label: 'View stories anonymously' },
-      { id: 'red_flags', label: 'Generate red flag reports' },
-      { id: 'wrapped', label: 'See your IG wrapped' },
+      { id: 'track', label: t('onboarding.helpWithTrack') },
+      { id: 'not_following_back', label: t('onboarding.helpWithNotFollowingBack') },
+      { id: 'stories', label: t('onboarding.helpWithStories') },
+      { id: 'red_flags', label: t('onboarding.helpWithRedFlags') },
+      { id: 'wrapped', label: t('onboarding.helpWithWrapped') },
     ],
   },
   {
@@ -163,6 +164,7 @@ const STEPS: Step[] = [
 ];
 
 export default function Onboarding({ onComplete }: OnboardingProps) {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [instagramResult, setInstagramResult] = useState<Instagram | null>(null);
@@ -170,6 +172,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const { showLogin, isLoggedIn, sync } = useInstagram();
   const { account } = useAccountContext();
   const { track } = useAnalytics();
+
+  const STEPS = useMemo(() => getSteps(t), [t]);
 
   // Progress bar excludes the start step (step 0)
   const stepsWithProgress = STEPS.length - 1;

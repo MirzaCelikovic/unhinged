@@ -11,7 +11,14 @@
     "skipLibCheck": true,
     "types": ["node"],
     "outDir": "dist-test",
-    "rootDir": "."
+    "rootDir": ".",
+    "resolveJsonModule": true
   },
-  "include": ["lib/followBacks.ts", "lib/followBacks.test.ts"]
+  "include": [
+    "lib/followBacks.ts",
+    "lib/followBacks.test.ts",
+    "lib/i18n/locales/en.json",
+    "lib/i18n/locales/de.json",
+    "lib/i18n/localization.test.ts"
+  ]
 }

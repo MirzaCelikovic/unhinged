@@ -21,8 +21,10 @@ import {
   FOLLOWERS_WARN_THRESHOLD,
   FOLLOWING_WARN_THRESHOLD,
 } from '~/lib/constants';
+import { useTranslation } from 'react-i18next';
 
 export default function TrackingAccount() {
+  const { t } = useTranslation();
   const { userId, username } = useLocalSearchParams<{ userId: string; username: string }>();
   const { account } = useAccountContext();
   const { syncState } = useInstagramContext();
@@ -102,25 +104,29 @@ export default function TrackingAccount() {
   const handleStopTracking = () => {
     if (!account?.uuid || !userId) return;
 
-    Alert.alert('Stop Tracking', `Stop tracking @${instagram?.username || username}?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Stop Tracking',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await removeTrackedInstagram.mutateAsync({ accountId: account.uuid, userId });
-            // Wait a bit for cache invalidation to propagate
-            setTimeout(() => {
-              router.back();
-            }, 100);
-          } catch (error) {
-            console.error('Failed to remove tracked instagram:', error);
-            Alert.alert('Error', 'Failed to stop tracking. Please try again.');
-          }
+    Alert.alert(
+      t('tracking.account.stopTrackingAlertTitle'),
+      t('tracking.account.stopTrackingAlertMessage', { username: instagram?.username || username }),
+      [
+        { text: t('tracking.account.cancel'), style: 'cancel' },
+        {
+          text: t('tracking.account.stopTracking'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await removeTrackedInstagram.mutateAsync({ accountId: account.uuid, userId });
+              // Wait a bit for cache invalidation to propagate
+              setTimeout(() => {
+                router.back();
+              }, 100);
+            } catch (error) {
+              console.error('Failed to remove tracked instagram:', error);
+              Alert.alert(t('tracking.account.errorAlertTitle'), t('tracking.account.errorAlertMessage'));
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   return (
@@ -158,7 +164,7 @@ export default function TrackingAccount() {
                 onPress={() => setActiveTab('feed')}>
                 <Text
                   className={`font-roboto-medium text-sm ${activeTab === 'feed' ? 'text-gray-900' : 'text-gray-500'}`}>
-                  Activity
+                  {t('tracking.account.tabActivity')}
                 </Text>
               </Pressable>
               <Pressable
@@ -166,7 +172,7 @@ export default function TrackingAccount() {
                 onPress={() => setActiveTab('stats')}>
                 <Text
                   className={`font-roboto-medium text-sm ${activeTab === 'stats' ? 'text-gray-900' : 'text-gray-500'}`}>
-                  Insights
+                  {t('tracking.account.tabInsights')}
                 </Text>
                 {hasInsightsIndicator && (
                   <View className="h-3 w-3 rounded-full bg-error" />
@@ -177,7 +183,7 @@ export default function TrackingAccount() {
                 onPress={() => setActiveTab('settings')}>
                 <Text
                   className={`font-roboto-medium text-sm ${activeTab === 'settings' ? 'text-gray-900' : 'text-gray-500'}`}>
-                  Settings
+                  {t('tracking.account.tabSettings')}
                 </Text>
               </Pressable>
             </View>
@@ -198,7 +204,7 @@ export default function TrackingAccount() {
                 <View className="border-b border-gray-100 p-4">
                   <View className="flex-row items-center justify-between">
                     <Text className="font-roboto-medium text-base text-gray-900">
-                      Sync following activity
+                      {t('tracking.account.syncFollowingActivity')}
                     </Text>
                     <Switch
                       value={trackFollowing}
@@ -209,14 +215,14 @@ export default function TrackingAccount() {
                   </View>
                   {followingWarn && (
                     <Text className="mt-2 font-roboto-regular text-sm text-gray-400">
-                      We recommend keeping this off for this account to protect your Instagram session from rate limiting.
+                      {t('tracking.account.rateLimitWarningFollowing')}
                     </Text>
                   )}
                 </View>
                 <View className="border-b border-gray-100 p-4">
                   <View className="flex-row items-center justify-between">
                     <Text className="font-roboto-medium text-base text-gray-900">
-                      Sync followers activity
+                      {t('tracking.account.syncFollowersActivity')}
                     </Text>
                     <Switch
                       value={trackFollowers}
@@ -227,14 +233,14 @@ export default function TrackingAccount() {
                   </View>
                   {followersWarn && (
                     <Text className="mt-2 font-roboto-regular text-sm text-gray-400">
-                      We recommend keeping this off for this account to protect your Instagram session from rate limiting.
+                      {t('tracking.account.rateLimitWarningFollowers')}
                     </Text>
                   )}
                 </View>
                 <Pressable
                   className="p-4 active:opacity-80"
                   onPress={handleStopTracking}>
-                  <Text className="font-roboto-medium text-base text-error">Stop Tracking</Text>
+                  <Text className="font-roboto-medium text-base text-error">{t('tracking.account.stopTracking')}</Text>
                 </Pressable>
               </View>
             )}
