@@ -6,8 +6,10 @@ import { X } from 'lucide-react-native';
 import Circles from '~/assets/circles.svg';
 import Logo from '~/assets/logo_black.svg';
 import { useAccountContext } from '~/contexts/AccountContext';
+import { useTranslation } from 'react-i18next';
 
 export default function NotificationsModal() {
+  const { t } = useTranslation();
   const { account, updateAccountSettings } = useAccountContext();
 
   // Local state for optimistic updates
@@ -59,11 +61,11 @@ export default function NotificationsModal() {
       <View className="flex-1 p-4">
         {/* Notifications Section */}
         <View className="mt-4">
-          <Text className="mb-3 font-roboto-bold text-lg text-black">Notifications</Text>
+          <Text className="mb-3 font-roboto-bold text-lg text-black">{t('settings.notifications.title')}</Text>
           <View className="overflow-hidden rounded-2xl bg-white">
             <View className="flex-row items-center justify-between border-b border-gray-100 p-4">
               <Text className="flex-1 font-roboto-medium text-base text-gray-900">
-                When someone you track has new activity
+                {t('settings.notifications.trackedActivity')}
               </Text>
               <Switch
                 value={localSettings.notification_tracked}
@@ -74,7 +76,7 @@ export default function NotificationsModal() {
             </View>
             <View className="flex-row items-center justify-between border-b border-gray-100 p-4">
               <Text className="flex-1 font-roboto-medium text-base text-gray-900">
-                When your account has new activity
+                {t('settings.notifications.accountActivity')}
               </Text>
               <Switch
                 value={localSettings.notification_account}
@@ -85,7 +87,7 @@ export default function NotificationsModal() {
             </View>
             <View className="flex-row items-center justify-between p-4">
               <Text className="flex-1 font-roboto-medium text-base text-gray-900">
-                Product updates and campaigns
+                {t('settings.notifications.productUpdates')}
               </Text>
               <Switch
                 value={localSettings.notification_marketing}
